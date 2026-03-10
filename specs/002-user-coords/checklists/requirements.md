@@ -1,8 +1,8 @@
-# Specification Quality Checklist: Select Location by Clicking on Map
+# Specification Quality Checklist: Enter Latitude/Longitude to Estimate Property Value
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-09
-**Feature**: `specs/003-uc03-feature-spec/spec.md`
+**Feature**: `specs/002-user-coords/spec.md`
 
 ## Content Quality
 

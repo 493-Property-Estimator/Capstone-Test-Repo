@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-03-10  
-**Feature**: [/home/fronk/ECE493/Capstone/Group/ece493_2026w_group14/specs/032-invalid-input-errors/spec.md](/home/fronk/ECE493/Capstone/Group/ece493_2026w_group14/specs/032-invalid-input-errors/spec.md)
+**Feature**: `specs/032-invalid-input-errors/spec.md`
 
 ## Content Quality
 

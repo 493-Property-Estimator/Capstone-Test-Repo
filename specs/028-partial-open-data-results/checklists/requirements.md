@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-03-10  
-**Feature**: [spec.md](../spec.md)
+**Feature**: `specs/028-partial-open-data-results/spec.md`
 
 ## Content Quality
 

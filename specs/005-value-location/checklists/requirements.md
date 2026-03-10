@@ -1,8 +1,8 @@
-# Specification Quality Checklist: Enter Street Address to Estimate Property Value
+# Specification Quality Checklist: Estimate Property Value Using Location Only
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-09
-**Feature**: `specs/001-uc01-feature-spec/spec.md`
+**Feature**: `specs/005-value-location/spec.md`
 
 ## Content Quality
 
@@ -31,4 +31,5 @@
 
 ## Notes
 
-- The specification includes implementation constraints (Python, vanilla HTML/CSS/JS) as required by the feature request. This causes the "No implementation details" items to remain unchecked.
+- The specification includes the required implementation constraints "Python, vanilla HTML/CSS/JS" because the feature request explicitly required them.
+- The Spec-Kit feature creation script failed before returning JSON or creating a feature folder, so the spec was created manually in the repository's existing `specs/` convention as `005-uc05-feature-spec`.

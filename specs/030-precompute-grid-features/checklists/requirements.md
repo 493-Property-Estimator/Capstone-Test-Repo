@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-03-10  
-**Feature**: [/home/fronk/ECE493/Capstone/Group/ece493_2026w_group14/specs/030-precompute-grid-features/spec.md](/home/fronk/ECE493/Capstone/Group/ece493_2026w_group14/specs/030-precompute-grid-features/spec.md)
+**Feature**: `specs/030-precompute-grid-features/spec.md`
 
 ## Content Quality
 

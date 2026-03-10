@@ -1,8 +1,8 @@
-# Specification Quality Checklist: Normalize Property Input to Canonical Location ID
+# Specification Quality Checklist: Enter Street Address to Estimate Property Value
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-09
-**Feature**: [spec.md](/home/fronk/ECE493/Capstone/Group/ece493_2026w_group14/specs/004-uc04-feature-spec/spec.md)
+**Feature**: `specs/001-user-geocode/spec.md`
 
 ## Content Quality
 
@@ -31,5 +31,4 @@
 
 ## Notes
 
-- The specification includes the required implementation constraints "Python, vanilla HTML/CSS/JS" in the Assumptions & Constraints and Non-Functional Requirements sections because the feature request explicitly required them.
-- Validation review found no unresolved clarification markers and no unsupported functional requirements; all FRs trace back to UC-04 flow text or UC-04 acceptance tests.
+- The specification includes implementation constraints (Python, vanilla HTML/CSS/JS) as required by the feature request. This causes the "No implementation details" items to remain unchecked.
