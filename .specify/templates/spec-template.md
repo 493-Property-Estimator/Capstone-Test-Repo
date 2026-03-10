@@ -18,12 +18,6 @@
   - Tested independently
   - Deployed independently
   - Demonstrated to users independently
-  
-  SOURCE OF TRUTH:
-  - Use cases live in `Use Cases/UC-XX.md`
-  - Scenarios live in `Scenarios/UC-XX-Scenarios.md`
-  - Acceptance tests live in `Acceptance Tests/UC-XX-AT.md`
-  Every user story and acceptance scenario MUST map back to these files.
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)
@@ -100,12 +94,6 @@
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
-
-### Non-Functional Requirements
-
-- **NFR-001**: UI updates MUST complete within 100 ms for local state changes
-- **NFR-002**: Estimate requests MUST meet p95 < 1.5 s cached and p95 < 3.5 s uncached
-- **NFR-003**: UI labels, validation, and interaction patterns MUST match shared styles/components
 
 ### Key Entities *(include if feature involves data)*
 

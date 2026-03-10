@@ -1,2 +1,5 @@
 [projects."/home/fronk/ECE493/Capstone/Group/ece493_2026w_group14"]
 trust_level = "trusted"
+
+[projects."/home/ayra/ECE_493/Capstone-Test-Repo"]
+trust_level = "trusted"

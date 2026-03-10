@@ -1,7 +1,7 @@
 {
-  "fetched_at": "2026-03-10T01:57:44.071150976Z",
+  "fetched_at": "2026-03-10T22:49:25.038145454Z",
   "etag": "W/\"abbed542b9b513e1f76f1e61299b15af\"",
-  "client_version": "0.104.0",
+  "client_version": "0.98.0",
   "models": [
     {
       "slug": "gpt-5.4",
@@ -55,8 +55,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.3-codex",
@@ -110,8 +109,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.2-codex",
@@ -168,8 +166,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.2",
@@ -218,8 +215,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.1-codex-max",
@@ -268,8 +264,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.1-codex",
@@ -314,8 +309,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.1",
@@ -360,8 +354,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5-codex",
@@ -406,8 +399,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5",
@@ -456,8 +448,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5.1-codex-mini",
@@ -498,8 +489,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     },
     {
       "slug": "gpt-5-codex-mini",
@@ -540,8 +530,7 @@
       "input_modalities": [
         "text",
         "image"
-      ],
-      "prefer_websockets": false
+      ]
     }
   ]
 }

@@ -17,25 +17,21 @@
   the iteration process.
 -->
 
-**Language/Version**: Python 3.x, JavaScript (ES6+), HTML, CSS  
-**Primary Dependencies**: None required (vanilla stack only)  
-**Storage**: [if applicable, e.g., files, SQLite, PostgreSQL or N/A]  
-**Testing**: pytest for Python; frontend testing harness per feature (must meet constitution gates)  
-**Target Platform**: Web application (modern desktop + mobile browsers)  
-**Project Type**: Web app (frontend + backend)  
-**Performance Goals**: p95 < 1.5 s cached estimate, p95 < 3.5 s uncached; UI updates < 100 ms  
-**Constraints**: Vanilla stack only; performance budgets enforced; acceptance tests required  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [ ] Code quality: lint/format clean, modular structure, no unjustified complexity
-- [ ] Testing: acceptance tests mapped to `Acceptance Tests/UC-XX-AT.md` plus unit/integration
-- [ ] UX consistency: shared styles/components used, labels/validation consistent
-- [ ] Performance: budgets met or explicit waiver documented
-- [ ] Traceability: all work mapped to UC-XX and scenario files
+[Gates determined based on constitution file]
 
 ## Project Structure
 
