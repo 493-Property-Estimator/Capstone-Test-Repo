@@ -18,3 +18,6 @@
 ## Failure States
 - If geocoding fails or no match is found, show an error message and allow re-entry (FR-01-012).
 - When the use case ends in failure, show the reason and a next step; do not show any estimate (FR-01-013).
+
+## Accessibility
+- Address entry and error messaging must be operable via keyboard navigation and present accessible error text.

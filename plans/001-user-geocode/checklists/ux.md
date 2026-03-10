@@ -8,30 +8,30 @@
 
 ## Requirement Completeness
 
-- [ ] CHK001 Are all user-visible UI states specified for valid submission, invalid format, geocoding failure, and partial data? [Completeness, Spec §Main Flow, Spec §Alternate Flows, Spec §Exception / Error Flows]
-- [ ] CHK002 Is the disambiguation list interaction explicitly defined in the requirements (what is shown and how selection proceeds)? [Completeness, Spec §Clarifications]
-- [ ] CHK003 Are the UI requirements for retry and re-entry explicitly defined (where the user returns and what is preserved)? [Gap]
+- [x] CHK001 Are all user-visible UI states specified for valid submission, invalid format, geocoding failure, and partial data? [Completeness, Spec §Main Flow, Spec §Alternate Flows, Spec §Exception / Error Flows]
+- [x] CHK002 Is the disambiguation list interaction explicitly defined in the requirements (what is shown and how selection proceeds)? [Completeness, Spec §Clarifications]
+- [ ] CHK003 Are the UI requirements for retry and re-entry explicitly defined (where the user returns and what is preserved)? [Gap] Note: Not necessary per spec/constitution.
 
 ## Requirement Clarity
 
-- [ ] CHK004 Is the validation error message requirement precise about required components (street number and street name) without ambiguity? [Clarity, Spec §Functional Requirements]
-- [ ] CHK005 Are "Estimate Property Value" entry action and address prompt labels specified consistently and unambiguously? [Ambiguity, Spec §Main Flow]
-- [ ] CHK006 Are success display requirements specific about format/placement of estimate and range? [Gap]
+- [x] CHK004 Is the validation error message requirement precise about required components (street number and street name) without ambiguity? [Clarity, Spec §Functional Requirements]
+- [x] CHK005 Are "Estimate Property Value" entry action and address prompt labels specified consistently and unambiguously? [Ambiguity, Spec §Main Flow]
+- [ ] CHK006 Are success display requirements specific about format/placement of estimate and range? [Gap] Note: Not necessary per spec/constitution.
 
 ## Requirement Consistency
 
-- [ ] CHK007 Do the success criteria and functional requirements align on the presence of estimate range and numeric constraints? [Consistency, Spec §Functional Requirements, Spec §Success Criteria]
-- [ ] CHK008 Are partial-data warning requirements consistent across alternate flows and acceptance scenarios? [Consistency, Spec §Alternate Flows, Spec §Acceptance Scenarios]
+- [x] CHK007 Do the success criteria and functional requirements align on the presence of estimate range and numeric constraints? [Consistency, Spec §Functional Requirements, Spec §Success Criteria]
+- [x] CHK008 Are partial-data warning requirements consistent across alternate flows and acceptance scenarios? [Consistency, Spec §Alternate Flows, Spec §Acceptance Scenarios]
 
 ## Scenario Coverage
 
-- [ ] CHK009 Are requirements defined for the user correcting an invalid address and resubmitting within the same session? [Coverage, Spec §Alternate Flows]
-- [ ] CHK010 Are requirements defined for the user experience when max geocoding attempts are exceeded? [Coverage, Spec §Clarifications, Spec §Exception / Error Flows]
+- [x] CHK009 Are requirements defined for the user correcting an invalid address and resubmitting within the same session? [Coverage, Spec §Alternate Flows]
+- [x] CHK010 Are requirements defined for the user experience when max geocoding attempts are exceeded? [Coverage, Spec §Clarifications, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.
 
 ## Edge Case Coverage
 
-- [ ] CHK011 Are ambiguous-address selection edge cases (no candidate chosen, list empty) specified? [Gap]
+- [ ] CHK011 Are ambiguous-address selection edge cases (no candidate chosen, list empty) specified? [Gap] Note: Not necessary per spec/constitution.
 
 ## Non-Functional Requirements
 
-- [ ] CHK012 Are accessibility requirements defined for keyboard navigation and error messaging in the address form? [Gap]
+- [x] CHK012 Are accessibility requirements defined for keyboard navigation and error messaging in the address form? [Gap] Note: Necessary (constitution UX consistency); /prompts:speckit.plan rerun.

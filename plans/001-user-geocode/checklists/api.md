@@ -8,20 +8,20 @@
 
 ## Requirement Completeness
 
-- [ ] CHK001 Are request and response schemas fully specified for success, partial-data, validation error, and geocoding error cases? [Completeness, Spec §Functional Requirements, Spec §Alternate Flows, Spec §Exception / Error Flows]
-- [ ] CHK002 Are error response fields specified for next-step guidance and retry information? [Completeness, Spec §Exception / Error Flows]
-- [ ] CHK003 Are requirements defined for handling ambiguous geocoding matches in the API? [Completeness, Spec §Clarifications]
+- [x] CHK001 Are request and response schemas fully specified for success, partial-data, validation error, and geocoding error cases? [Completeness, Spec §Functional Requirements, Spec §Alternate Flows, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK002 Are error response fields specified for next-step guidance and retry information? [Completeness, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK003 Are requirements defined for handling ambiguous geocoding matches in the API? [Completeness, Spec §Clarifications] Note: Necessary; /prompts:speckit.plan rerun.
 
 ## Requirement Clarity
 
-- [ ] CHK004 Are retry limits and attempt-count semantics explicitly defined for the API? [Clarity, Spec §Clarifications]
-- [ ] CHK005 Is the canonical location ID requirement expressed with sufficient precision for API consumers? [Clarity, Spec §Functional Requirements]
+- [x] CHK004 Are retry limits and attempt-count semantics explicitly defined for the API? [Clarity, Spec §Clarifications] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK005 Is the canonical location ID requirement expressed with sufficient precision for API consumers? [Clarity, Spec §Functional Requirements]
 
 ## Requirement Consistency
 
-- [ ] CHK006 Do the API requirements align with UI flow requirements for validation, geocoding failure, and partial data warnings? [Consistency, Spec §Functional Requirements, Spec §Alternate Flows, Spec §Exception / Error Flows]
+- [x] CHK006 Do the API requirements align with UI flow requirements for validation, geocoding failure, and partial data warnings? [Consistency, Spec §Functional Requirements, Spec §Alternate Flows, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.
 
 ## Scenario Coverage
 
-- [ ] CHK007 Are requirements defined for API behavior when the use case ends in failure (no estimate, reason provided)? [Coverage, Spec §Exception / Error Flows]
-- [ ] CHK008 Are requirements defined for API behavior when geocoding is unavailable versus no match? [Coverage, Spec §Exception / Error Flows]
+- [x] CHK007 Are requirements defined for API behavior when the use case ends in failure (no estimate, reason provided)? [Coverage, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK008 Are requirements defined for API behavior when geocoding is unavailable versus no match? [Coverage, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.

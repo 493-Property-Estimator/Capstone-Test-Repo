@@ -9,6 +9,10 @@
 
 Implement the address-based estimation flow: collect a street address, validate format, geocode to coordinates, normalize to a canonical location ID, compute an estimate and range, and present results via UI and API. Handle invalid format, geocoding failures/no-match with retries, multiple match disambiguation, and partial-data warnings, while meeting constitution performance and testing gates.
 
+## Rerun Notes
+
+- `/prompts:speckit.plan` rerun on 2026-03-10 to account for necessary checklist gaps: API schema coverage (success/partial/error/ambiguous/failure), retry/attempt semantics, ambiguity selection, failure handling, data-model fields for attempts/ambiguity/failure states, and baseline UX accessibility requirements.
+
 ## Technical Context
 
 **Language/Version**: Python 3.x, JavaScript (ES6+), HTML, CSS  

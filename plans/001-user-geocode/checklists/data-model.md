@@ -8,20 +8,20 @@
 
 ## Requirement Completeness
 
-- [ ] CHK001 Are all data items listed in the spec explicitly defined with fields and types? [Completeness, Spec §Data Involved]
-- [ ] CHK002 Are fields required for validation error messaging (missing street number/name) specified? [Completeness, Spec §Functional Requirements]
-- [ ] CHK003 Are fields defined for tracking attempt count up to the max retries? [Completeness, Spec §Clarifications]
+- [x] CHK001 Are all data items listed in the spec explicitly defined with fields and types? [Completeness, Spec §Data Involved] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK002 Are fields required for validation error messaging (missing street number/name) specified? [Completeness, Spec §Functional Requirements] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK003 Are fields defined for tracking attempt count up to the max retries? [Completeness, Spec §Clarifications] Note: Necessary; /prompts:speckit.plan rerun.
 
 ## Requirement Clarity
 
-- [ ] CHK004 Is the canonical location ID definition clear enough to guarantee stability across identical requests? [Clarity, Spec §Functional Requirements]
-- [ ] CHK005 Are constraints for estimate values (numeric, non-negative, low ≤ estimate ≤ high) stated in a way that can be modeled and validated? [Clarity, Spec §Functional Requirements]
+- [x] CHK004 Is the canonical location ID definition clear enough to guarantee stability across identical requests? [Clarity, Spec §Functional Requirements]
+- [x] CHK005 Are constraints for estimate values (numeric, non-negative, low ≤ estimate ≤ high) stated in a way that can be modeled and validated? [Clarity, Spec §Functional Requirements]
 
 ## Requirement Consistency
 
-- [ ] CHK006 Do acceptance scenarios and functional requirements agree on the presence of estimate range and missing-data warnings? [Consistency, Spec §Acceptance Scenarios, Spec §Functional Requirements]
+- [x] CHK006 Do acceptance scenarios and functional requirements agree on the presence of estimate range and missing-data warnings? [Consistency, Spec §Acceptance Scenarios, Spec §Functional Requirements]
 
 ## Scenario Coverage
 
-- [ ] CHK007 Are data representations defined for geocoding ambiguity and user selection? [Coverage, Spec §Clarifications]
-- [ ] CHK008 Are failure states represented without estimate data when the use case ends in failure? [Coverage, Spec §Exception / Error Flows]
+- [x] CHK007 Are data representations defined for geocoding ambiguity and user selection? [Coverage, Spec §Clarifications] Note: Necessary; /prompts:speckit.plan rerun.
+- [x] CHK008 Are failure states represented without estimate data when the use case ends in failure? [Coverage, Spec §Exception / Error Flows] Note: Necessary; /prompts:speckit.plan rerun.
