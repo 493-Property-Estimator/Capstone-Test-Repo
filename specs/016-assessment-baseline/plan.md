@@ -51,8 +51,12 @@ specs/016-assessment-baseline/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── assessment_baseline.py
 │   ├── models/
+│   │   └── assessment_baseline.py
 │   ├── services/
+│   │   ├── assessment_baseline.py
+│   │   └── assessment_baseline_support.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -62,9 +66,14 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── assessment_baseline.js
+│   │   └── assessment_baseline_panel.js
 │   ├── pages/
+│   │   └── assessment-baseline.html
 │   ├── services/
+│   │   └── assessment_baseline.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

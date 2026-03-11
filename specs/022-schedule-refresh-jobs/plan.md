@@ -51,9 +51,15 @@ specs/022-schedule-refresh-jobs/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── schedule_refresh_jobs.py
 │   ├── models/
+│   │   └── schedule_refresh_jobs.py
 │   ├── services/
-│   ├── scheduler/
+│   │   ├── schedule_refresh_jobs.py
+│   │   └── schedule_refresh_jobs_support.py
+│   ├── ingestion/
+│   │   ├── schedule_refresh_jobs_pipeline.py
+│   │   └── schedule_refresh_jobs_qa.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -63,9 +69,13 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   └── schedule_refresh_jobs.js
 │   ├── pages/
+│   │   └── schedule-refresh-jobs.html
 │   ├── services/
+│   │   └── schedule_refresh_jobs.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

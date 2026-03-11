@@ -50,9 +50,14 @@ specs/030-precompute-grid-features/
 ```text
 backend/
 ├── src/
+│   ├── api/
+│   │   └── precompute_grid_features.py
 │   ├── models/
+│   │   └── precompute_grid_features.py
 │   ├── services/
+│   │   └── precompute_grid_features.py
 │   └── jobs/
+│       └── precompute_grid_features.py
 └── tests/
     ├── integration/
     └── unit/

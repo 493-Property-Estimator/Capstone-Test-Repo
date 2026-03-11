@@ -54,6 +54,8 @@ specs/007-amenity-proximity/
 ```text
 backend/
 ├── src/
+│   ├── api/
+│   │   └── amenity_proximity.py
 │   ├── services/
 │   │   ├── amenity_proximity.py
 │   │   ├── distance.py

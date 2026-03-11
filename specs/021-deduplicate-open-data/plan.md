@@ -51,9 +51,12 @@ specs/021-deduplicate-open-data/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── deduplicate_open_data.py
 │   ├── models/
+│   │   └── deduplicate_open_data.py
 │   ├── services/
-│   ├── deduplication/
+│   │   ├── deduplicate_open_data.py
+│   │   └── deduplicate_open_data_support.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -63,9 +66,14 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── deduplicate_open_data.js
+│   │   └── deduplicate_open_data_panel.js
 │   ├── pages/
+│   │   └── deduplicate-open-data.html
 │   ├── services/
+│   │   └── deduplicate_open_data.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

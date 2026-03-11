@@ -50,6 +50,8 @@ specs/011-commute-accessibility/
 ```text
 backend/
 ├── src/
+│   ├── api/
+│   │   └── commute_accessibility.py
 │   ├── services/
 │   │   ├── commute_accessibility.py
 │   │   ├── routing.py

@@ -51,8 +51,13 @@ specs/029-cache-computations/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── cache_computations.py
 │   ├── models/
+│   │   └── cache_computations.py
 │   ├── services/
+│   │   ├── cache_computations.py
+│   │   ├── cache_computations_support.py
+│   │   └── cache_computations_reporting.py
 │   └── valuation/
 └── tests/
     ├── contract/

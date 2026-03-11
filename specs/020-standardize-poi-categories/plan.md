@@ -51,9 +51,15 @@ specs/020-standardize-poi-categories/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── standardize_poi_categories.py
 │   ├── models/
+│   │   └── standardize_poi_categories.py
 │   ├── services/
+│   │   ├── standardize_poi_categories.py
+│   │   └── standardize_poi_categories_support.py
 │   ├── ingestion/
+│   │   ├── standardize_poi_categories_pipeline.py
+│   │   └── standardize_poi_categories_qa.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -63,9 +69,13 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   └── standardize_poi_categories.js
 │   ├── pages/
+│   │   └── standardize-poi-categories.html
 │   ├── services/
+│   │   └── standardize_poi_categories.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

@@ -51,7 +51,13 @@ specs/031-health-service-metrics/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── health_service_metrics.py
+│   ├── models/
+│   │   └── health_service_metrics.py
 │   ├── services/
+│   │   ├── health_service_metrics.py
+│   │   ├── health_service_metrics_support.py
+│   │   └── health_service_metrics_reporting.py
 │   └── monitoring/
 └── tests/
     ├── integration/

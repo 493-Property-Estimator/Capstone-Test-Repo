@@ -51,14 +51,22 @@ specs/025-open-data-layers/
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── layer-panel.js
+│   │   └── layer-legend.js
 │   ├── pages/
+│   │   └── map-layers.html
 │   ├── services/
+│   │   └── layer-api.js
 │   └── styles/
+│       └── base.css
 └── tests/
 
 backend/
 └── src/
+    ├── api/
+    │   └── open_data_layers.py
     └── services/
+        └── layer_data.py
 ```
 
 **Structure Decision**: Frontend map UI with backend layer-data service endpoints and optional caching.

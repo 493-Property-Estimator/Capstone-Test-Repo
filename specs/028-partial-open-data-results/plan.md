@@ -51,8 +51,12 @@ specs/028-partial-open-data-results/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── partial_open_data_results.py
 │   ├── models/
+│   │   └── partial_open_data_results.py
 │   ├── services/
+│   │   ├── partial_open_data_results.py
+│   │   └── partial_open_data_results_support.py
 │   └── valuation/
 └── tests/
     ├── contract/
@@ -61,7 +65,15 @@ backend/
 
 frontend/
 └── src/
-    └── components/
+    ├── components/
+    │   ├── partial_open_data_results.js
+    │   └── partial_open_data_results_panel.js
+    ├── pages/
+    │   └── partial-open-data-results.html
+    ├── services/
+    │   └── partial_open_data_results.js
+    └── styles/
+        └── base.css
 ```
 
 **Structure Decision**: Backend estimate pipeline enforces partial-data rules; UI renders warning indicators.
