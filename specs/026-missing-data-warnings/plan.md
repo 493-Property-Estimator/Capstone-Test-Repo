@@ -51,14 +51,22 @@ specs/026-missing-data-warnings/
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── warning-panel.js
+│   │   └── confidence-indicator.js
 │   ├── pages/
+│   │   └── estimate.html
 │   ├── services/
+│   │   └── estimate-api.js
 │   └── styles/
+│       └── base.css
 └── tests/
 
 backend/
 └── src/
+    ├── api/
+    │   └── missing_data_warnings.py
     └── services/
+        └── warning_metadata.py
 ```
 
 **Structure Decision**: Frontend UI renders warnings and confidence from API metadata; backend logs malformed metadata.

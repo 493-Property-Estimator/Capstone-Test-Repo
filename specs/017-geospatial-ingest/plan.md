@@ -51,9 +51,15 @@ specs/017-geospatial-ingest/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── geospatial_ingest.py
 │   ├── models/
+│   │   └── geospatial_ingest.py
 │   ├── services/
+│   │   ├── geospatial_ingest.py
+│   │   └── geospatial_ingest_support.py
 │   ├── ingestion/
+│   │   ├── geospatial_ingest_pipeline.py
+│   │   └── geospatial_ingest_qa.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -63,9 +69,13 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   └── geospatial_ingest.js
 │   ├── pages/
+│   │   └── geospatial-ingest.html
 │   ├── services/
+│   │   └── geospatial_ingest.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

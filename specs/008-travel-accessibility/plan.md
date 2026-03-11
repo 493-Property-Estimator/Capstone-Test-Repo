@@ -50,6 +50,8 @@ specs/008-travel-accessibility/
 ```text
 backend/
 ├── src/
+│   ├── api/
+│   │   └── travel_accessibility.py
 │   ├── services/
 │   │   ├── travel_accessibility.py
 │   │   ├── routing.py

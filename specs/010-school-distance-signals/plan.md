@@ -50,6 +50,8 @@ specs/010-school-distance-signals/
 ```text
 backend/
 ├── src/
+│   ├── api/
+│   │   └── school_distance_signals.py
 │   ├── services/
 │   │   ├── school_distance.py
 │   │   ├── routing.py

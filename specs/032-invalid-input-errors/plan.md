@@ -51,8 +51,14 @@ specs/032-invalid-input-errors/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── invalid_input_errors.py
+│   ├── models/
+│   │   └── invalid_input_errors.py
 │   ├── validation/
 │   └── services/
+│       ├── invalid_input_errors.py
+│       ├── invalid_input_errors_support.py
+│       └── invalid_input_errors_reporting.py
 └── tests/
     ├── integration/
     └── unit/

@@ -50,6 +50,8 @@ specs/012-neighbourhood-indicators/
 ```text
 backend/
 ├── src/
+│   ├── api/
+│   │   └── neighbourhood_indicators.py
 │   ├── services/
 │   │   ├── neighbourhood.py
 │   │   ├── boundary_resolution.py

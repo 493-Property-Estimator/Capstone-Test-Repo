@@ -51,9 +51,15 @@ specs/019-ingest-tax-assessments/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── ingest_tax_assessments.py
 │   ├── models/
+│   │   └── ingest_tax_assessments.py
 │   ├── services/
+│   │   ├── ingest_tax_assessments.py
+│   │   └── ingest_tax_assessments_support.py
 │   ├── ingestion/
+│   │   ├── ingest_tax_assessments_pipeline.py
+│   │   └── ingest_tax_assessments_qa.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -63,9 +69,13 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   └── ingest_tax_assessments.js
 │   ├── pages/
+│   │   └── ingest-tax-assessments.html
 │   ├── services/
+│   │   └── ingest_tax_assessments.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

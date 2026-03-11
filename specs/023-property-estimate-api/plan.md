@@ -51,9 +51,12 @@ specs/023-property-estimate-api/
 backend/
 ├── src/
 │   ├── api/
+│   │   └── property_estimate_api.py
 │   ├── models/
+│   │   └── property_estimate_api.py
 │   ├── services/
-│   ├── valuation/
+│   │   ├── property_estimate_api.py
+│   │   └── property_estimate_api_support.py
 │   └── lib/
 └── tests/
     ├── contract/
@@ -63,9 +66,14 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── property_estimate_api.js
+│   │   └── property_estimate_api_panel.js
 │   ├── pages/
+│   │   └── property-estimate-api.html
 │   ├── services/
+│   │   └── property_estimate_api.js
 │   └── styles/
+│       └── base.css
 └── tests/
 ```
 

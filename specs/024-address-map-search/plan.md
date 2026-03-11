@@ -51,14 +51,22 @@ specs/024-address-map-search/
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── search-bar.js
+│   │   └── suggestion-list.js
 │   ├── pages/
+│   │   └── map-search.html
 │   ├── services/
+│   │   └── geocode-search.js
 │   └── styles/
+│       └── base.css
 └── tests/
 
 backend/
 └── src/
+    ├── api/
+    │   └── address_map_search.py
     └── services/
+        └── geocode_proxy.py
 ```
 
 **Structure Decision**: Frontend-first map UI with backend geocoding/autocomplete proxy where needed.
