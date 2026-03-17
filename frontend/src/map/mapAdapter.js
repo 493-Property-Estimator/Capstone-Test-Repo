@@ -1,70 +1,119 @@
+import {
+  EDMONTON_BOUNDS,
+  EDMONTON_CENTER,
+  LAYER_DEFINITIONS,
+  OSM_ATTRIBUTION,
+  OSM_TILE_URL
+} from "../config.js";
 import { createElement, clearElement, setText } from "../utils/dom.js";
+import { debounce } from "../utils/debounce.js";
 
-export function createMapAdapter({ root, onMapClick, messageElement }) {
+export function createMapAdapter({
+  root,
+  onMapClick,
+  onViewportChange,
+  messageElement
+}) {
   let clickHandler = onMapClick;
+  let viewportChangeHandler = onViewportChange;
   let marker = null;
   let layerContainer = null;
-  let overlay = null;
-  let bounds = {
-    west: -113.7136,
-    south: 53.3958,
-    east: -113.2714,
-    north: 53.716
-  };
-  let zoom = 11;
+  let map = null;
+  const layerInstances = {};
+  let pointerDownLatLng = null;
+  let mapWasDragged = false;
 
   function renderBase() {
     clearElement(root);
 
-    overlay = createElement("div", "map-overlay-copy");
-    overlay.innerHTML = `
-      <p class="eyebrow">Map Adapter</p>
-      <h3>OpenStreetMap placeholder</h3>
-      <p class="feature-summary">
-        Replace this adapter with Leaflet or another OpenStreetMap renderer.
-        The rest of the frontend modules can stay unchanged.
-      </p>
-    `;
-
     layerContainer = createElement("div", "map-layer-container");
-    layerContainer.style.position = "absolute";
-    layerContainer.style.right = "18px";
-    layerContainer.style.bottom = "18px";
-    layerContainer.style.maxWidth = "340px";
-
-    root.appendChild(overlay);
     root.appendChild(layerContainer);
-  }
 
-  function toViewportPosition(lat, lng) {
-    const xRatio = (lng - bounds.west) / (bounds.east - bounds.west);
-    const yRatio = 1 - (lat - bounds.south) / (bounds.north - bounds.south);
+    if (!window.L) {
+      setText(messageElement, "Leaflet failed to load.");
+      return;
+    }
 
-    return {
-      x: Math.min(Math.max(xRatio * root.clientWidth, 20), root.clientWidth - 20),
-      y: Math.min(Math.max(yRatio * root.clientHeight, 20), root.clientHeight - 20)
-    };
+    map = window.L.map(root, {
+      center: EDMONTON_CENTER,
+      zoom: 11,
+      minZoom: 10,
+      maxZoom: 18,
+      maxBounds: EDMONTON_BOUNDS,
+      maxBoundsViscosity: 0.8,
+      zoomControl: true
+    });
+
+    window.L.tileLayer(OSM_TILE_URL, {
+      attribution: OSM_ATTRIBUTION
+    }).addTo(map);
+
+    map.on("mousedown", (event) => {
+      pointerDownLatLng = event.latlng;
+      mapWasDragged = false;
+    });
+
+    map.on("dragstart", () => {
+      mapWasDragged = true;
+    });
+
+    map.on("click", (event) => {
+      const movedDistance =
+        pointerDownLatLng && typeof pointerDownLatLng.distanceTo === "function"
+          ? pointerDownLatLng.distanceTo(event.latlng)
+          : 0;
+
+      if (mapWasDragged || movedDistance > 8) {
+        pointerDownLatLng = null;
+        mapWasDragged = false;
+        return;
+      }
+
+      clickHandler({
+        lat: Number(event.latlng.lat.toFixed(5)),
+        lng: Number(event.latlng.lng.toFixed(5))
+      });
+
+      pointerDownLatLng = null;
+      mapWasDragged = false;
+    });
+
+    const debouncedViewportChange = debounce(() => {
+      if (viewportChangeHandler) {
+        viewportChangeHandler(getViewport());
+      }
+    }, 250);
+
+    map.on("moveend zoomend", debouncedViewportChange);
+    debouncedViewportChange();
   }
 
   function renderMarker(location) {
-    if (marker) {
-      marker.remove();
+    if (!map) {
+      return;
     }
 
-    const position = toViewportPosition(
-      location.coordinates.lat,
-      location.coordinates.lng
-    );
+    if (!marker) {
+      marker = window.L.marker([
+        location.coordinates.lat,
+        location.coordinates.lng
+      ]).addTo(map);
+    } else {
+      marker.setLatLng([location.coordinates.lat, location.coordinates.lng]);
+    }
 
-    marker = createElement("div", "map-pin");
-    marker.style.left = `${position.x}px`;
-    marker.style.top = `${position.y}px`;
-    marker.title = location.canonical_address || "Selected property";
-    root.appendChild(marker);
+    marker.bindPopup(location.canonical_address || "Selected property");
   }
 
   function setView(location) {
+    if (!map) {
+      return;
+    }
+
     renderMarker(location);
+    map.flyTo([location.coordinates.lat, location.coordinates.lng], 15, {
+      duration: 0.8
+    });
     setText(
       messageElement,
       `Viewing ${location.canonical_address || "selected property"}`
@@ -72,16 +121,75 @@ export function createMapAdapter({ root, onMapClick, messageElement }) {
   }
 
   function renderLayers(activeLayers) {
+    if (!map) {
+      return;
+    }
+
     clearElement(layerContainer);
 
     Object.entries(activeLayers).forEach(([layerId, layerState]) => {
+      const definition = LAYER_DEFINITIONS.find((layer) => layer.id === layerId);
+
+      if (!layerState.enabled) {
+        if (layerInstances[layerId]) {
+          map.removeLayer(layerInstances[layerId]);
+          delete layerInstances[layerId];
+        }
+        return;
+      }
+
+      if (layerInstances[layerId]) {
+        map.removeLayer(layerInstances[layerId]);
+        delete layerInstances[layerId];
+      }
+
+      if (layerState.data?.features?.length) {
+        layerInstances[layerId] = window.L.geoJSON(layerState.data.features, {
+          pointToLayer(feature, latlng) {
+            return window.L.circleMarker(latlng, {
+              radius: 6,
+              color: definition?.color || "#666",
+              weight: 2,
+              fillColor: definition?.color || "#666",
+              fillOpacity: 0.65
+            });
+          },
+          style() {
+            return {
+              color: definition?.color || "#666",
+              weight: 2,
+              fillOpacity: 0.2
+            };
+          },
+          onEachFeature(feature, layer) {
+            const properties = feature.properties || {};
+            const popupText = [
+              properties.name,
+              properties.address,
+              properties.description
+            ]
+              .filter(Boolean)
+              .join("<br />");
+
+            if (popupText) {
+              layer.bindPopup(popupText);
+            }
+          }
+        }).addTo(map);
+      }
+
+      if (!layerState.enabled) {
+        return;
+      }
+
       if (!layerState.enabled) {
         return;
       }
 
       const chip = createElement("div", "map-layer-chip");
       const swatch = createElement("span", "legend-swatch");
-      swatch.style.background = layerState.data?.legend?.items?.[0]?.color || "#666";
+      swatch.style.background =
+        layerState.data?.legend?.items?.[0]?.color || definition?.color || "#666";
       const label = createElement(
         "span",
         null,
@@ -114,8 +222,28 @@ export function createMapAdapter({ root, onMapClick, messageElement }) {
     setClickHandler(handler) {
       clickHandler = handler;
     },
+    setViewportChangeHandler(handler) {
+      viewportChangeHandler = handler;
+    },
     getViewport() {
-      return { ...bounds, zoom };
+      if (!map) {
+        return {
+          west: EDMONTON_BOUNDS[0][1],
+          south: EDMONTON_BOUNDS[0][0],
+          east: EDMONTON_BOUNDS[1][1],
+          north: EDMONTON_BOUNDS[1][0],
+          zoom: 11
+        };
+      }
+
+      const bounds = map.getBounds();
+      return {
+        west: bounds.getWest(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        north: bounds.getNorth(),
+        zoom: map.getZoom()
+      };
     }
   };
 }

@@ -1,4 +1,5 @@
 import { LAYER_DEFINITIONS } from "../../config.js";
+import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
 
 export function createLayerController({
@@ -85,6 +86,17 @@ export function createLayerController({
       setText(statusElement, "Unavailable");
     }
   }
+
+  const refreshVisibleLayers = debounce(() => {
+    const state = store.getState();
+    LAYER_DEFINITIONS.filter((layer) => state.activeLayers[layer.id]?.enabled).forEach(
+      (layer) => loadLayer(layer.id)
+    );
+  }, 300);
+
+  mapAdapter.setViewportChangeHandler(() => {
+    refreshVisibleLayers();
+  });
 
   store.subscribe((state) => {
     renderControls();

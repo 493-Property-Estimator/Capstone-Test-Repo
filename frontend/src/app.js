@@ -14,7 +14,8 @@ const mapMessageElement = document.getElementById("map-message");
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
-  onMapClick: () => {}
+  onMapClick: () => {},
+  onViewportChange: () => {}
 });
 
 const handleMapClick = createMapSelectionController({
@@ -55,7 +56,15 @@ createEstimateController({
   submitButton: document.getElementById("estimate-submit"),
   statusElement: document.getElementById("estimate-status"),
   locationSummary: document.getElementById("location-summary"),
-  estimatePanel: document.getElementById("estimate-panel")
+  estimatePanel: document.getElementById("estimate-panel"),
+  validationMessage: document.getElementById("validation-message"),
+  formElements: {
+    latitudeInput: document.getElementById("latitude-input"),
+    longitudeInput: document.getElementById("longitude-input"),
+    bedroomsInput: document.getElementById("bedrooms-input"),
+    bathroomsInput: document.getElementById("bathrooms-input"),
+    floorAreaInput: document.getElementById("floor-area-input")
+  }
 });
 
 createWarningController({
