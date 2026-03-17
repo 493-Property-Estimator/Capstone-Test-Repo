@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Property Value Estimator</title>
+    <link rel="stylesheet" href="./styles/app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <header class="panel panel-brand">
+          <p class="eyebrow">Property Value Estimator</p>
+          <h1>Edmonton Property Explorer</h1>
+          <p class="panel-copy">
+            Search an address, click the map, and inspect estimate context
+            from open-data layers.
+          </p>
+        </header>
+
+        <section class="panel" aria-labelledby="search-heading">
+          <div class="panel-heading">
+            <h2 id="search-heading">Search</h2>
+            <span id="search-status" class="status-pill">Idle</span>
+          </div>
+          <label class="field-label" for="address-input">Address</label>
+          <div class="search-row">
+            <input
+              id="address-input"
+              class="text-input"
+              type="text"
+              placeholder="Search for an address"
+              autocomplete="off"
+            />
+            <button id="search-submit" class="button button-primary" type="button">
+              Search
+            </button>
+          </div>
+          <p id="search-helper" class="helper-text">
+            Enter at least 3 characters to load suggestions.
+          </p>
+          <div id="suggestions" class="suggestions" aria-live="polite"></div>
+          <div id="candidate-results" class="candidate-results"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="layers-heading">
+          <div class="panel-heading">
+            <h2 id="layers-heading">Layers</h2>
+            <span id="layer-status" class="status-pill">Ready</span>
+          </div>
+          <div id="layer-controls" class="layer-list"></div>
+          <div id="layer-legend" class="legend"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="estimate-heading">
+          <div class="panel-heading">
+            <h2 id="estimate-heading">Estimate</h2>
+            <span id="estimate-status" class="status-pill">Waiting</span>
+          </div>
+          <div id="location-summary" class="location-summary">
+            Select a property to request an estimate.
+          </div>
+          <button id="estimate-submit" class="button button-primary" type="button">
+            Get Estimate
+          </button>
+          <div id="warning-indicator" class="warning-indicator is-hidden"></div>
+          <section id="warning-panel" class="warning-panel is-hidden"></section>
+          <section id="estimate-panel" class="estimate-panel">
+            <p class="empty-state">No estimate loaded.</p>
+          </section>
+        </section>
+      </aside>
+
+      <main class="map-shell">
+        <div class="map-toolbar">
+          <div class="toolbar-copy">
+            <p class="eyebrow">Interactive Map</p>
+            <h2>OpenStreetMap View</h2>
+          </div>
+          <div id="map-message" class="map-message">Map ready.</div>
+        </div>
+        <div id="map-root" class="map-root" aria-label="Property map"></div>
+      </main>
+    </div>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
