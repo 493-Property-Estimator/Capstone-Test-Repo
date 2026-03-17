@@ -18,8 +18,76 @@ export function createEstimateController({
   submitButton,
   statusElement,
   locationSummary,
-  estimatePanel
+  estimatePanel,
+  validationMessage,
+  formElements
 }) {
+  function showValidation(message) {
+    validationMessage.textContent = message;
+    validationMessage.classList.remove("is-hidden");
+  }
+
+  function clearValidation() {
+    validationMessage.textContent = "";
+    validationMessage.classList.add("is-hidden");
+  }
+
+  function normalizeNumber(value) {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  function buildPayload() {
+    const state = store.getState();
+    const latitude = normalizeNumber(formElements.latitudeInput.value);
+    const longitude = normalizeNumber(formElements.longitudeInput.value);
+    const bedrooms = normalizeNumber(formElements.bedroomsInput.value);
+    const bathrooms = normalizeNumber(formElements.bathroomsInput.value);
+    const floorArea = normalizeNumber(formElements.floorAreaInput.value);
+
+    const coordinates =
+      latitude !== undefined && longitude !== undefined
+        ? { lat: latitude, lng: longitude }
+        : state.selectedLocation?.coordinates;
+
+    if (!coordinates) {
+      throw new Error(
+        "Provide an address, click the map, or enter latitude and longitude."
+      );
+    }
+
+    if (
+      coordinates.lat < 53.3958 ||
+      coordinates.lat > 53.716 ||
+      coordinates.lng < -113.7136 ||
+      coordinates.lng > -113.2714
+    ) {
+      throw new Error("Coordinates must be within the supported Edmonton area.");
+    }
+
+    return {
+      location: {
+        canonical_location_id: state.selectedLocation?.canonical_location_id,
+        coordinates,
+        address: state.selectedLocation?.canonical_address
+      },
+      property_details: {
+        ...(bedrooms !== undefined ? { bedrooms } : {}),
+        ...(bathrooms !== undefined ? { bathrooms } : {}),
+        ...(floorArea !== undefined ? { floor_area_sqft: floorArea } : {})
+      },
+      options: {
+        include_breakdown: true,
+        include_warnings: true,
+        include_layers_context: true
+      }
+    };
+  }
+
   function renderEstimate(estimate) {
     clearElement(estimatePanel);
 
@@ -72,28 +140,18 @@ export function createEstimateController({
   }
 
   async function requestEstimate() {
-    const state = store.getState();
+    clearValidation();
     setText(statusElement, "Loading");
 
     try {
-      const response = await apiClient.getEstimate({
-        location: {
-          canonical_location_id: state.selectedLocation?.canonical_location_id,
-          coordinates: state.selectedLocation?.coordinates,
-          address: state.selectedLocation?.canonical_address
-        },
-        property_details: {},
-        options: {
-          include_breakdown: true,
-          include_warnings: true,
-          include_layers_context: false
-        }
-      });
+      const payload = buildPayload();
+      const response = await apiClient.getEstimate(payload);
 
       store.setState({ estimate: response, warningsCollapsed: false });
       setText(statusElement, response.status === "partial" ? "Partial" : "Ready");
     } catch (error) {
       setText(statusElement, "Error");
+      showValidation(error.message);
       store.setState({
         estimate: {
           warnings: [
@@ -117,6 +175,10 @@ export function createEstimateController({
 
   store.subscribe((state) => {
     const location = state.selectedLocation;
+    if (location?.coordinates) {
+      formElements.latitudeInput.value = String(location.coordinates.lat);
+      formElements.longitudeInput.value = String(location.coordinates.lng);
+    }
     setText(
       locationSummary,
       location?.canonical_address

@@ -23,6 +23,7 @@ body {
   background:
     radial-gradient(circle at top left, rgba(29, 107, 87, 0.08), transparent 28%),
     linear-gradient(135deg, #efe8d6, #f5f2e9 50%, #ebe0c7);
+  overflow: hidden;
 }
 
 button,
@@ -30,10 +31,15 @@ input {
   font: inherit;
 }
 
+label {
+  display: block;
+}
+
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
   grid-template-columns: minmax(320px, 430px) 1fr;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -44,6 +50,8 @@ input {
   border-right: 1px solid rgba(95, 86, 72, 0.18);
   background: rgba(255, 251, 243, 0.78);
   backdrop-filter: blur(12px);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .panel {
@@ -97,6 +105,23 @@ p {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+.field-label {
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .text-input {
@@ -209,6 +234,16 @@ p {
   border-radius: 12px;
   background: #fff3de;
   color: #7b4a00;
+  cursor: pointer;
+}
+
+.validation-message {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff0f0;
+  border: 1px solid #e3aaaa;
+  color: var(--critical);
 }
 
 .warning-panel {
@@ -269,6 +304,8 @@ p {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .map-toolbar {
@@ -281,6 +318,7 @@ p {
 .map-root {
   position: relative;
   min-height: 640px;
+  flex: 1 1 auto;
   border: 1px solid rgba(17, 69, 54, 0.18);
   border-radius: 24px;
   overflow: hidden;
@@ -304,28 +342,6 @@ p {
   box-shadow: var(--shadow);
 }
 
-.map-overlay-copy {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  max-width: 300px;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(255, 250, 241, 0.9);
-  border: 1px solid rgba(17, 69, 54, 0.18);
-}
-
-.map-pin {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  background: #a43434;
-  border: 3px solid #fff;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
-}
-
 .map-layer-chip {
   display: inline-flex;
   align-items: center;
@@ -337,6 +353,20 @@ p {
   border: 1px solid rgba(17, 69, 54, 0.18);
 }
 
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.map-layer-container {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 500;
+  max-width: 340px;
+}
+
 .is-hidden {
   display: none;
 }
@@ -344,6 +374,7 @@ p {
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .sidebar,
