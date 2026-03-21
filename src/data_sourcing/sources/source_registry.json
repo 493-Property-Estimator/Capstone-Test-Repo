@@ -1,0 +1,375 @@
+{
+  "datasets": {
+    "geospatial.roads": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Road Centerline",
+      "description": "Road and transportation geometry used for road proximity and travel features.",
+      "ingestion_technique": "local_json",
+      "local_path": "geospatial_roads.json",
+      "remote_url": "https://data.edmonton.ca/",
+      "link_status": "needs_verification",
+      "ingestion_notes": "Use local snapshot for deterministic ingest. Replace remote_url with direct endpoint for live pulls.",
+      "downstream_pipelines": []
+    },
+    "geospatial.boundaries": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Neighbourhood / Boundary Polygons",
+      "description": "Boundary polygons for spatial sanity checks and area joins.",
+      "ingestion_technique": "local_json",
+      "local_path": "geospatial_boundaries.json",
+      "remote_url": "https://data.edmonton.ca/",
+      "link_status": "needs_verification",
+      "ingestion_notes": "Keep canonical CRS aligned with geospatial ingest rules.",
+      "downstream_pipelines": []
+    },
+    "geospatial.pois": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Points of Interest",
+      "description": "POI records used for standardization and deduplication pipelines.",
+      "ingestion_technique": "local_json",
+      "local_path": "geospatial_pois.json",
+      "remote_url": "https://data.edmonton.ca/",
+      "link_status": "needs_verification",
+      "ingestion_notes": "Raw category fields are preserved and refined in standardization.",
+      "downstream_pipelines": ["poi_standardization", "deduplication"]
+    },
+    "census.neighbourhood_indicators": {
+      "enabled": true,
+      "pipeline": "census",
+      "city": "Edmonton",
+      "dataset": "Census Snapshot",
+      "description": "Neighbourhood census values for indicator computation.",
+      "ingestion_technique": "local_json",
+      "local_path": "census.json",
+      "remote_url": "https://data.edmonton.ca/",
+      "link_status": "needs_verification",
+      "ingestion_notes": "Suppressed values handled as limited-accuracy indicators.",
+      "downstream_pipelines": []
+    },
+    "assessments.property_tax": {
+      "enabled": true,
+      "pipeline": "assessments",
+      "city": "Edmonton",
+      "dataset": "Property Assessment",
+      "description": "Tax assessment baseline values, parcel metadata, and coordinates.",
+      "ingestion_technique": "local_json",
+      "local_path": "assessments.json",
+      "remote_url": "https://data.edmonton.ca/",
+      "link_status": "needs_verification",
+      "ingestion_notes": "Invalid values are quarantined; deterministic duplicate resolution is applied in refinement.",
+      "downstream_pipelines": []
+    },
+    "assessments.property_tax_csv": {
+      "enabled": false,
+      "pipeline": "assessments",
+      "city": "Edmonton",
+      "dataset": "Property Assessment (Current Calendar Year CSV)",
+      "description": "Raw city assessment CSV with pass-through columns preserved in DB.",
+      "ingestion_technique": "local_csv",
+      "local_path": "datasets/edmonton/property_assessment_current_year.csv",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "record_id": "Account Number",
+        "account_number": "Account Number",
+        "suite": "Suite",
+        "house_number": "House Number",
+        "street_name": "Street Name",
+        "neighbourhood_id": "Neighbourhood ID",
+        "neighbourhood": "Neighbourhood",
+        "ward": "Ward",
+        "assessment_value": "Assessed Value",
+        "tax_class": "Tax Class",
+        "garage": "Garage",
+        "assessment_class_1": "Assessment Class 1",
+        "assessment_class_2": "Assessment Class 2",
+        "assessment_class_3": "Assessment Class 3",
+        "assessment_class_pct_1": "Assessment Class % 1",
+        "assessment_class_pct_2": "Assessment Class % 2",
+        "assessment_class_pct_3": "Assessment Class % 3",
+        "lat": "Latitude",
+        "lon": "Longitude",
+        "point_location": "Point Location",
+        "parcel_id": "Account Number"
+      },
+      "ingestion_notes": "Maps account number to canonical record/parcel IDs and preserves all raw attributes in assessments_records tables.",
+      "downstream_pipelines": []
+    },
+    "poi.mapping_rules": {
+      "enabled": true,
+      "pipeline": "poi_standardization",
+      "city": "Edmonton",
+      "dataset": "POI Mapping Rules",
+      "description": "Canonical taxonomy mappings from raw source category labels.",
+      "ingestion_technique": "local_json",
+      "local_path": "poi_mapping.json",
+      "remote_url": "",
+      "link_status": "local_only",
+      "ingestion_notes": "Can be managed in git and updated without re-downloading raw POI feeds.",
+      "downstream_pipelines": ["deduplication"]
+    },
+
+    "geospatial.bike_routes": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Bike Routes",
+      "description": "Cycling route network.",
+      "ingestion_technique": "local_geojson",
+      "local_path": "datasets/edmonton/bike_routes.geojson",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "route_id",
+        "source_id": "source",
+        "name": "route_name",
+        "lon": "lon",
+        "lat": "lat"
+      },
+      "ingestion_notes": "GeoJSON lines can be reduced to representative points unless geometry-aware pipeline is expanded.",
+      "downstream_pipelines": []
+    },
+    "geospatial.zoning_overlays": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Zoning Overlays",
+      "description": "Zoning boundaries and overlays.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "datasets/edmonton/zoning_overlays.zip",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "ZONE_ID",
+        "source_id": "SOURCE",
+        "name": "ZONE_NAME"
+      },
+      "ingestion_notes": "Requires pyshp package for shapefile parsing.",
+      "downstream_pipelines": []
+    },
+    "assessments.property_historical": {
+      "enabled": false,
+      "pipeline": "assessments",
+      "city": "Edmonton",
+      "dataset": "Property Assessment Historical",
+      "description": "Historical assessment values by parcel and year.",
+      "ingestion_technique": "local_csv",
+      "local_path": "datasets/edmonton/property_assessment_historical.csv",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "record_id": "record_id",
+        "assessment_value": "assessment_value",
+        "parcel_id": "parcel_id",
+        "lat": "latitude",
+        "lon": "longitude"
+      },
+      "ingestion_notes": "Year can be preserved in metadata or embedded in record_id.",
+      "downstream_pipelines": []
+    },
+    "geospatial.trees": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Tree Inventory",
+      "description": "Street and park tree locations.",
+      "ingestion_technique": "local_csv",
+      "local_path": "datasets/edmonton/trees.csv",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "tree_id",
+        "source_id": "source",
+        "name": "species",
+        "lon": "longitude",
+        "lat": "latitude"
+      },
+      "ingestion_notes": "Useful for green coverage and amenity context.",
+      "downstream_pipelines": []
+    },
+    "geospatial.transit_routes": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Transit Routes",
+      "description": "Bus/LRT route geometries.",
+      "ingestion_technique": "local_geojson",
+      "local_path": "datasets/edmonton/transit_routes.geojson",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "route_id",
+        "source_id": "source",
+        "name": "route_name"
+      },
+      "ingestion_notes": "Can be paired with GTFS schedule feeds for accessibility metrics.",
+      "downstream_pipelines": []
+    },
+    "geospatial.transit_times": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Transit Schedules/Times",
+      "description": "Transit schedule table (e.g., GTFS-derived).",
+      "ingestion_technique": "remote_csv",
+      "local_path": "",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "trip_id",
+        "source_id": "feed",
+        "name": "route_id"
+      },
+      "ingestion_notes": "Requires a concrete URL before enabling.",
+      "downstream_pipelines": []
+    },
+    "geospatial.school_catchments": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "School Catchment Areas",
+      "description": "School attendance boundary polygons.",
+      "ingestion_technique": "local_geojson",
+      "local_path": "datasets/edmonton/school_catchments.geojson",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "catchment_id",
+        "source_id": "board",
+        "name": "school_name"
+      },
+      "ingestion_notes": "Polygon data may need geometry-aware enhancements for full fidelity.",
+      "downstream_pipelines": []
+    },
+    "geospatial.school_locations": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "School Locations",
+      "description": "School point locations.",
+      "ingestion_technique": "local_csv",
+      "local_path": "datasets/edmonton/schools.csv",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "school_id",
+        "source_id": "board",
+        "name": "school_name",
+        "lon": "longitude",
+        "lat": "latitude"
+      },
+      "ingestion_notes": "Useful for school accessibility signals.",
+      "downstream_pipelines": []
+    },
+    "geospatial.playgrounds": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Playgrounds",
+      "description": "Playground amenity locations.",
+      "ingestion_technique": "local_geojson",
+      "local_path": "datasets/edmonton/playgrounds.geojson",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "playground_id",
+        "source_id": "source",
+        "name": "name"
+      },
+      "ingestion_notes": "Amenity enrichment source.",
+      "downstream_pipelines": []
+    },
+    "geospatial.parks": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Parks",
+      "description": "Park polygons and park points.",
+      "ingestion_technique": "local_geojson",
+      "local_path": "datasets/edmonton/parks.geojson",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "park_id",
+        "source_id": "source",
+        "name": "park_name"
+      },
+      "ingestion_notes": "Supports green space features and amenity scoring.",
+      "downstream_pipelines": []
+    },
+    "geospatial.libraries": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Libraries",
+      "description": "Public library locations.",
+      "ingestion_technique": "local_csv",
+      "local_path": "datasets/edmonton/libraries.csv",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "library_id",
+        "source_id": "source",
+        "name": "library_name",
+        "lon": "longitude",
+        "lat": "latitude"
+      },
+      "ingestion_notes": "Amenity enrichment source.",
+      "downstream_pipelines": []
+    },
+    "geospatial.osm_alberta": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "target_dataset": "roads",
+      "city": "Edmonton",
+      "dataset": "OpenStreetMap Alberta (Clipped to Edmonton)",
+      "description": "Large Alberta-wide OSM shapefile, refined to Edmonton extent before ingestion.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "datasets/osm/alberta-latest-free.shp.zip",
+      "shapefile_layer": "gis_osm_roads_free_1",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "osm_id",
+        "name": "name",
+        "raw_category": "fclass",
+        "road_type": "fclass",
+        "lane_count": "lanes"
+      },
+      "spatial_filter": {
+        "bbox": [-113.75, 53.39, -113.27, 53.72]
+      },
+      "ingestion_notes": "Uses shapefile bbox intersection against Edmonton envelope to avoid loading all Alberta records.",
+      "downstream_pipelines": []
+    },
+    "geospatial.osm_pois_alberta": {
+      "enabled": false,
+      "pipeline": "geospatial",
+      "target_dataset": "pois",
+      "city": "Edmonton",
+      "dataset": "OpenStreetMap Alberta POIs (Clipped to Edmonton)",
+      "description": "OSM POI point features with fclass captured as raw category.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "datasets/osm/alberta-latest-free.shp.zip",
+      "shapefile_layer": "gis_osm_pois_free_1",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "osm_id",
+        "name": "name",
+        "raw_category": "fclass"
+      },
+      "spatial_filter": {
+        "bbox": [-113.75, 53.39, -113.27, 53.72]
+      },
+      "ingestion_notes": "Use the gis_osm_pois_free_1 point layer; each POI keeps fclass for category standardization.",
+      "downstream_pipelines": ["poi_standardization", "deduplication"]
+    }
+  }
+}

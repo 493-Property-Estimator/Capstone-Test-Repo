@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "mappings": {
+      "Park": {
+        "canonical_category": "Green Space",
+        "canonical_subcategory": "Park",
+        "rule_id": "map-park",
+        "rationale": "direct lexical match"
+      },
+      "Public Park": {
+        "canonical_category": "Green Space",
+        "canonical_subcategory": "Park",
+        "rule_id": "map-public-park",
+        "rationale": "synonym mapping"
+      },
+      "Clinic": {
+        "canonical_category": "Health",
+        "canonical_subcategory": "Clinic",
+        "rule_id": "map-clinic",
+        "rationale": "taxonomy table"
+      },
+      "Health Centre": {
+        "canonical_category": "Health",
+        "canonical_subcategory": "Clinic",
+        "rule_id": "map-health-centre",
+        "rationale": "taxonomy synonym"
+      }
+    }
+  },
+  "records": []
+}
