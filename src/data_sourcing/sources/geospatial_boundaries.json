@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "source_name": "City Open Data",
+    "publish_date": "2026-02-15",
+    "version": "2026.02",
+    "license_note": "Open Government License",
+    "file_format": "json",
+    "expected_schema": ["entity_id", "source_id", "name", "lon", "lat"]
+  },
+  "records": [
+    {"entity_id": "boundary-001", "source_id": "boundaries_portal", "name": "Downtown", "lon": -123.116, "lat": 49.282},
+    {"entity_id": "boundary-002", "source_id": "boundaries_portal", "name": "West End", "lon": -123.14, "lat": 49.287}
+  ]
+}

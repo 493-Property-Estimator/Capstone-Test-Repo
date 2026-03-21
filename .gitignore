@@ -1,0 +1,4 @@
+src/data_sourcing/data/
+src/data_sourcing/open_data.db
+src/data_sourcing/__pycache__/
+__pycache__/

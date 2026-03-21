@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "source_name": "City Open Data",
+    "publish_date": "2026-02-20",
+    "version": "2026.03",
+    "license_note": "Open Government License",
+    "file_format": "json",
+    "expected_schema": ["entity_id", "source_id", "name", "raw_category", "lon", "lat"]
+  },
+  "records": [
+    {"entity_id": "poi-100", "source_id": "pois_a", "name": "Queen Park", "raw_category": "Park", "lon": -123.1201, "lat": 49.2798},
+    {"entity_id": "poi-100-alt", "source_id": "pois_b", "name": "Queen Park", "raw_category": "Public Park", "lon": -123.1202, "lat": 49.2797},
+    {"entity_id": "poi-200", "source_id": "pois_a", "name": "Central Clinic", "raw_category": "Clinic", "lon": -123.1155, "lat": 49.2810},
+    {"entity_id": "poi-201", "source_id": "pois_b", "name": "Central Clinic East", "raw_category": "Health Centre", "lon": -123.1150, "lat": 49.2812},
+    {"entity_id": "poi-300", "source_id": "pois_c", "name": "Unknown Venue", "raw_category": "Mystery Place", "lon": -123.1300, "lat": 49.2750}
+  ]
+}

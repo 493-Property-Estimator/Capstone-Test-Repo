@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "collection_year": 2025,
+    "refresh_date": "2026-01-31",
+    "geography_level": "neighbourhood",
+    "area_map": {
+      "N001": "AREA-001",
+      "N002": "AREA-002",
+      "N003": "AREA-003"
+    }
+  },
+  "records": [
+    {"source_area_id": "N001", "geography_level": "neighbourhood", "population": 12000, "households": 5000, "median_income": 67000, "suppressed_income": false, "area_sq_km": 2.0},
+    {"source_area_id": "N002", "geography_level": "neighbourhood", "population": 9000, "households": 3800, "median_income": null, "suppressed_income": true, "area_sq_km": 1.6},
+    {"source_area_id": "N003", "geography_level": "neighbourhood", "population": 15000, "households": 6200, "median_income": 72000, "suppressed_income": false, "area_sq_km": 2.5}
+  ]
+}

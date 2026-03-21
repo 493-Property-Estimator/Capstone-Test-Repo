@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "assessment_year": 2025,
+    "publication_date": "2026-02-01",
+    "coverage_notes": "Citywide",
+    "license_note": "Open Government License"
+  },
+  "records": [
+    {"record_id": "A-001", "assessment_value": 810000, "parcel_id": "P100", "lat": 49.2801, "lon": -123.1201},
+    {"record_id": "A-002", "assessment_value": 820000, "parcel_id": "P100", "lat": 49.2802, "lon": -123.1202, "ambiguous_hint": true},
+    {"record_id": "A-003", "assessment_value": 620000, "parcel_id": "P200", "lat": 49.2810, "lon": -123.1150},
+    {"record_id": "A-004", "assessment_value": 0, "parcel_id": "P300", "lat": 49.2750, "lon": -123.1300}
+  ]
+}
