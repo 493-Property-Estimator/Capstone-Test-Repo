@@ -1,4 +1,20 @@
 https://data.edmonton.ca/City-Administration/Property-Information-Current-Calendar-Year-/dkk9-cj3x/about_data
+Account Number: Text
+Suite: Text
+House Number: Text
+Street Name: Text
+legal_description: Text
+zoning: Text
+lot_size: Number
+Total Gross Area: Text
+year_built: Number
+garage: Checkbox
+Neighbourhood ID: Number
+Neighbourhood: Text
+Ward: Text
+Latitude: Number
+Longitude: Number
+Point Location: Point
 
 https://data.edmonton.ca/Externally-Sourced-Datasets/Edmonton-Public-School-Board-EPSB-_School-Catchmen/gc4g-ct3z/about_data
 
@@ -7,23 +23,170 @@ https://data.edmonton.ca/Transportation/Intersection-Safety-Device-Locations/7fn
 https://data.edmonton.ca/Transit/ETS-Bus-Schedule-GTFS-Data-Feed-Trips/ctwr-tvrd/about_data
 
 https://data.edmonton.ca/Externally-Sourced-Datasets/Edmonton-Public-School-Board-EPSB-_School-Location/996c-239n/about_data
+abed_id: Text
+epsb_id: Number
+school_nam: Text
+sch_type: Text
+grades: Text
+sch_addres: Text
+sch_city: Text
+sch_postal: Text
+sector: Text
+school_web: Text
+school_ema: Text
+school_pho: Text
+dc: Text
+prg: Text
+latitude: Number
+longitude: Number
+geometry_point: Point
 
 https://data.edmonton.ca/Outdoor-Recreation/Parks/gdd9-eqv9/about_data
+ID: Number
+Official Name: Text
+Common Name: Text
+Status: Text
+Type: Text
+Class: Text
+Address: Text
+Area (m²): Number
+Longitude: Number
+Latitude: Number
+Multipolygon: MultiPolygon
 
 https://data.edmonton.ca/Transit/ETS-Bus-Schedule-GTFS-Data-Feed-Stops/4vt2-8zrq/about_data
+stop_id: Text
+stop_code: Text
+stop_name: Text
+stop_desc: Text
+stop_lat: Number
+stop_lon: Number
+zone_id: Text
+stop_url: Text
+location_type: Number
+parent_station: Text
+level_name: Text
+geometry_point: Point
 
 https://data.edmonton.ca/Community-Centres/Public-Libraries/jn25-zspi/about_data
+Branch ID: Text
+Branch: Text
+Address: Text
+Postal Code: Text
+Phone Number: Text
+Free WiFi: Text
+Monday Open: Text
+Monday Close: Text
+Tuesday Open: Text
+Tuesday Close: Text
+Wednesday Open: Text
+Wednesday Close: Text
+Thursday Open: Text
+Thursday Close: Text
+Friday Open: Text
+Friday Close: Text
+Saturday Open: Text
+Saturday Close: Text
+Sunday Open: Text
+Sunday Close: Text
+Latitude: Number
+Longitude: Number
+Location: Location
+Geometry Point: Point
 
 https://data.edmonton.ca/Transportation-Infrastructure/Bike-Routes/vd4b-a4iv/about_data
+id: Number
+Type: Text
+Classification: Text
+Network Classification: Text
+Road Segment Type: Text
+Duration: Number
+Street Name Full: Text
+Line Weight: Number
+Route Coming Soon: Checkbox
+Construction Year: Number
+geometry_line: MultiLine
 
 https://data.edmonton.ca/Outdoor-Recreation/Map-View-Playgrounds/g57c-ph4j
+ID: Number
+Name: Text
+Address: Text
+Type: Text
+Surface Type: Text
+Accessibility: Text
+User Category: Text
+Maintainer: Text
+Redevelopment Date: Floating Timestamp
+Latitude: Number
+Longitude: Number
+Location: Location
+Geometry Point: Point
+Neighbourhood ID: Number
+Neighbourhood Name: Text
 
 https://data.edmonton.ca/Urban-Planning-Economy/Edmonton-Business-Census/8c4b-u4a4/about_data
+objectid: Number
+Survey Year: Number
+Last Edited Date: Floating Timestamp
+Business Name: Text
+Business Description: Text
+Business Size: Text
+Export: Text
+Hybrid Work: Text
+Business Address: Text
+Unit Number: Text
+Postal Code: Text
+Business Website: Text
+Year Of Establishment: Text
+Sectors: Text
+Sectors Code: Text
+Subsectors: Text
+Subsectors Code: Text
+Industry Group: Text
+Industry Group Code: Text
+Industries: Text
+Industries Code: Text
+NAICS Code: Text
+NAICS Description: Text
+Service Or Goods: Text
+Ward Name: Text
+BIA: Text
+Planning District: Text
+Neighbourhood Name: Text
+Neighbourhood Number: Number
+Longitude: Number
+Latitude: Number
+Geometry: Point
 
 https://data.edmonton.ca/Facilities-and-Structures/Police-Stations/e7aq-scxv/about_data
+NAME: Text
+ADDRESS: Text
+LATITUDE: Number
+LONGITUDE: Number
+LOCATION: Location
+Geometry Point: Point
 
 https://data.edmonton.ca/Transportation-Infrastructure/Road-Network/9j8t-zm52/about_data
 
 https://download.geofabrik.de/north-america/canada.html
 
 https://data.edmonton.ca/City-Administration/Property-Assessment-Data-Current-Calendar-Year-/q7d6-ambg/about_data
+Account Number: Text
+Suite: Text
+House Number: Text
+Street Name: Text
+Neighbourhood ID: Number
+Neighbourhood: Text
+Ward: Text
+Assessed Value: Text
+Tax Class: Text
+Garage: Text
+Assessment Class 1: Text
+Assessment Class 2: Text
+Assessment Class 3: Text
+Assessment Class % 1: Text
+Assessment Class % 2: Text
+Assessment Class % 3: Text
+Latitude: Text
+Longitude: Text
+Point Location: Text
