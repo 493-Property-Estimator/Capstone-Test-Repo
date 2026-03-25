@@ -9,6 +9,7 @@ DEFAULT_SOURCE_REGISTRY_PATH = SOURCES_DIR / "source_registry.json"
 DEFAULT_DB_PATH = BASE_DIR / "open_data.db"
 
 GEOSPATIAL_DATASETS = ("roads", "boundaries", "pois")
+TRANSIT_DATASETS = ("stops", "trips")
 # GEOSPATIAL_SIZE_LIMIT_BYTES = 5_000_000
 GEOSPATIAL_SIZE_LIMIT_BYTES = 2_000_000_000
 GEOSPATIAL_MAX_RETRIES = 2
@@ -29,6 +30,7 @@ DEDUPE_MAX_DISTANCE_METERS = 250.0
 
 REFRESH_DEPENDENCIES = {
     "geospatial": [],
+    "transit": [],
     "census": ["geospatial"],
     "assessments": ["geospatial"],
     "poi_standardization": ["geospatial"],

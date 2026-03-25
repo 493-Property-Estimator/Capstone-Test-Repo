@@ -185,6 +185,34 @@ def init_db(conn: sqlite3.Connection) -> None:
             UNIQUE (canonical_category, canonical_subcategory)
         );
 
+        CREATE TABLE IF NOT EXISTS poi_staging (
+            run_id TEXT NOT NULL,
+            canonical_poi_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            raw_category TEXT,
+            address TEXT,
+            lon REAL,
+            lat REAL,
+            source_ids_json TEXT NOT NULL DEFAULT '[]',
+            source_entity_ids_json TEXT NOT NULL DEFAULT '[]',
+            source_version TEXT,
+            updated_at TEXT,
+            PRIMARY KEY (run_id, canonical_poi_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS poi_prod (
+            canonical_poi_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            raw_category TEXT,
+            address TEXT,
+            lon REAL,
+            lat REAL,
+            source_ids_json TEXT NOT NULL DEFAULT '[]',
+            source_entity_ids_json TEXT NOT NULL DEFAULT '[]',
+            source_version TEXT,
+            updated_at TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS census_staging (
             run_id TEXT NOT NULL,
             area_id TEXT NOT NULL,
@@ -262,6 +290,74 @@ def init_db(conn: sqlite3.Connection) -> None:
             assessment_value REAL NOT NULL,
             chosen_record_id TEXT NOT NULL,
             confidence REAL NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS property_locations_staging (
+            run_id TEXT NOT NULL,
+            canonical_location_id TEXT NOT NULL,
+            assessment_year INTEGER,
+            assessment_value REAL,
+            suite TEXT,
+            house_number TEXT,
+            street_name TEXT,
+            legal_description TEXT,
+            zoning TEXT,
+            lot_size REAL,
+            total_gross_area TEXT,
+            year_built INTEGER,
+            neighbourhood_id TEXT,
+            neighbourhood TEXT,
+            ward TEXT,
+            tax_class TEXT,
+            garage TEXT,
+            assessment_class_1 TEXT,
+            assessment_class_2 TEXT,
+            assessment_class_3 TEXT,
+            assessment_class_pct_1 REAL,
+            assessment_class_pct_2 REAL,
+            assessment_class_pct_3 REAL,
+            lat REAL,
+            lon REAL,
+            point_location TEXT,
+            source_ids_json TEXT NOT NULL DEFAULT '[]',
+            record_ids_json TEXT NOT NULL DEFAULT '[]',
+            link_method TEXT NOT NULL,
+            confidence REAL,
+            updated_at TEXT,
+            PRIMARY KEY (run_id, canonical_location_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS property_locations_prod (
+            canonical_location_id TEXT PRIMARY KEY,
+            assessment_year INTEGER,
+            assessment_value REAL,
+            suite TEXT,
+            house_number TEXT,
+            street_name TEXT,
+            legal_description TEXT,
+            zoning TEXT,
+            lot_size REAL,
+            total_gross_area TEXT,
+            year_built INTEGER,
+            neighbourhood_id TEXT,
+            neighbourhood TEXT,
+            ward TEXT,
+            tax_class TEXT,
+            garage TEXT,
+            assessment_class_1 TEXT,
+            assessment_class_2 TEXT,
+            assessment_class_3 TEXT,
+            assessment_class_pct_1 REAL,
+            assessment_class_pct_2 REAL,
+            assessment_class_pct_3 REAL,
+            lat REAL,
+            lon REAL,
+            point_location TEXT,
+            source_ids_json TEXT NOT NULL DEFAULT '[]',
+            record_ids_json TEXT NOT NULL DEFAULT '[]',
+            link_method TEXT NOT NULL,
+            confidence REAL,
+            updated_at TEXT
         );
 
         CREATE TABLE IF NOT EXISTS assessments_records_prod (
@@ -396,6 +492,77 @@ def init_db(conn: sqlite3.Connection) -> None:
             failed_json TEXT NOT NULL,
             reasons_json TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS transit_staging (
+            run_id TEXT NOT NULL,
+            transit_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            route_id TEXT,
+            service_id TEXT,
+            trip_id TEXT,
+            trip_headsign TEXT,
+            direction_id INTEGER,
+            block_id TEXT,
+            shape_id TEXT,
+            wheelchair_accessible TEXT,
+            bikes_allowed TEXT,
+            line_length REAL,
+            stop_id TEXT,
+            stop_code TEXT,
+            stop_name TEXT,
+            stop_desc TEXT,
+            stop_lat REAL,
+            stop_lon REAL,
+            zone_id TEXT,
+            stop_url TEXT,
+            location_type INTEGER,
+            parent_station TEXT,
+            level_name TEXT,
+            lon REAL,
+            lat REAL,
+            geometry_json TEXT NOT NULL DEFAULT '[]',
+            raw_record_json TEXT NOT NULL DEFAULT '{}',
+            source_version TEXT,
+            updated_at TEXT,
+            PRIMARY KEY (run_id, transit_type, entity_id, source_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS transit_prod (
+            transit_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            route_id TEXT,
+            service_id TEXT,
+            trip_id TEXT,
+            trip_headsign TEXT,
+            direction_id INTEGER,
+            block_id TEXT,
+            shape_id TEXT,
+            wheelchair_accessible TEXT,
+            bikes_allowed TEXT,
+            line_length REAL,
+            stop_id TEXT,
+            stop_code TEXT,
+            stop_name TEXT,
+            stop_desc TEXT,
+            stop_lat REAL,
+            stop_lon REAL,
+            zone_id TEXT,
+            stop_url TEXT,
+            location_type INTEGER,
+            parent_station TEXT,
+            level_name TEXT,
+            lon REAL,
+            lat REAL,
+            geometry_json TEXT NOT NULL DEFAULT '[]',
+            raw_record_json TEXT NOT NULL DEFAULT '{}',
+            source_version TEXT,
+            updated_at TEXT,
+            PRIMARY KEY (transit_type, entity_id, source_id)
+        );
         """
     )
     # Backward-compatible schema evolution for existing DB files.
@@ -404,6 +571,16 @@ def init_db(conn: sqlite3.Connection) -> None:
         "ALTER TABLE source_configs ADD COLUMN field_map_json TEXT NOT NULL DEFAULT '{}'",
         "ALTER TABLE poi_standardized_staging ADD COLUMN poi_type_id INTEGER",
         "ALTER TABLE poi_standardized_prod ADD COLUMN poi_type_id INTEGER",
+        "ALTER TABLE assessments_records_staging ADD COLUMN legal_description TEXT",
+        "ALTER TABLE assessments_records_staging ADD COLUMN zoning TEXT",
+        "ALTER TABLE assessments_records_staging ADD COLUMN lot_size REAL",
+        "ALTER TABLE assessments_records_staging ADD COLUMN total_gross_area TEXT",
+        "ALTER TABLE assessments_records_staging ADD COLUMN year_built INTEGER",
+        "ALTER TABLE assessments_records_prod ADD COLUMN legal_description TEXT",
+        "ALTER TABLE assessments_records_prod ADD COLUMN zoning TEXT",
+        "ALTER TABLE assessments_records_prod ADD COLUMN lot_size REAL",
+        "ALTER TABLE assessments_records_prod ADD COLUMN total_gross_area TEXT",
+        "ALTER TABLE assessments_records_prod ADD COLUMN year_built INTEGER",
     ):
         try:
             conn.execute(statement)

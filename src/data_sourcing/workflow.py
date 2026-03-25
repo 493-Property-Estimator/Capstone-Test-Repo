@@ -17,6 +17,7 @@ from .pipelines import (
     run_deduplication,
     run_geospatial_ingest,
     run_poi_standardization,
+    run_transit_ingest,
 )
 
 StepFn = Callable[[Any, str], dict[str, Any]]
@@ -70,6 +71,12 @@ def run_refresh_workflow(
 
     step_map: dict[str, StepFn] = {
         "geospatial": lambda c, t: run_geospatial_ingest(c, trigger=t, source_overrides=source_overrides),
+        "transit": lambda c, t: run_transit_ingest(
+            c,
+            trigger=t,
+            source_keys=["transit.ets_stops", "transit.ets_trips"],
+            source_overrides=source_overrides,
+        ),
         "census": lambda c, t: run_census_ingest(c, trigger=t, source_overrides=source_overrides),
         "assessments": lambda c, t: run_assessment_ingest(c, trigger=t, source_overrides=source_overrides),
         "poi_standardization": lambda c, t: run_poi_standardization(
@@ -82,7 +89,7 @@ def run_refresh_workflow(
         "deduplication": lambda c, t: run_deduplication(c, trigger=t),
     }
 
-    order = ["geospatial", "census", "assessments", "poi_standardization", "deduplication"]
+    order = ["geospatial", "transit", "census", "assessments", "poi_standardization", "deduplication"]
     step_status: dict[str, str] = {}
     reasons: dict[str, str] = {}
     warnings: list[str] = []

@@ -2,6 +2,7 @@
 
 from .pipelines import (
     run_geospatial_ingest,
+    run_transit_ingest,
     run_census_ingest,
     run_assessment_ingest,
     run_poi_standardization,
@@ -13,6 +14,7 @@ from .workflow import run_refresh_workflow
 
 __all__ = [
     "run_geospatial_ingest",
+    "run_transit_ingest",
     "run_census_ingest",
     "run_assessment_ingest",
     "run_poi_standardization",

@@ -15,14 +15,16 @@ from .pipelines import (
     run_deduplication,
     run_geospatial_ingest,
     run_poi_standardization,
+    run_transit_ingest,
 )
 from .source_fetcher import load_payload_for_source, resolve_source_location
 from .source_registry import get_source_spec, list_sources
 from .workflow import run_refresh_workflow
 
-PIPELINE_ORDER = ["geospatial", "census", "assessments", "poi_standardization", "deduplication"]
+PIPELINE_ORDER = ["geospatial", "transit", "census", "assessments", "poi_standardization", "deduplication"]
 PIPELINE_DEPENDENCIES = {
     "geospatial": [],
+    "transit": [],
     "census": ["geospatial"],
     "assessments": ["geospatial"],
     "poi_standardization": ["geospatial"],
@@ -169,14 +171,29 @@ class IngestionService:
                     )
                 elif pipeline == "census":
                     outputs[pipeline] = run_census_ingest(conn, trigger=trigger, source_overrides=source_overrides)
+                elif pipeline == "transit":
+                    transit_source_keys = [key for key in valid_source_keys if key.startswith("transit.")]
+                    if not transit_source_keys:
+                        outputs[pipeline] = {
+                            "status": "skipped",
+                            "reason": "no valid transit sources selected",
+                            "warnings": [],
+                            "errors": [],
+                        }
+                        continue
+                    outputs[pipeline] = run_transit_ingest(
+                        conn,
+                        trigger=trigger,
+                        source_keys=transit_source_keys,
+                        source_overrides=source_overrides,
+                    )
                 elif pipeline == "assessments":
                     assessment_source_keys = [key for key in valid_source_keys if key.startswith("assessments.")]
-                    selected_assessment_key = assessment_source_keys[0] if assessment_source_keys else "assessments.property_tax"
                     outputs[pipeline] = run_assessment_ingest(
                         conn,
                         trigger=trigger,
                         source_overrides=source_overrides,
-                        source_key=selected_assessment_key,
+                        source_keys=assessment_source_keys or None,
                     )
                 elif pipeline == "poi_standardization":
                     outputs[pipeline] = run_poi_standardization(
