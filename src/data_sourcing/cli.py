@@ -44,7 +44,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     list_parser = subparsers.add_parser("list-sources", help="List configured ingestion sources")
     list_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
-    list_parser.add_argument("--pipeline", choices=["geospatial", "census", "assessments", "poi_standardization", "deduplication"])
+    list_parser.add_argument("--pipeline", choices=["geospatial", "transit", "census", "assessments", "poi_standardization", "deduplication"])
     list_parser.add_argument("--enabled-only", action="store_true", help="Show only enabled sources")
 
     show_parser = subparsers.add_parser("show-source", help="Show one source config")

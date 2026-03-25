@@ -21,6 +21,17 @@ https://data.edmonton.ca/Externally-Sourced-Datasets/Edmonton-Public-School-Boar
 https://data.edmonton.ca/Transportation/Intersection-Safety-Device-Locations/7fnd-72gr/about_data
 
 https://data.edmonton.ca/Transit/ETS-Bus-Schedule-GTFS-Data-Feed-Trips/ctwr-tvrd/about_data
+route_id: Text
+service_id: Text
+trip_id: Text
+trip_headsign: Text
+direction_id: Number
+block_id: Text
+shape_id: Text
+wheelchair_accessible: Checkbox
+bikes_allowed: Checkbox
+line_length: Number
+geometry_line: MultiLine
 
 https://data.edmonton.ca/Externally-Sourced-Datasets/Edmonton-Public-School-Board-EPSB-_School-Location/996c-239n/about_data
 abed_id: Text

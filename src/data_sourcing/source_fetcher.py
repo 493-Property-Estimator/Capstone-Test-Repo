@@ -84,14 +84,62 @@ def _fetch_remote_file(url: str, source_key: str, forced_ext: str | None = None)
     return cache_path
 
 
+def _normalize_field_name(value: str) -> str:
+    return "".join(ch.lower() for ch in value if ch.isalnum())
+
+
+def _lookup_mapped_value(record: dict[str, Any], source_field: str) -> Any:
+    if source_field in record:
+        return record[source_field]
+
+    normalized_source = _normalize_field_name(source_field)
+    if not normalized_source:
+        return None
+
+    normalized_record_keys = {
+        _normalize_field_name(key): key
+        for key in record
+        if isinstance(key, str)
+    }
+    exact = normalized_record_keys.get(normalized_source)
+    if exact is not None:
+        return record[exact]
+
+    for normalized_key, original_key in normalized_record_keys.items():
+        if not normalized_key:
+            continue
+        if normalized_key.startswith(normalized_source) or normalized_source.startswith(normalized_key):
+            return record[original_key]
+
+    return None
+
+
 def _apply_field_map(record: dict[str, Any], field_map: dict[str, str] | None) -> dict[str, Any]:
     if not field_map:
         return dict(record)
     normalized = dict(record)
     for target_field, source_field in field_map.items():
-        if source_field in record:
-            normalized[target_field] = record[source_field]
+        if isinstance(source_field, str) and source_field.startswith("="):
+            normalized[target_field] = source_field[1:]
+            continue
+        if isinstance(source_field, str):
+            mapped_value = _lookup_mapped_value(record, source_field)
+            if mapped_value is not None:
+                normalized[target_field] = mapped_value
     return normalized
+
+
+def _infer_local_ingestion_technique(source_path: Path, configured_technique: str) -> str:
+    suffix = source_path.suffix.lower()
+    if suffix == ".csv":
+        return "local_csv"
+    if suffix in {".json"}:
+        return "local_json"
+    if suffix in {".geojson"}:
+        return "local_geojson"
+    if suffix in {".zip", ".shp"}:
+        return "local_shapefile"
+    return configured_technique
 
 
 def _normalize_json(path: Path, field_map: dict[str, str] | None) -> SourcePayload:
@@ -360,6 +408,7 @@ def load_payload_for_source(
         source_path = _fetch_remote_file(location, source_key, forced_ext=forced_ext)
     else:
         source_path = Path(location)
+        technique = _infer_local_ingestion_technique(source_path, technique)
 
     if technique in {"local_json", "remote_json"}:
         return _normalize_json(source_path, field_map)

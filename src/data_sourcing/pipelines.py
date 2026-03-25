@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import uuid
+import hashlib
 from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
@@ -20,6 +21,7 @@ from .config import (
     GEOSPATIAL_DATASETS,
     GEOSPATIAL_REPAIR_RATE_LIMIT,
     GEOSPATIAL_SIZE_LIMIT_BYTES,
+    TRANSIT_DATASETS,
     UNMAPPED_POLICY,
     UNMAPPED_RATE_LIMIT,
 )
@@ -65,6 +67,236 @@ def _safe_int(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _normalize_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return " ".join(text.split())
+
+
+def _slug_text(value: Any) -> str | None:
+    text = _normalize_text(value)
+    if text is None:
+        return None
+    return "".join(ch.lower() for ch in text if ch.isalnum())
+
+
+def _display_text(value: Any) -> str | None:
+    text = _normalize_text(value)
+    if text is None:
+        return None
+    parts = [part for part in text.replace("_", " ").split(" ") if part]
+    if not parts:
+        return None
+    return " ".join(part.capitalize() for part in parts)
+
+
+def _resolve_feature_name(record: dict[str, Any], fallback_id: str) -> str:
+    for field in (
+        "name",
+        "road_name",
+        "official_n",
+        "common_nam",
+        "branch",
+        "school_nam",
+        "stop_name",
+        "business_n",
+        "code_descr",
+    ):
+        text = _normalize_text(record.get(field))
+        if text:
+            return text
+
+    raw_category = _display_text(record.get("raw_category") or record.get("fclass"))
+    address = _normalize_text(record.get("address") or record.get("sch_addres") or record.get("business_a"))
+    if raw_category and address:
+        return f"{raw_category} at {address}"
+    if raw_category:
+        return raw_category
+    return fallback_id
+
+
+def _resolve_source_entity_id(record: dict[str, Any], source_id: str) -> str:
+    entity_id = _normalize_text(record.get("entity_id"))
+    if entity_id:
+        return entity_id
+
+    name = _resolve_feature_name(record, "")
+    address = _normalize_text(record.get("address") or record.get("sch_addres") or record.get("business_a"))
+    lat = _safe_float(record.get("lat"))
+    lon = _safe_float(record.get("lon"))
+    raw_category = _display_text(record.get("raw_category") or record.get("fclass")) or "feature"
+
+    return _stable_id(
+        "entity",
+        source_id,
+        raw_category,
+        name,
+        address,
+        round(lat, 6) if lat is not None else None,
+        round(lon, 6) if lon is not None else None,
+    )
+
+
+def _stable_id(prefix: str, *parts: Any) -> str:
+    payload = "|".join("" if part is None else str(part) for part in parts)
+    digest = hashlib.sha1(payload.encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}-{digest}"
+
+
+def _nonnull(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, (list, dict, tuple, set)):
+        return len(value) > 0
+    return True
+
+
+def _coalesce(existing: Any, new_value: Any) -> Any:
+    return existing if _nonnull(existing) else new_value
+
+
+def _merge_json_lists(existing_json: str | None, new_values: list[str]) -> str:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for source in (existing_json,):
+        if not source:
+            continue
+        try:
+            items = json.loads(source)
+        except json.JSONDecodeError:
+            items = []
+        for item in items:
+            text = str(item)
+            if text not in seen:
+                seen.add(text)
+                merged.append(text)
+    for item in new_values:
+        text = str(item)
+        if text not in seen:
+            seen.add(text)
+            merged.append(text)
+    return json.dumps(merged)
+
+
+def _property_location_key(record: dict[str, Any]) -> tuple[str, str]:
+    suite = _slug_text(record.get("suite"))
+    house = _slug_text(record.get("house_number"))
+    street = _slug_text(record.get("street_name"))
+    if house and street:
+        return "address", "|".join(part for part in (suite, house, street) if part)
+
+    lat = _safe_float(record.get("lat"))
+    lon = _safe_float(record.get("lon"))
+    if lat is not None and lon is not None:
+        return "spatial", f"{round(lat, 5)}|{round(lon, 5)}"
+
+    record_id = _normalize_text(record.get("record_id")) or _normalize_text(record.get("account_number")) or "unknown"
+    return "record", record_id
+
+
+def _canonical_location_id(record: dict[str, Any]) -> str:
+    key_type, key_value = _property_location_key(record)
+    return _stable_id("loc", key_type, key_value)
+
+
+def _poi_merge_key(row: dict[str, Any]) -> str:
+    address = _slug_text(row.get("address"))
+    name = _slug_text(row.get("name"))
+    if address and name:
+        return _stable_id("poi", "address_name", address, name)
+    if name and _nonnull(row.get("lat")) and _nonnull(row.get("lon")):
+        return _stable_id("poi", "name_coord", name, round(float(row["lat"]), 4), round(float(row["lon"]), 4))
+    if _nonnull(row.get("lat")) and _nonnull(row.get("lon")):
+        return _stable_id("poi", "coord", round(float(row["lat"]), 5), round(float(row["lon"]), 5))
+    return _stable_id("poi", "entity", row.get("source_id"), row.get("entity_id"))
+
+
+def _merge_property_rows(existing: dict[str, Any] | None, new_row: dict[str, Any]) -> dict[str, Any]:
+    if existing is None:
+        return dict(new_row)
+
+    merged = dict(existing)
+    for field in (
+        "suite",
+        "house_number",
+        "street_name",
+        "legal_description",
+        "zoning",
+        "lot_size",
+        "total_gross_area",
+        "year_built",
+        "neighbourhood_id",
+        "neighbourhood",
+        "ward",
+        "tax_class",
+        "garage",
+        "assessment_class_1",
+        "assessment_class_2",
+        "assessment_class_3",
+        "assessment_class_pct_1",
+        "assessment_class_pct_2",
+        "assessment_class_pct_3",
+        "lat",
+        "lon",
+        "point_location",
+    ):
+        merged[field] = _coalesce(merged.get(field), new_row.get(field))
+
+    if _nonnull(new_row.get("assessment_value")):
+        current_year = _safe_int(merged.get("assessment_year")) or 0
+        new_year = _safe_int(new_row.get("assessment_year")) or 0
+        if not _nonnull(merged.get("assessment_value")) or new_year >= current_year:
+            merged["assessment_year"] = new_row.get("assessment_year")
+            merged["assessment_value"] = new_row.get("assessment_value")
+
+    if (_safe_float(new_row.get("confidence")) or 0.0) >= (_safe_float(merged.get("confidence")) or 0.0):
+        merged["link_method"] = new_row.get("link_method")
+        merged["confidence"] = new_row.get("confidence")
+
+    merged["source_ids_json"] = _merge_json_lists(
+        merged.get("source_ids_json"),
+        json.loads(new_row["source_ids_json"]) if isinstance(new_row.get("source_ids_json"), str) else [],
+    )
+    merged["record_ids_json"] = _merge_json_lists(
+        merged.get("record_ids_json"),
+        json.loads(new_row["record_ids_json"]) if isinstance(new_row.get("record_ids_json"), str) else [],
+    )
+    merged["updated_at"] = max(
+        [value for value in (merged.get("updated_at"), new_row.get("updated_at")) if value],
+        default=None,
+    )
+    return merged
+
+
+def _merge_poi_rows(existing: dict[str, Any] | None, new_row: dict[str, Any]) -> dict[str, Any]:
+    if existing is None:
+        return dict(new_row)
+
+    merged = dict(existing)
+    for field in ("name", "raw_category", "address", "lon", "lat"):
+        merged[field] = _coalesce(merged.get(field), new_row.get(field))
+
+    merged["source_ids_json"] = _merge_json_lists(
+        merged.get("source_ids_json"),
+        json.loads(new_row["source_ids_json"]) if isinstance(new_row.get("source_ids_json"), str) else [],
+    )
+    merged["source_entity_ids_json"] = _merge_json_lists(
+        merged.get("source_entity_ids_json"),
+        json.loads(new_row["source_entity_ids_json"]) if isinstance(new_row.get("source_entity_ids_json"), str) else [],
+    )
+    merged["source_version"] = _coalesce(merged.get("source_version"), new_row.get("source_version"))
+    merged["updated_at"] = max(
+        [value for value in (merged.get("updated_at"), new_row.get("updated_at")) if value],
+        default=None,
+    )
+    return merged
 
 
 def _extract_geometry_points(record: dict[str, Any]) -> list[tuple[float, float]]:
@@ -137,7 +369,8 @@ def run_geospatial_ingest(
     source_versions: dict[str, str | None] = {dataset: None for dataset in GEOSPATIAL_DATASETS}
     roads_by_key: dict[tuple[str, str], dict[str, Any]] = {}
     road_segments: list[dict[str, Any]] = []
-    entity_key_counts: dict[tuple[str, str, str], int] = defaultdict(int)
+    poi_merged_by_id: dict[str, dict[str, Any]] = {}
+    entity_key_counts: dict[tuple[str, str], int] = defaultdict(int)
 
     for source_key in geospatial_sources:
         try:
@@ -170,21 +403,22 @@ def run_geospatial_ingest(
                 continue
 
             source_id = str(record.get("source_id") or source_key)
-            base_entity_id = str(record["entity_id"])
+            base_entity_id = _resolve_source_entity_id(record, source_id)
+            scoped_entity_id = f"{source_id}:{base_entity_id}"
             raw_category = record.get("raw_category")
             if raw_category in (None, "") and dataset in {"roads", "pois"}:
                 raw_category = record.get("fclass")
-            entity_key = (dataset, source_id, base_entity_id)
+            entity_key = (dataset, scoped_entity_id)
             entity_key_counts[entity_key] += 1
             dup_index = entity_key_counts[entity_key]
-            entity_id = base_entity_id if dup_index == 1 else f"{base_entity_id}__dup{dup_index}"
+            entity_id = scoped_entity_id if dup_index == 1 else f"{scoped_entity_id}__dup{dup_index}"
             if dup_index > 1:
                 warnings.append(
                     f"{source_key}: duplicate entity_id '{base_entity_id}' for source '{source_id}'"
                     f" disambiguated as '{entity_id}'"
                 )
 
-            name = str(record.get("name") or record.get("road_name") or entity_id).strip()
+            name = _resolve_feature_name(record, entity_id)
 
             points = _extract_geometry_points(record)
             if not points:
@@ -220,6 +454,35 @@ def run_geospatial_ingest(
                     "updated_at": payload.metadata.get("publish_date"),
                 }
             )
+
+            if dataset == "pois":
+                address = _normalize_text(record.get("address") or record.get("sch_addres") or record.get("business_a"))
+                poi_row = {
+                    "run_id": run_id,
+                    "canonical_poi_id": _poi_merge_key(
+                        {
+                            "source_id": source_id,
+                            "entity_id": entity_id,
+                            "name": name,
+                            "address": address,
+                            "lat": float(lat),
+                            "lon": float(lon),
+                        }
+                    ),
+                    "name": name,
+                    "raw_category": raw_category,
+                    "address": address,
+                    "lon": float(lon),
+                    "lat": float(lat),
+                    "source_ids_json": json.dumps([source_id]),
+                    "source_entity_ids_json": json.dumps([f"{source_id}:{entity_id}"]),
+                    "source_version": payload.metadata.get("version"),
+                    "updated_at": payload.metadata.get("publish_date"),
+                }
+                poi_merged_by_id[poi_row["canonical_poi_id"]] = _merge_poi_rows(
+                    poi_merged_by_id.get(poi_row["canonical_poi_id"]),
+                    poi_row,
+                )
 
             if dataset == "roads":
                 road_id = str(record.get("road_id") or entity_id)
@@ -292,6 +555,21 @@ def run_geospatial_ingest(
             refined,
         )
 
+        if dataset == "pois":
+            conn.execute("DELETE FROM poi_staging WHERE run_id=?", (run_id,))
+            conn.executemany(
+                """
+                INSERT INTO poi_staging (
+                    run_id, canonical_poi_id, name, raw_category, address, lon, lat,
+                    source_ids_json, source_entity_ids_json, source_version, updated_at
+                ) VALUES (
+                    :run_id, :canonical_poi_id, :name, :raw_category, :address, :lon, :lat,
+                    :source_ids_json, :source_entity_ids_json, :source_version, :updated_at
+                )
+                """,
+                list(poi_merged_by_id.values()),
+            )
+
         if refined:
             results.append(
                 {
@@ -345,7 +623,13 @@ def run_geospatial_ingest(
         try:
             with transaction(conn):
                 for dataset in dataset_types:
-                    conn.execute("DELETE FROM geospatial_prod WHERE dataset_type=?", (dataset,))
+                    source_ids = sorted({row["source_id"] for row in refined_by_dataset[dataset]})
+                    if source_ids:
+                        placeholders = ",".join("?" for _ in source_ids)
+                        conn.execute(
+                            f"DELETE FROM geospatial_prod WHERE dataset_type=? AND source_id IN ({placeholders})",
+                            [dataset, *source_ids],
+                        )
                     conn.execute(
                         """
                         INSERT INTO geospatial_prod (
@@ -360,8 +644,17 @@ def run_geospatial_ingest(
                         (run_id, dataset),
                     )
                 if "roads" in dataset_types:
-                    conn.execute("DELETE FROM road_segments_prod")
-                    conn.execute("DELETE FROM roads_prod")
+                    road_source_ids = sorted({row["source_id"] for row in roads_by_key.values()})
+                    if road_source_ids:
+                        placeholders = ",".join("?" for _ in road_source_ids)
+                        conn.execute(
+                            f"DELETE FROM road_segments_prod WHERE source_id IN ({placeholders})",
+                            road_source_ids,
+                        )
+                        conn.execute(
+                            f"DELETE FROM roads_prod WHERE source_id IN ({placeholders})",
+                            road_source_ids,
+                        )
                     conn.execute(
                         """
                         INSERT INTO roads_prod (
@@ -387,6 +680,36 @@ def run_geospatial_ingest(
                         WHERE run_id=?
                         """,
                         (run_id,),
+                    )
+                if poi_merged_by_id:
+                    existing_pois = {
+                        row["canonical_poi_id"]: dict(row)
+                        for row in conn.execute("SELECT * FROM poi_prod").fetchall()
+                    }
+                    merged_pois = dict(existing_pois)
+                    for canonical_id, row in poi_merged_by_id.items():
+                        merged_pois[canonical_id] = _merge_poi_rows(existing_pois.get(canonical_id), row)
+                    conn.executemany(
+                        """
+                        INSERT INTO poi_prod (
+                            canonical_poi_id, name, raw_category, address, lon, lat,
+                            source_ids_json, source_entity_ids_json, source_version, updated_at
+                        ) VALUES (
+                            :canonical_poi_id, :name, :raw_category, :address, :lon, :lat,
+                            :source_ids_json, :source_entity_ids_json, :source_version, :updated_at
+                        )
+                        ON CONFLICT(canonical_poi_id) DO UPDATE SET
+                            name=excluded.name,
+                            raw_category=excluded.raw_category,
+                            address=excluded.address,
+                            lon=excluded.lon,
+                            lat=excluded.lat,
+                            source_ids_json=excluded.source_ids_json,
+                            source_entity_ids_json=excluded.source_entity_ids_json,
+                            source_version=excluded.source_version,
+                            updated_at=excluded.updated_at
+                        """,
+                        list(merged_pois.values()),
                     )
             for result in results:
                 result["promotion_status"] = "promoted"
@@ -580,217 +903,198 @@ def run_assessment_ingest(
     conn,
     trigger: str = "manual",
     source_overrides: dict[str, str] | None = None,
-    source_key: str = "assessments.property_tax",
+    source_keys: list[str] | None = None,
 ) -> dict[str, Any]:
     run_id = _new_run_id("assess")
     started_at = utc_now()
     warnings: list[str] = []
     errors: list[str] = []
 
-    payload = load_payload_for_source(source_key, source_overrides)
-    assessment_year = int(payload.metadata.get("assessment_year", 0))
-
     refined: list[dict[str, Any]] = []
     full_records: list[dict[str, Any]] = []
+    property_rows_by_location: dict[str, dict[str, Any]] = {}
     quarantined = 0
+    run_record_id_counts: dict[str, int] = defaultdict(int)
+    selected_source_keys = source_keys[:] if source_keys else ["assessments.property_tax"]
+    assessment_year = 0
 
-    for record in payload.records:
-        source_id = str(record.get("source_id") or source_key)
-        record_id = str(record.get("record_id") or record.get("account_number") or f"missing-{quarantined + 1}")
-        missing = require_fields(record, ("record_id", "assessment_value", "parcel_id", "lat", "lon"))
-        if missing:
-            quarantined += 1
-            full_records.append(
-                {
-                    "run_id": run_id,
-                    "record_id": record_id,
-                    "source_id": source_id,
-                    "assessment_year": assessment_year,
-                    "canonical_location_id": None,
-                    "assessment_value": _safe_float(record.get("assessment_value")),
-                    "suite": record.get("suite"),
-                    "house_number": record.get("house_number"),
-                    "street_name": record.get("street_name"),
-                    "neighbourhood_id": record.get("neighbourhood_id"),
-                    "neighbourhood": record.get("neighbourhood"),
-                    "ward": record.get("ward"),
-                    "tax_class": record.get("tax_class"),
-                    "garage": record.get("garage"),
-                    "assessment_class_1": record.get("assessment_class_1"),
-                    "assessment_class_2": record.get("assessment_class_2"),
-                    "assessment_class_3": record.get("assessment_class_3"),
-                    "assessment_class_pct_1": _safe_float(record.get("assessment_class_pct_1")),
-                    "assessment_class_pct_2": _safe_float(record.get("assessment_class_pct_2")),
-                    "assessment_class_pct_3": _safe_float(record.get("assessment_class_pct_3")),
-                    "lat": _safe_float(record.get("lat")),
-                    "lon": _safe_float(record.get("lon")),
-                    "point_location": record.get("point_location"),
-                    "link_method": "unlinked",
-                    "confidence": 0.0,
-                    "ambiguous": 0,
-                    "quarantined": 1,
-                    "reason_code": f"missing_fields:{','.join(missing)}",
-                    "raw_record_json": json.dumps(record, default=str),
-                }
+    for source_key in selected_source_keys:
+        payload = load_payload_for_source(source_key, source_overrides)
+        source_assessment_year = int(payload.metadata.get("assessment_year", 0))
+        assessment_year = max(assessment_year, source_assessment_year)
+        source_updated_at = payload.metadata.get("publication_date") or payload.metadata.get("publish_date")
+        requires_value = source_key != "assessments.property_information"
+
+        for record in payload.records:
+            source_id = str(record.get("source_id") or source_key)
+            base_record_id = str(record.get("record_id") or record.get("account_number") or f"missing-{quarantined + 1}")
+            run_record_id_counts[base_record_id] += 1
+            record_id = (
+                base_record_id
+                if run_record_id_counts[base_record_id] == 1
+                else f"{base_record_id}__{source_id}"
             )
+            lat = _safe_float(record.get("lat"))
+            lon = _safe_float(record.get("lon"))
+            value = _safe_float(record.get("assessment_value"))
+
+            missing = require_fields(record, ("record_id",))
+            if lat is None:
+                missing.append("lat")
+            if lon is None:
+                missing.append("lon")
+            if requires_value and value is None:
+                missing.append("assessment_value")
+
+            if missing:
+                quarantined += 1
+                full_records.append(
+                    {
+                        "run_id": run_id,
+                        "record_id": record_id,
+                        "source_id": source_id,
+                        "assessment_year": source_assessment_year,
+                        "canonical_location_id": None,
+                        "assessment_value": value,
+                        "suite": record.get("suite"),
+                        "house_number": record.get("house_number"),
+                        "street_name": record.get("street_name"),
+                        "legal_description": record.get("legal_description"),
+                        "zoning": record.get("zoning"),
+                        "lot_size": _safe_float(record.get("lot_size")),
+                        "total_gross_area": record.get("total_gross_area"),
+                        "year_built": _safe_int(record.get("year_built")),
+                        "neighbourhood_id": record.get("neighbourhood_id"),
+                        "neighbourhood": record.get("neighbourhood"),
+                        "ward": record.get("ward"),
+                        "tax_class": record.get("tax_class"),
+                        "garage": record.get("garage"),
+                        "assessment_class_1": record.get("assessment_class_1"),
+                        "assessment_class_2": record.get("assessment_class_2"),
+                        "assessment_class_3": record.get("assessment_class_3"),
+                        "assessment_class_pct_1": _safe_float(record.get("assessment_class_pct_1")),
+                        "assessment_class_pct_2": _safe_float(record.get("assessment_class_pct_2")),
+                        "assessment_class_pct_3": _safe_float(record.get("assessment_class_pct_3")),
+                        "lat": lat,
+                        "lon": lon,
+                        "point_location": record.get("point_location"),
+                        "link_method": "unlinked",
+                        "confidence": 0.0,
+                        "ambiguous": 0,
+                        "quarantined": 1,
+                        "reason_code": f"missing_fields:{','.join(sorted(set(missing)))}",
+                        "raw_record_json": json.dumps(record, default=str),
+                    }
+                )
+                refined.append(
+                    {
+                        "run_id": run_id,
+                        "record_id": record_id,
+                        "assessment_year": source_assessment_year,
+                        "canonical_location_id": None,
+                        "assessment_value": None,
+                        "link_method": "unlinked",
+                        "confidence": 0.0,
+                        "ambiguous": 0,
+                        "quarantined": 1,
+                        "reason_code": f"missing_fields:{','.join(sorted(set(missing)))}",
+                    }
+                )
+                continue
+
+            if requires_value and value is not None and value <= 0:
+                quarantined += 1
+                full_records.append(
+                    {
+                        "run_id": run_id,
+                        "record_id": record_id,
+                        "source_id": source_id,
+                        "assessment_year": source_assessment_year,
+                        "canonical_location_id": None,
+                        "assessment_value": None,
+                        "suite": record.get("suite"),
+                        "house_number": record.get("house_number"),
+                        "street_name": record.get("street_name"),
+                        "legal_description": record.get("legal_description"),
+                        "zoning": record.get("zoning"),
+                        "lot_size": _safe_float(record.get("lot_size")),
+                        "total_gross_area": record.get("total_gross_area"),
+                        "year_built": _safe_int(record.get("year_built")),
+                        "neighbourhood_id": record.get("neighbourhood_id"),
+                        "neighbourhood": record.get("neighbourhood"),
+                        "ward": record.get("ward"),
+                        "tax_class": record.get("tax_class"),
+                        "garage": record.get("garage"),
+                        "assessment_class_1": record.get("assessment_class_1"),
+                        "assessment_class_2": record.get("assessment_class_2"),
+                        "assessment_class_3": record.get("assessment_class_3"),
+                        "assessment_class_pct_1": _safe_float(record.get("assessment_class_pct_1")),
+                        "assessment_class_pct_2": _safe_float(record.get("assessment_class_pct_2")),
+                        "assessment_class_pct_3": _safe_float(record.get("assessment_class_pct_3")),
+                        "lat": lat,
+                        "lon": lon,
+                        "point_location": record.get("point_location"),
+                        "link_method": "unlinked",
+                        "confidence": 0.0,
+                        "ambiguous": 0,
+                        "quarantined": 1,
+                        "reason_code": "invalid_value",
+                        "raw_record_json": json.dumps(record, default=str),
+                    }
+                )
+                refined.append(
+                    {
+                        "run_id": run_id,
+                        "record_id": record_id,
+                        "assessment_year": source_assessment_year,
+                        "canonical_location_id": None,
+                        "assessment_value": None,
+                        "link_method": "unlinked",
+                        "confidence": 0.0,
+                        "ambiguous": 0,
+                        "quarantined": 1,
+                        "reason_code": "invalid_value",
+                    }
+                )
+                continue
+
+            canonical = _canonical_location_id(record)
+            link_key_type, _ = _property_location_key(record)
+            link_method = "address" if link_key_type == "address" else ("spatial" if link_key_type == "spatial" else "record")
+            confidence = 0.98 if link_method == "address" else (0.75 if link_method == "spatial" else 0.5)
+            ambiguous = 1 if record.get("ambiguous_hint", False) else 0
+            normalized_value = float(value) if value is not None else None
+
             refined.append(
                 {
                     "run_id": run_id,
                     "record_id": record_id,
-                    "assessment_year": assessment_year,
-                    "canonical_location_id": None,
-                    "assessment_value": None,
-                    "link_method": "unlinked",
-                    "confidence": 0.0,
-                    "ambiguous": 0,
-                    "quarantined": 1,
-                    "reason_code": f"missing_fields:{','.join(missing)}",
+                    "assessment_year": source_assessment_year,
+                    "canonical_location_id": canonical,
+                    "assessment_value": normalized_value,
+                    "link_method": link_method,
+                    "confidence": confidence,
+                    "ambiguous": ambiguous,
+                    "quarantined": 0,
+                    "reason_code": "ambiguous" if ambiguous else None,
                 }
             )
-            continue
 
-        value = _safe_float(record.get("assessment_value"))
-        if value is None or value <= 0:
-            quarantined += 1
-            full_records.append(
-                {
-                    "run_id": run_id,
-                    "record_id": record_id,
-                    "source_id": source_id,
-                    "assessment_year": assessment_year,
-                    "canonical_location_id": None,
-                    "assessment_value": None,
-                    "suite": record.get("suite"),
-                    "house_number": record.get("house_number"),
-                    "street_name": record.get("street_name"),
-                    "neighbourhood_id": record.get("neighbourhood_id"),
-                    "neighbourhood": record.get("neighbourhood"),
-                    "ward": record.get("ward"),
-                    "tax_class": record.get("tax_class"),
-                    "garage": record.get("garage"),
-                    "assessment_class_1": record.get("assessment_class_1"),
-                    "assessment_class_2": record.get("assessment_class_2"),
-                    "assessment_class_3": record.get("assessment_class_3"),
-                    "assessment_class_pct_1": _safe_float(record.get("assessment_class_pct_1")),
-                    "assessment_class_pct_2": _safe_float(record.get("assessment_class_pct_2")),
-                    "assessment_class_pct_3": _safe_float(record.get("assessment_class_pct_3")),
-                    "lat": _safe_float(record.get("lat")),
-                    "lon": _safe_float(record.get("lon")),
-                    "point_location": record.get("point_location"),
-                    "link_method": "unlinked",
-                    "confidence": 0.0,
-                    "ambiguous": 0,
-                    "quarantined": 1,
-                    "reason_code": "invalid_value",
-                    "raw_record_json": json.dumps(record, default=str),
-                }
-            )
-            refined.append(
-                {
-                    "run_id": run_id,
-                    "record_id": record_id,
-                    "assessment_year": assessment_year,
-                    "canonical_location_id": None,
-                    "assessment_value": None,
-                    "link_method": "unlinked",
-                    "confidence": 0.0,
-                    "ambiguous": 0,
-                    "quarantined": 1,
-                    "reason_code": "invalid_value",
-                }
-            )
-            continue
-
-        parcel_id = str(record["parcel_id"]).strip()
-        lat = _safe_float(record.get("lat"))
-        lon = _safe_float(record.get("lon"))
-        if lat is None or lon is None:
-            quarantined += 1
-            full_records.append(
-                {
-                    "run_id": run_id,
-                    "record_id": record_id,
-                    "source_id": source_id,
-                    "assessment_year": assessment_year,
-                    "canonical_location_id": None,
-                    "assessment_value": None,
-                    "suite": record.get("suite"),
-                    "house_number": record.get("house_number"),
-                    "street_name": record.get("street_name"),
-                    "neighbourhood_id": record.get("neighbourhood_id"),
-                    "neighbourhood": record.get("neighbourhood"),
-                    "ward": record.get("ward"),
-                    "tax_class": record.get("tax_class"),
-                    "garage": record.get("garage"),
-                    "assessment_class_1": record.get("assessment_class_1"),
-                    "assessment_class_2": record.get("assessment_class_2"),
-                    "assessment_class_3": record.get("assessment_class_3"),
-                    "assessment_class_pct_1": _safe_float(record.get("assessment_class_pct_1")),
-                    "assessment_class_pct_2": _safe_float(record.get("assessment_class_pct_2")),
-                    "assessment_class_pct_3": _safe_float(record.get("assessment_class_pct_3")),
-                    "lat": None,
-                    "lon": None,
-                    "point_location": record.get("point_location"),
-                    "link_method": "unlinked",
-                    "confidence": 0.0,
-                    "ambiguous": 0,
-                    "quarantined": 1,
-                    "reason_code": "invalid_coordinates",
-                    "raw_record_json": json.dumps(record, default=str),
-                }
-            )
-            refined.append(
-                {
-                    "run_id": run_id,
-                    "record_id": record_id,
-                    "assessment_year": assessment_year,
-                    "canonical_location_id": None,
-                    "assessment_value": None,
-                    "link_method": "unlinked",
-                    "confidence": 0.0,
-                    "ambiguous": 0,
-                    "quarantined": 1,
-                    "reason_code": "invalid_coordinates",
-                }
-            )
-            continue
-
-        if parcel_id:
-            canonical = f"loc-{parcel_id}"
-            link_method = "direct"
-            confidence = 0.99
-        else:
-            canonical = f"loc-{round(lat, 4)}-{round(lon, 4)}"
-            link_method = "spatial"
-            confidence = 0.75
-
-        ambiguous = 1 if record.get("ambiguous_hint", False) else 0
-
-        refined.append(
-            {
-                "run_id": run_id,
-                "record_id": record_id,
-                "assessment_year": assessment_year,
-                "canonical_location_id": canonical,
-                "assessment_value": float(value),
-                "link_method": link_method,
-                "confidence": confidence,
-                "ambiguous": ambiguous,
-                "quarantined": 0,
-                "reason_code": "ambiguous" if ambiguous else None,
-            }
-        )
-        full_records.append(
-            {
+            full_row = {
                 "run_id": run_id,
                 "record_id": record_id,
                 "source_id": source_id,
-                "assessment_year": assessment_year,
+                "assessment_year": source_assessment_year,
                 "canonical_location_id": canonical,
-                "assessment_value": float(value),
+                "assessment_value": normalized_value,
                 "suite": record.get("suite"),
                 "house_number": record.get("house_number"),
                 "street_name": record.get("street_name"),
+                "legal_description": record.get("legal_description"),
+                "zoning": record.get("zoning"),
+                "lot_size": _safe_float(record.get("lot_size")),
+                "total_gross_area": record.get("total_gross_area"),
+                "year_built": _safe_int(record.get("year_built")),
                 "neighbourhood_id": record.get("neighbourhood_id"),
                 "neighbourhood": record.get("neighbourhood"),
                 "ward": record.get("ward"),
@@ -812,10 +1116,49 @@ def run_assessment_ingest(
                 "reason_code": "ambiguous" if ambiguous else None,
                 "raw_record_json": json.dumps(record, default=str),
             }
-        )
+            full_records.append(full_row)
+
+            property_row = {
+                "run_id": run_id,
+                "canonical_location_id": canonical,
+                "assessment_year": source_assessment_year or None,
+                "assessment_value": normalized_value,
+                "suite": record.get("suite"),
+                "house_number": record.get("house_number"),
+                "street_name": record.get("street_name"),
+                "legal_description": record.get("legal_description"),
+                "zoning": record.get("zoning"),
+                "lot_size": _safe_float(record.get("lot_size")),
+                "total_gross_area": record.get("total_gross_area"),
+                "year_built": _safe_int(record.get("year_built")),
+                "neighbourhood_id": record.get("neighbourhood_id"),
+                "neighbourhood": record.get("neighbourhood"),
+                "ward": record.get("ward"),
+                "tax_class": record.get("tax_class"),
+                "garage": record.get("garage"),
+                "assessment_class_1": record.get("assessment_class_1"),
+                "assessment_class_2": record.get("assessment_class_2"),
+                "assessment_class_3": record.get("assessment_class_3"),
+                "assessment_class_pct_1": _safe_float(record.get("assessment_class_pct_1")),
+                "assessment_class_pct_2": _safe_float(record.get("assessment_class_pct_2")),
+                "assessment_class_pct_3": _safe_float(record.get("assessment_class_pct_3")),
+                "lat": lat,
+                "lon": lon,
+                "point_location": record.get("point_location"),
+                "source_ids_json": json.dumps([source_id]),
+                "record_ids_json": json.dumps([record_id]),
+                "link_method": link_method,
+                "confidence": confidence,
+                "updated_at": source_updated_at,
+            }
+            property_rows_by_location[canonical] = _merge_property_rows(
+                property_rows_by_location.get(canonical),
+                property_row,
+            )
 
     conn.execute("DELETE FROM assessments_staging WHERE run_id=?", (run_id,))
     conn.execute("DELETE FROM assessments_records_staging WHERE run_id=?", (run_id,))
+    conn.execute("DELETE FROM property_locations_staging WHERE run_id=?", (run_id,))
     conn.executemany(
         """
         INSERT INTO assessments_staging (
@@ -833,20 +1176,42 @@ def run_assessment_ingest(
         INSERT INTO assessments_records_staging (
             run_id, record_id, source_id, assessment_year, canonical_location_id, assessment_value,
             suite, house_number, street_name, neighbourhood_id, neighbourhood, ward, tax_class,
-            garage, assessment_class_1, assessment_class_2, assessment_class_3,
+            garage, legal_description, zoning, lot_size, total_gross_area, year_built,
+            assessment_class_1, assessment_class_2, assessment_class_3,
             assessment_class_pct_1, assessment_class_pct_2, assessment_class_pct_3,
             lat, lon, point_location, link_method, confidence, ambiguous, quarantined,
             reason_code, raw_record_json
         ) VALUES (
             :run_id, :record_id, :source_id, :assessment_year, :canonical_location_id, :assessment_value,
             :suite, :house_number, :street_name, :neighbourhood_id, :neighbourhood, :ward, :tax_class,
-            :garage, :assessment_class_1, :assessment_class_2, :assessment_class_3,
+            :garage, :legal_description, :zoning, :lot_size, :total_gross_area, :year_built,
+            :assessment_class_1, :assessment_class_2, :assessment_class_3,
             :assessment_class_pct_1, :assessment_class_pct_2, :assessment_class_pct_3,
             :lat, :lon, :point_location, :link_method, :confidence, :ambiguous, :quarantined,
             :reason_code, :raw_record_json
         )
         """,
         full_records,
+    )
+    conn.executemany(
+        """
+        INSERT INTO property_locations_staging (
+            run_id, canonical_location_id, assessment_year, assessment_value, suite, house_number,
+            street_name, legal_description, zoning, lot_size, total_gross_area, year_built,
+            neighbourhood_id, neighbourhood, ward, tax_class, garage, assessment_class_1,
+            assessment_class_2, assessment_class_3, assessment_class_pct_1, assessment_class_pct_2,
+            assessment_class_pct_3, lat, lon, point_location, source_ids_json, record_ids_json,
+            link_method, confidence, updated_at
+        ) VALUES (
+            :run_id, :canonical_location_id, :assessment_year, :assessment_value, :suite, :house_number,
+            :street_name, :legal_description, :zoning, :lot_size, :total_gross_area, :year_built,
+            :neighbourhood_id, :neighbourhood, :ward, :tax_class, :garage, :assessment_class_1,
+            :assessment_class_2, :assessment_class_3, :assessment_class_pct_1, :assessment_class_pct_2,
+            :assessment_class_pct_3, :lat, :lon, :point_location, :source_ids_json, :record_ids_json,
+            :link_method, :confidence, :updated_at
+        )
+        """,
+        list(property_rows_by_location.values()),
     )
 
     total = len(refined)
@@ -881,8 +1246,8 @@ def run_assessment_ingest(
             if prev is None:
                 choice_by_loc[loc] = row
                 continue
-            prev_score = (prev["confidence"], prev["assessment_value"])
-            curr_score = (row["confidence"], row["assessment_value"])
+            prev_score = (prev["confidence"], _safe_float(prev["assessment_value"]) or -1.0)
+            curr_score = (row["confidence"], _safe_float(row["assessment_value"]) or -1.0)
             if curr_score > prev_score:
                 choice_by_loc[loc] = row
 
@@ -895,12 +1260,18 @@ def run_assessment_ingest(
                 "confidence": row["confidence"],
             }
             for loc, row in choice_by_loc.items()
+            if row["assessment_value"] is not None
         ]
 
         try:
             with transaction(conn):
-                conn.execute("DELETE FROM assessments_prod")
-                conn.execute("DELETE FROM assessments_records_prod")
+                touched_source_ids = sorted({row["source_id"] for row in full_records})
+                if touched_source_ids:
+                    placeholders = ",".join("?" for _ in touched_source_ids)
+                    conn.execute(
+                        f"DELETE FROM assessments_records_prod WHERE source_id IN ({placeholders})",
+                        touched_source_ids,
+                    )
                 conn.executemany(
                     """
                     INSERT INTO assessments_prod (
@@ -910,6 +1281,11 @@ def run_assessment_ingest(
                         :canonical_location_id, :assessment_year, :assessment_value,
                         :chosen_record_id, :confidence
                     )
+                    ON CONFLICT(canonical_location_id) DO UPDATE SET
+                        assessment_year=excluded.assessment_year,
+                        assessment_value=excluded.assessment_value,
+                        chosen_record_id=excluded.chosen_record_id,
+                        confidence=excluded.confidence
                     """,
                     promoted_rows,
                 )
@@ -918,14 +1294,16 @@ def run_assessment_ingest(
                     INSERT INTO assessments_records_prod (
                         record_id, source_id, assessment_year, canonical_location_id, assessment_value,
                         suite, house_number, street_name, neighbourhood_id, neighbourhood, ward, tax_class,
-                        garage, assessment_class_1, assessment_class_2, assessment_class_3,
+                        garage, legal_description, zoning, lot_size, total_gross_area, year_built,
+                        assessment_class_1, assessment_class_2, assessment_class_3,
                         assessment_class_pct_1, assessment_class_pct_2, assessment_class_pct_3,
                         lat, lon, point_location, link_method, confidence, ambiguous, quarantined,
                         reason_code, raw_record_json
                     )
                     SELECT record_id, source_id, assessment_year, canonical_location_id, assessment_value,
                            suite, house_number, street_name, neighbourhood_id, neighbourhood, ward, tax_class,
-                           garage, assessment_class_1, assessment_class_2, assessment_class_3,
+                           garage, legal_description, zoning, lot_size, total_gross_area, year_built,
+                           assessment_class_1, assessment_class_2, assessment_class_3,
                            assessment_class_pct_1, assessment_class_pct_2, assessment_class_pct_3,
                            lat, lon, point_location, link_method, confidence, ambiguous, quarantined,
                            reason_code, raw_record_json
@@ -934,13 +1312,70 @@ def run_assessment_ingest(
                     """,
                     (run_id,),
                 )
+                existing_properties = {
+                    row["canonical_location_id"]: dict(row)
+                    for row in conn.execute("SELECT * FROM property_locations_prod").fetchall()
+                }
+                merged_properties = dict(existing_properties)
+                for canonical_id, row in property_rows_by_location.items():
+                    merged_properties[canonical_id] = _merge_property_rows(existing_properties.get(canonical_id), row)
+                conn.executemany(
+                    """
+                    INSERT INTO property_locations_prod (
+                        canonical_location_id, assessment_year, assessment_value, suite, house_number,
+                        street_name, legal_description, zoning, lot_size, total_gross_area, year_built,
+                        neighbourhood_id, neighbourhood, ward, tax_class, garage, assessment_class_1,
+                        assessment_class_2, assessment_class_3, assessment_class_pct_1, assessment_class_pct_2,
+                        assessment_class_pct_3, lat, lon, point_location, source_ids_json, record_ids_json,
+                        link_method, confidence, updated_at
+                    ) VALUES (
+                        :canonical_location_id, :assessment_year, :assessment_value, :suite, :house_number,
+                        :street_name, :legal_description, :zoning, :lot_size, :total_gross_area, :year_built,
+                        :neighbourhood_id, :neighbourhood, :ward, :tax_class, :garage, :assessment_class_1,
+                        :assessment_class_2, :assessment_class_3, :assessment_class_pct_1, :assessment_class_pct_2,
+                        :assessment_class_pct_3, :lat, :lon, :point_location, :source_ids_json, :record_ids_json,
+                        :link_method, :confidence, :updated_at
+                    )
+                    ON CONFLICT(canonical_location_id) DO UPDATE SET
+                        assessment_year=excluded.assessment_year,
+                        assessment_value=excluded.assessment_value,
+                        suite=excluded.suite,
+                        house_number=excluded.house_number,
+                        street_name=excluded.street_name,
+                        legal_description=excluded.legal_description,
+                        zoning=excluded.zoning,
+                        lot_size=excluded.lot_size,
+                        total_gross_area=excluded.total_gross_area,
+                        year_built=excluded.year_built,
+                        neighbourhood_id=excluded.neighbourhood_id,
+                        neighbourhood=excluded.neighbourhood,
+                        ward=excluded.ward,
+                        tax_class=excluded.tax_class,
+                        garage=excluded.garage,
+                        assessment_class_1=excluded.assessment_class_1,
+                        assessment_class_2=excluded.assessment_class_2,
+                        assessment_class_3=excluded.assessment_class_3,
+                        assessment_class_pct_1=excluded.assessment_class_pct_1,
+                        assessment_class_pct_2=excluded.assessment_class_pct_2,
+                        assessment_class_pct_3=excluded.assessment_class_pct_3,
+                        lat=excluded.lat,
+                        lon=excluded.lon,
+                        point_location=excluded.point_location,
+                        source_ids_json=excluded.source_ids_json,
+                        record_ids_json=excluded.record_ids_json,
+                        link_method=excluded.link_method,
+                        confidence=excluded.confidence,
+                        updated_at=excluded.updated_at
+                    """,
+                    list(merged_properties.values()),
+                )
             promotion_status = "promoted"
             record_dataset_version(
                 conn,
                 dataset_type="assessments",
                 version_id=str(assessment_year),
                 source_version=str(assessment_year),
-                provenance=f"property tax assessments ({source_key})",
+                provenance=f"property assessments ({', '.join(selected_source_keys)})",
                 run_id=run_id,
             )
         except Exception as exc:
@@ -961,6 +1396,7 @@ def run_assessment_ingest(
             "linked": linked,
             "unlinked": unlinked,
             "ambiguous": ambiguous,
+            "merged_properties": len(property_rows_by_location),
         },
     }
     upsert_run_log(
@@ -983,6 +1419,182 @@ def run_assessment_ingest(
         "assessment_year": assessment_year,
         "coverage_percent": metadata["coverage_percent"],
         "invalid_rate": invalid_rate,
+        "qa_status": qa_status,
+        "promotion_status": promotion_status,
+        "warnings": warnings,
+        "errors": errors,
+        "completed_at": completed_at,
+    }
+
+
+def run_transit_ingest(
+    conn,
+    trigger: str = "manual",
+    source_keys: list[str] | None = None,
+    source_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    run_id = _new_run_id("transit")
+    started_at = utc_now()
+    warnings: list[str] = []
+    errors: list[str] = []
+    selected_source_keys = source_keys[:] if source_keys else []
+    if not selected_source_keys:
+        errors.append("no transit sources selected")
+
+    rows: list[dict[str, Any]] = []
+    source_versions: dict[str, str | None] = {}
+
+    for source_key in selected_source_keys:
+        spec = get_source_spec(source_key)
+        payload = load_payload_for_source(source_key, source_overrides)
+        transit_type = spec.get("target_dataset")
+        if transit_type not in TRANSIT_DATASETS:
+            errors.append(f"{source_key} missing supported transit target_dataset")
+            continue
+        source_versions[source_key] = payload.metadata.get("version")
+
+        for record in payload.records:
+            entity_id = str(record.get("entity_id") or record.get("trip_id") or record.get("stop_id") or "")
+            if not entity_id:
+                errors.append(f"{source_key} missing entity id")
+                continue
+            source_id = str(record.get("source_id") or source_key)
+            name = _normalize_text(record.get("name") or record.get("stop_name") or record.get("trip_headsign") or record.get("route_id") or entity_id) or entity_id
+            points = _extract_geometry_points(record)
+            lon = _safe_float(record.get("stop_lon") or record.get("lon"))
+            lat = _safe_float(record.get("stop_lat") or record.get("lat"))
+            if (lon is None or lat is None) and points:
+                lon = sum(point[0] for point in points) / len(points)
+                lat = sum(point[1] for point in points) / len(points)
+
+            rows.append(
+                {
+                    "run_id": run_id,
+                    "transit_type": transit_type,
+                    "entity_id": entity_id,
+                    "source_id": source_id,
+                    "name": name,
+                    "route_id": record.get("route_id"),
+                    "service_id": record.get("service_id"),
+                    "trip_id": record.get("trip_id"),
+                    "trip_headsign": record.get("trip_headsign"),
+                    "direction_id": _safe_int(record.get("direction_id")),
+                    "block_id": record.get("block_id"),
+                    "shape_id": record.get("shape_id"),
+                    "wheelchair_accessible": record.get("wheelchair_accessible"),
+                    "bikes_allowed": record.get("bikes_allowed"),
+                    "line_length": _safe_float(record.get("line_length")),
+                    "stop_id": record.get("stop_id"),
+                    "stop_code": record.get("stop_code"),
+                    "stop_name": record.get("stop_name"),
+                    "stop_desc": record.get("stop_desc"),
+                    "stop_lat": _safe_float(record.get("stop_lat")),
+                    "stop_lon": _safe_float(record.get("stop_lon")),
+                    "zone_id": record.get("zone_id"),
+                    "stop_url": record.get("stop_url"),
+                    "location_type": _safe_int(record.get("location_type")),
+                    "parent_station": record.get("parent_station"),
+                    "level_name": record.get("level_name"),
+                    "lon": lon,
+                    "lat": lat,
+                    "geometry_json": json.dumps([[point[0], point[1]] for point in points]),
+                    "raw_record_json": json.dumps(record, default=str),
+                    "source_version": payload.metadata.get("version"),
+                    "updated_at": payload.metadata.get("publish_date"),
+                }
+            )
+
+    conn.execute("DELETE FROM transit_staging WHERE run_id=?", (run_id,))
+    if rows:
+        conn.executemany(
+            """
+            INSERT INTO transit_staging (
+                run_id, transit_type, entity_id, source_id, name, route_id, service_id,
+                trip_id, trip_headsign, direction_id, block_id, shape_id, wheelchair_accessible,
+                bikes_allowed, line_length, stop_id, stop_code, stop_name, stop_desc, stop_lat,
+                stop_lon, zone_id, stop_url, location_type, parent_station, level_name, lon, lat,
+                geometry_json, raw_record_json, source_version, updated_at
+            ) VALUES (
+                :run_id, :transit_type, :entity_id, :source_id, :name, :route_id, :service_id,
+                :trip_id, :trip_headsign, :direction_id, :block_id, :shape_id, :wheelchair_accessible,
+                :bikes_allowed, :line_length, :stop_id, :stop_code, :stop_name, :stop_desc, :stop_lat,
+                :stop_lon, :zone_id, :stop_url, :location_type, :parent_station, :level_name, :lon, :lat,
+                :geometry_json, :raw_record_json, :source_version, :updated_at
+            )
+            """,
+            rows,
+        )
+
+    status = "failed" if errors else "succeeded"
+    promotion_status = "failed"
+    qa_status = "fail" if errors else "pass"
+    if not errors:
+        try:
+            with transaction(conn):
+                touched = sorted({(row["transit_type"], row["source_id"]) for row in rows})
+                for transit_type, source_id in touched:
+                    conn.execute(
+                        "DELETE FROM transit_prod WHERE transit_type=? AND source_id=?",
+                        (transit_type, source_id),
+                    )
+                conn.execute(
+                    """
+                    INSERT INTO transit_prod (
+                        transit_type, entity_id, source_id, name, route_id, service_id,
+                        trip_id, trip_headsign, direction_id, block_id, shape_id, wheelchair_accessible,
+                        bikes_allowed, line_length, stop_id, stop_code, stop_name, stop_desc, stop_lat,
+                        stop_lon, zone_id, stop_url, location_type, parent_station, level_name, lon, lat,
+                        geometry_json, raw_record_json, source_version, updated_at
+                    )
+                    SELECT transit_type, entity_id, source_id, name, route_id, service_id,
+                           trip_id, trip_headsign, direction_id, block_id, shape_id, wheelchair_accessible,
+                           bikes_allowed, line_length, stop_id, stop_code, stop_name, stop_desc, stop_lat,
+                           stop_lon, zone_id, stop_url, location_type, parent_station, level_name, lon, lat,
+                           geometry_json, raw_record_json, source_version, updated_at
+                    FROM transit_staging
+                    WHERE run_id=?
+                    """,
+                    (run_id,),
+                )
+            promotion_status = "promoted"
+            for source_key in selected_source_keys:
+                record_dataset_version(
+                    conn,
+                    dataset_type=f"transit:{get_source_spec(source_key).get('target_dataset')}",
+                    version_id=source_versions.get(source_key) or run_id,
+                    source_version=source_versions.get(source_key),
+                    provenance=source_key,
+                    run_id=run_id,
+                )
+        except Exception as exc:
+            status = "failed"
+            errors.append(f"promotion failed: {exc}")
+            add_alert(conn, run_id, "error", f"transit promotion failed: {exc}")
+
+    completed_at = utc_now()
+    metadata = {
+        "row_count": len(rows),
+        "qa_status": qa_status,
+        "promotion_status": promotion_status,
+        "source_keys": selected_source_keys,
+    }
+    upsert_run_log(
+        conn,
+        run_id=run_id,
+        story="transit",
+        trigger_type=trigger,
+        status=status,
+        started_at=started_at,
+        completed_at=completed_at,
+        warnings=warnings,
+        errors=errors,
+        metadata=metadata,
+    )
+    conn.commit()
+    return {
+        "run_id": run_id,
+        "status": status,
+        "row_count": len(rows),
         "qa_status": qa_status,
         "promotion_status": promotion_status,
         "warnings": warnings,
