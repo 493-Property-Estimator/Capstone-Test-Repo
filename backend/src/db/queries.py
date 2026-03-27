@@ -1,0 +1,154 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable
+
+from backend.src.db.connection import connect
+
+
+@dataclass(frozen=True)
+class LocationRecord:
+    canonical_location_id: str
+    house_number: str | None
+    street_name: str | None
+    neighbourhood: str | None
+    ward: str | None
+    assessment_value: float | None
+    lat: float | None
+    lon: float | None
+
+
+def _format_address(row: dict[str, Any]) -> str:
+    house = (row.get("house_number") or "").strip()
+    street = (row.get("street_name") or "").strip()
+    if house and street:
+        return f"{house} {street}, Edmonton, AB"
+    return row.get("street_name") or ""
+
+
+def search_address_suggestions(db_path: Path, query: str, limit: int) -> list[dict[str, Any]]:
+    like = f"%{query.strip().upper()}%"
+    sql = """
+        SELECT canonical_location_id, house_number, street_name, neighbourhood, lat, lon
+        FROM property_locations_prod
+        WHERE UPPER(COALESCE(house_number, '') || ' ' || COALESCE(street_name, '')) LIKE ?
+        LIMIT ?
+    """
+    with connect(db_path) as conn:
+        rows = conn.execute(sql, (like, limit)).fetchall()
+    suggestions = []
+    for idx, row in enumerate(rows, start=1):
+        row = dict(row)
+        suggestions.append(
+            {
+                "id": f"sug_{row.get('canonical_location_id', idx)}",
+                "display_text": _format_address(row),
+                "secondary_text": row.get("neighbourhood"),
+                "rank": idx,
+                "confidence": "high" if idx == 1 else "medium",
+            }
+        )
+    return suggestions
+
+
+def resolve_address(db_path: Path, query: str, limit: int = 5) -> list[LocationRecord]:
+    like = f"%{query.strip().upper()}%"
+    sql = """
+        SELECT canonical_location_id, house_number, street_name, neighbourhood, ward,
+               assessment_value, lat, lon
+        FROM property_locations_prod
+        WHERE UPPER(COALESCE(house_number, '') || ' ' || COALESCE(street_name, '')) LIKE ?
+        LIMIT ?
+    """
+    with connect(db_path) as conn:
+        rows = conn.execute(sql, (like, limit)).fetchall()
+    return [
+        LocationRecord(
+            canonical_location_id=row["canonical_location_id"],
+            house_number=row["house_number"],
+            street_name=row["street_name"],
+            neighbourhood=row["neighbourhood"],
+            ward=row["ward"],
+            assessment_value=row["assessment_value"],
+            lat=row["lat"],
+            lon=row["lon"],
+        )
+        for row in rows
+    ]
+
+
+def get_location_by_id(db_path: Path, canonical_location_id: str) -> LocationRecord | None:
+    sql = """
+        SELECT canonical_location_id, house_number, street_name, neighbourhood, ward,
+               assessment_value, lat, lon
+        FROM property_locations_prod
+        WHERE canonical_location_id = ?
+    """
+    with connect(db_path) as conn:
+        row = conn.execute(sql, (canonical_location_id,)).fetchone()
+    if not row:
+        return None
+    return LocationRecord(
+        canonical_location_id=row["canonical_location_id"],
+        house_number=row["house_number"],
+        street_name=row["street_name"],
+        neighbourhood=row["neighbourhood"],
+        ward=row["ward"],
+        assessment_value=row["assessment_value"],
+        lat=row["lat"],
+        lon=row["lon"],
+    )
+
+
+def fetch_geospatial_features(
+    db_path: Path,
+    layer_id: str,
+    west: float,
+    south: float,
+    east: float,
+    north: float,
+) -> list[dict[str, Any]]:
+    sql = """
+        SELECT dataset_type, entity_id, source_id, name, raw_category, canonical_geom_type, lon, lat
+        FROM geospatial_prod
+        WHERE lon BETWEEN ? AND ? AND lat BETWEEN ? AND ?
+    """
+    with connect(db_path) as conn:
+        rows = conn.execute(sql, (west, east, south, north)).fetchall()
+    features = []
+    for row in rows:
+        row = dict(row)
+        if not _matches_layer(layer_id, row):
+            continue
+        features.append(row)
+    return features
+
+
+def _matches_layer(layer_id: str, row: dict[str, Any]) -> bool:
+    dataset_type = (row.get("dataset_type") or "").lower()
+    raw_category = (row.get("raw_category") or "").lower()
+    layer = layer_id.lower()
+    if layer in dataset_type:
+        return True
+    if layer in raw_category:
+        return True
+    if layer == "green_spaces" and raw_category in {"park", "dog_park"}:
+        return True
+    if layer == "parks" and raw_category in {"park", "dog_park"}:
+        return True
+    return False
+
+
+def get_latest_dataset_version(db_path: Path) -> str | None:
+    sql = """
+        SELECT version_id
+        FROM dataset_versions
+        ORDER BY promoted_at DESC
+        LIMIT 1
+    """
+    with connect(db_path) as conn:
+        row = conn.execute(sql).fetchone()
+    if not row:
+        return None
+    return row["version_id"]
