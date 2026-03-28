@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestingStage Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">TestingStage</p>
+          <h1>Property API Playground</h1>
+          <p>Map click testing against the sample Edmonton property and POI database.</p>
+        </div>
+        <nav class="nav">
+          <a data-nav href="/">Map nearest property</a>
+          <a data-nav href="/top-x">Top x nearby POIs</a>
+          <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/neighborhood-results">Neighborhood results</a>
+        </nav>
+        <p class="sidebar-note">
+          The map uses Leaflet and OpenStreetMap. The backend reads the SQLite sample in
+          <code>src/data_sourcing/open_data.db</code>.
+        </p>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <p class="eyebrow">Page 1</p>
+          <h2>Map click to inspect the nearest property</h2>
+          <p>
+            Click anywhere on the map. The frontend sends the clicked point to the backend,
+            which returns the nearest property and summary statistics over the nearest 15
+            properties.
+          </p>
+        </section>
+
+        <section class="layout-grid">
+          <div class="hero map-card">
+            <div class="map-toolbar">
+              <div>
+                <h3>Edmonton map</h3>
+                <p class="muted small">Pan, zoom, and click to run the nearest-property call.</p>
+              </div>
+              <div id="map-status" class="status">Map ready.</div>
+            </div>
+            <div id="map-root" class="map-root"></div>
+          </div>
+
+          <section class="panel stack">
+            <div>
+              <h3>Selection results</h3>
+              <p>Orange dot: clicked point. Teal dot: nearest property from the database.</p>
+            </div>
+            <div id="selection-result" class="result-card">
+              Click the map to load a result.
+            </div>
+            <div id="estimator-result" class="result-card">
+              Nearby 15-property statistics will appear here.
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="/map-page.js"></script>
+  </body>
+</html>
