@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,75 +49,132 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _pick_latest(data_dir: Path, patterns: list[str]) -> Path | None:
+def _normalize_for_match(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _pick_latest_matching(
+    data_dir: Path,
+    required_fragments: list[str],
+    allowed_suffixes: tuple[str, ...],
+) -> Path | None:
+    normalized_fragments = [_normalize_for_match(fragment) for fragment in required_fragments]
     candidates: list[Path] = []
-    for pattern in patterns:
-        candidates.extend(data_dir.glob(pattern))
+    for path in data_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        if allowed_suffixes and path.suffix.lower() not in allowed_suffixes:
+            continue
+        normalized_relative_path = _normalize_for_match(str(path.relative_to(data_dir)))
+        if all(fragment in normalized_relative_path for fragment in normalized_fragments):
+            candidates.append(path)
+
     if not candidates:
         return None
-    return sorted(candidates)[-1]
+
+    return max(candidates, key=lambda candidate: (candidate.stat().st_mtime_ns, str(candidate)))
 
 
 def _pick_assessment_csv(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Property_Assessment_Data_*.csv"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Property Assessment Data"],
+        allowed_suffixes=(".csv",),
+    )
 
 
 def _pick_property_info_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Property Information*.csv", "Property Information*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Property Information"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
+    )
 
 
 def _pick_transit_stops_zip(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["ETS Bus Schedule GTFS Data Feed - Stops*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["ETS Bus Schedule GTFS Data Feed", "Stops"],
+        allowed_suffixes=(".zip", ".shp"),
+    )
 
 
 def _pick_transit_trips_zip(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["ETS Bus Schedule GTFS Data Feed - Trips*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["ETS Bus Schedule GTFS Data Feed", "Trips"],
+        allowed_suffixes=(".zip", ".shp"),
+    )
 
 
 def _pick_school_locations_path(data_dir: Path) -> Path | None:
-    return _pick_latest(
+    return _pick_latest_matching(
         data_dir,
-        [
-            "Edmonton Public School Board (EPSB)_School Locations_*.csv",
-            "Edmonton Public School Board (EPSB)_School Locations_*.zip",
-        ],
+        required_fragments=["Edmonton Public School Board", "School Locations"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
     )
 
 
 def _pick_police_stations_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Police Stations_*.csv", "Police Stations_*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Police Stations"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
+    )
 
 
 def _pick_playgrounds_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Playgrounds_*.csv", "Playgrounds_*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Playgrounds"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
+    )
 
 
 def _pick_parks_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Parks_*.csv", "Parks_*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Parks"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
+    )
 
 
 def _pick_business_census_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Edmonton Business Census*.csv", "Edmonton Business Census*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Edmonton Business Census"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
+    )
 
 
 def _pick_recreation_facilities_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Recreation Facilities*.csv", "Recreation Facilities*.zip"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Recreation Facilities"],
+        allowed_suffixes=(".csv", ".zip", ".shp"),
+    )
 
 
 def _pick_osm_roads_path(data_dir: Path) -> Path | None:
     shp = data_dir / "_tmp_alberta_layers" / "gis_osm_roads_free_1.shp"
     if shp.exists():
         return shp
-    zips = sorted(data_dir.glob("alberta-*.shp.zip"))
-    return zips[-1] if zips else None
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["alberta"],
+        allowed_suffixes=(".zip",),
+    )
 
 
 def _pick_osm_pois_path(data_dir: Path) -> Path | None:
     shp = data_dir / "_tmp_alberta_layers" / "gis_osm_pois_free_1.shp"
     if shp.exists():
         return shp
-    zips = sorted(data_dir.glob("alberta-*.shp.zip"))
-    return zips[-1] if zips else None
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["alberta"],
+        allowed_suffixes=(".zip",),
+    )
 
 
 def _bundled_roads_snapshot() -> Path | None:
@@ -125,7 +183,11 @@ def _bundled_roads_snapshot() -> Path | None:
 
 
 def _pick_road_network_path(data_dir: Path) -> Path | None:
-    return _pick_latest(data_dir, ["Road Network*.zip", "Road Network*.shp", "Road Network*.geojson", "Road Network*.json"])
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["Road Network"],
+        allowed_suffixes=(".zip", ".shp", ".geojson", ".json"),
+    )
 
 
 def discover_sources(data_dir: Path, include_osm: bool = False) -> tuple[list[PlannedSource], list[str]]:

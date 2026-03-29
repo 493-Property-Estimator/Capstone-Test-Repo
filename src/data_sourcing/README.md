@@ -145,6 +145,8 @@ Script:
 
 What it currently auto-detects:
 
+- matches by stable dataset name text in the path, not by the specific date suffix
+- searches recursively under the chosen `data/` directory, so extracted shapefiles inside dated folders are also eligible
 - latest `Property_Assessment_Data_*.csv` -> `assessments.property_tax_csv`
 - latest `Property Information*.csv` or `Property Information*.zip` -> `assessments.property_information`
 - latest `Edmonton Public School Board (EPSB)_School Locations_*.csv` or `.zip` -> `geospatial.school_locations`
