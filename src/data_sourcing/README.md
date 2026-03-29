@@ -109,6 +109,14 @@ Source check outcomes are written to `source_checks`. Run summaries are written 
 - `geospatial.parks`
   - supports parks ZIP or CSV
   - writes park POIs into `geospatial_prod`
+- `geospatial.business_census`
+  - supports Edmonton Business Census ZIP or CSV
+  - writes business POIs into `geospatial_prod` and `poi_prod`
+  - preserves neighbourhood, raw subcategory, dataset/provider, and source metadata for filtering
+- `geospatial.recreation_facilities`
+  - supports Recreation Facilities ZIP or CSV
+  - writes recreation POIs into `geospatial_prod` and `poi_prod`
+  - preserves category/type details for POI filtering
 - `geospatial.roads`
   - uses the bundled `src/data_sourcing/sources/geospatial_roads.json` snapshot by default
   - writes `roads_prod` and `road_segments_prod`
@@ -143,6 +151,8 @@ What it currently auto-detects:
 - latest `Police Stations_*.csv` or `.zip` -> `geospatial.police_stations`
 - latest `Playgrounds_*.csv` or `.zip` -> `geospatial.playgrounds`
 - latest `Parks_*.csv` or `.zip` -> `geospatial.parks`
+- latest `Edmonton Business Census*.csv` or `.zip` -> `geospatial.business_census`
+- latest `Recreation Facilities*.csv` or `.zip` -> `geospatial.recreation_facilities`
 - bundled `src/data_sourcing/sources/geospatial_roads.json` -> `geospatial.roads`
 - latest `ETS Bus Schedule GTFS Data Feed - Stops*.zip` -> `transit.ets_stops`
 - latest `ETS Bus Schedule GTFS Data Feed - Trips*.zip` -> `transit.ets_trips`
@@ -255,6 +265,7 @@ Key production tables and primary fields:
   - `road_id`, `source_id` (PK pair)
   - `road_name`
   - `road_type` (for OSM roads this is sourced from `fclass`)
+  - `official_road_name`, `jurisdiction`, `functional_class`, `quadrant`
   - `source_version`, `updated_at`
   - `metadata_json`
 
@@ -264,10 +275,15 @@ Key production tables and primary fields:
   - `sequence_no`
   - `segment_name`, `segment_type`
   - `lane_count`
+  - `municipal_segment_id`
+  - `official_road_name`, `roadway_category`, `surface_type`
+  - `jurisdiction`, `functional_class`, `travel_direction`, `quadrant`
+  - `from_intersection_id`, `to_intersection_id`
   - `start_lon`, `start_lat`, `end_lon`, `end_lat`
   - `center_lon`, `center_lat`
   - `length_m`
   - `geometry_json` (array of coordinate pairs)
+  - `metadata_json`
   - `source_version`, `updated_at`
 
 ### POI Standardization

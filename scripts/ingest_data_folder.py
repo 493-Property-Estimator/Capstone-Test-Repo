@@ -95,6 +95,14 @@ def _pick_parks_path(data_dir: Path) -> Path | None:
     return _pick_latest(data_dir, ["Parks_*.csv", "Parks_*.zip"])
 
 
+def _pick_business_census_path(data_dir: Path) -> Path | None:
+    return _pick_latest(data_dir, ["Edmonton Business Census*.csv", "Edmonton Business Census*.zip"])
+
+
+def _pick_recreation_facilities_path(data_dir: Path) -> Path | None:
+    return _pick_latest(data_dir, ["Recreation Facilities*.csv", "Recreation Facilities*.zip"])
+
+
 def _pick_osm_roads_path(data_dir: Path) -> Path | None:
     shp = data_dir / "_tmp_alberta_layers" / "gis_osm_roads_free_1.shp"
     if shp.exists():
@@ -114,6 +122,10 @@ def _pick_osm_pois_path(data_dir: Path) -> Path | None:
 def _bundled_roads_snapshot() -> Path | None:
     candidate = ROOT / "src" / "data_sourcing" / "sources" / "geospatial_roads.json"
     return candidate if candidate.exists() else None
+
+
+def _pick_road_network_path(data_dir: Path) -> Path | None:
+    return _pick_latest(data_dir, ["Road Network*.zip", "Road Network*.shp", "Road Network*.geojson", "Road Network*.json"])
 
 
 def discover_sources(data_dir: Path, include_osm: bool = False) -> tuple[list[PlannedSource], list[str]]:
@@ -192,17 +204,57 @@ def discover_sources(data_dir: Path, include_osm: bool = False) -> tuple[list[Pl
     else:
         notes.append("No parks file matched Parks_*.csv or Parks_*.zip")
 
-    roads_snapshot = _bundled_roads_snapshot()
-    if roads_snapshot:
+    business_census = _pick_business_census_path(data_dir)
+    if business_census:
         planned.append(
             PlannedSource(
-                source_key="geospatial.roads",
-                file_path=roads_snapshot,
-                reason="bundled local geospatial_roads.json snapshot",
+                source_key="geospatial.business_census",
+                file_path=business_census,
+                reason="latest Edmonton Business Census CSV/ZIP",
             )
         )
     else:
-        notes.append("No bundled geospatial roads snapshot found at src/data_sourcing/sources/geospatial_roads.json")
+        notes.append("No business census file matched Edmonton Business Census*.csv or Edmonton Business Census*.zip")
+
+    recreation_facilities = _pick_recreation_facilities_path(data_dir)
+    if recreation_facilities:
+        planned.append(
+            PlannedSource(
+                source_key="geospatial.recreation_facilities",
+                file_path=recreation_facilities,
+                reason="latest Recreation Facilities CSV/ZIP",
+            )
+        )
+    else:
+        notes.append("No recreation facilities file matched Recreation Facilities*.csv or Recreation Facilities*.zip")
+
+    road_network = _pick_road_network_path(data_dir)
+    if road_network:
+        planned.append(
+            PlannedSource(
+                source_key="geospatial.roads",
+                file_path=road_network,
+                reason="latest Edmonton Road Network export",
+            )
+        )
+    else:
+        roads_snapshot = _bundled_roads_snapshot()
+        if roads_snapshot:
+            planned.append(
+                PlannedSource(
+                    source_key="geospatial.roads",
+                    file_path=roads_snapshot,
+                    reason="bundled local geospatial_roads.json snapshot",
+                )
+            )
+            notes.append(
+                "Edmonton Road Network export not found in data dir; falling back to bundled road snapshot."
+            )
+        else:
+            notes.append(
+                "No Edmonton Road Network file matched Road Network*.zip/.shp/.geojson/.json "
+                "and no bundled geospatial road snapshot was found."
+            )
 
     transit_stops_zip = _pick_transit_stops_zip(data_dir)
     if transit_stops_zip:

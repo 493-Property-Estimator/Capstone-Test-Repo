@@ -47,6 +47,38 @@ export function formatNumber(value) {
   }).format(value);
 }
 
+export function formatDurationSeconds(value) {
+  if (value == null) {
+    return "N/A";
+  }
+
+  const totalSeconds = Math.round(Number(value));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
+export function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => {
+    const replacements = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return replacements[character] || character;
+  });
+}
+
 export function setStatus(element, message) {
   element.textContent = message;
 }

@@ -162,6 +162,10 @@ def _coalesce(existing: Any, new_value: Any) -> Any:
     return existing if _nonnull(existing) else new_value
 
 
+def _coalesce_prefer_new(existing: Any, new_value: Any) -> Any:
+    return new_value if _nonnull(new_value) else existing
+
+
 def _merge_json_lists(existing_json: str | None, new_values: list[str]) -> str:
     merged: list[str] = []
     seen: set[str] = set()
@@ -183,6 +187,26 @@ def _merge_json_lists(existing_json: str | None, new_values: list[str]) -> str:
             seen.add(text)
             merged.append(text)
     return json.dumps(merged)
+
+
+def _load_json_object(raw_json: str | None) -> dict[str, Any]:
+    if not raw_json:
+        return {}
+    try:
+        parsed = json.loads(raw_json)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _merge_json_object(existing_json: str | None, updates: dict[str, Any]) -> str:
+    merged = _load_json_object(existing_json)
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = {**merged[key], **value}
+        else:
+            merged[key] = value
+    return json.dumps(merged, sort_keys=True, default=str)
 
 
 def _property_location_key(record: dict[str, Any]) -> tuple[str, str]:
@@ -280,7 +304,17 @@ def _merge_poi_rows(existing: dict[str, Any] | None, new_row: dict[str, Any]) ->
         return dict(new_row)
 
     merged = dict(existing)
-    for field in ("name", "raw_category", "address", "lon", "lat"):
+    for field in (
+        "name",
+        "raw_category",
+        "raw_subcategory",
+        "address",
+        "lon",
+        "lat",
+        "neighbourhood",
+        "source_dataset",
+        "source_provider",
+    ):
         merged[field] = _coalesce(merged.get(field), new_row.get(field))
 
     merged["source_ids_json"] = _merge_json_lists(
@@ -291,6 +325,18 @@ def _merge_poi_rows(existing: dict[str, Any] | None, new_row: dict[str, Any]) ->
         merged.get("source_entity_ids_json"),
         json.loads(new_row["source_entity_ids_json"]) if isinstance(new_row.get("source_entity_ids_json"), str) else [],
     )
+    existing_metadata = json.loads(merged.get("metadata_json") or "{}") if merged.get("metadata_json") else {}
+    new_metadata = json.loads(new_row.get("metadata_json") or "{}") if new_row.get("metadata_json") else {}
+    if not isinstance(existing_metadata, dict):
+        existing_metadata = {}
+    if not isinstance(new_metadata, dict):
+        new_metadata = {}
+    merged_sources = dict(existing_metadata.get("sources", {}))
+    merged_sources.update(new_metadata.get("sources", {}))
+    combined_metadata = dict(existing_metadata)
+    combined_metadata.update({k: v for k, v in new_metadata.items() if k != "sources"})
+    combined_metadata["sources"] = merged_sources
+    merged["metadata_json"] = json.dumps(combined_metadata, sort_keys=True)
     merged["source_version"] = _coalesce(merged.get("source_version"), new_row.get("source_version"))
     merged["updated_at"] = max(
         [value for value in (merged.get("updated_at"), new_row.get("updated_at")) if value],
@@ -337,6 +383,324 @@ def _polyline_length_m(points: list[tuple[float, float]]) -> float:
         lon2, lat2 = points[idx + 1]
         total += _distance_meters(lat1, lon1, lat2, lon2)
     return total
+
+
+def _normalize_road_name(value: Any) -> str | None:
+    text = _normalize_text(value)
+    if text is None:
+        return None
+    canonical = f" {text.upper().replace('.', ' ').replace('-', ' ')} "
+    replacements = {
+        " AVENUE ": " AVE ",
+        " STREET ": " ST ",
+        " ROAD ": " RD ",
+        " DRIVE ": " DR ",
+        " BOULEVARD ": " BLVD ",
+        " COURT ": " CT ",
+        " PLACE ": " PL ",
+        " TERRACE ": " TER ",
+        " CRESCENT ": " CRES ",
+        " LANE ": " LN ",
+        " TRAIL ": " TRL ",
+        " PARKWAY ": " PKWY ",
+        " HIGHWAY ": " HWY ",
+    }
+    for source, target in replacements.items():
+        canonical = canonical.replace(source, target)
+    canonical = "".join(ch if ch.isalnum() or ch.isspace() else " " for ch in canonical)
+    canonical = " ".join(canonical.split())
+    return canonical or None
+
+
+def _road_name_candidates(record: dict[str, Any], fallback_name: str | None = None) -> list[str]:
+    candidates: list[str] = []
+    for value in (
+        record.get("official_road_name"),
+        record.get("road_name"),
+        record.get("segment_name"),
+        record.get("name"),
+        fallback_name,
+    ):
+        normalized = _normalize_road_name(value)
+        if normalized and normalized not in candidates:
+            candidates.append(normalized)
+    return candidates
+
+
+def _is_placeholder_road_name(name: Any, road_id: Any | None = None) -> bool:
+    text = _normalize_text(name)
+    if text is None:
+        return True
+    if road_id is not None and text == str(road_id).strip():
+        return True
+    return not any(ch.isalpha() for ch in text)
+
+
+def _choose_common_value(values: list[Any]) -> Any:
+    counts: dict[Any, int] = defaultdict(int)
+    for value in values:
+        normalized = _normalize_text(value)
+        if normalized is None:
+            continue
+        counts[normalized] += 1
+    if not counts:
+        return None
+    return max(counts.items(), key=lambda item: (item[1], item[0]))[0]
+
+
+def _road_attributes_from_record(record: dict[str, Any]) -> dict[str, Any]:
+    official_road_name = _normalize_text(
+        record.get("official_road_name")
+        or record.get("street_nam")
+        or record.get("road_name")
+        or record.get("name")
+    )
+    return {
+        "municipal_segment_id": _normalize_text(record.get("municipal_segment_id") or record.get("centerline")),
+        "official_road_name": official_road_name,
+        "roadway_category": _normalize_text(record.get("roadway_category") or record.get("centerli_2")),
+        "surface_type": _normalize_text(record.get("surface_type") or record.get("road_segme")),
+        "jurisdiction": _normalize_text(record.get("jurisdiction") or record.get("responsibl")),
+        "functional_class": _normalize_text(record.get("functional_class") or record.get("functional")),
+        "travel_direction": _normalize_text(record.get("travel_direction") or record.get("digitizing")),
+        "quadrant": _normalize_text(record.get("quadrant")),
+        "from_intersection_id": _normalize_text(record.get("from_intersection_id") or record.get("from_inter")),
+        "to_intersection_id": _normalize_text(record.get("to_intersection_id") or record.get("to_interse")),
+    }
+
+
+def _build_road_segment_index(conn) -> dict[str, list[dict[str, Any]]]:
+    index: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    rows = conn.execute(
+        """
+        SELECT
+            rs.segment_id,
+            rs.road_id,
+            rs.source_id,
+            rs.segment_name,
+            rs.length_m,
+            rs.center_lon,
+            rs.center_lat,
+            r.road_name,
+            r.official_road_name
+        FROM road_segments_prod rs
+        JOIN roads_prod r
+          ON r.road_id = rs.road_id
+         AND r.source_id = rs.source_id
+        """
+    ).fetchall()
+
+    for row in rows:
+        candidate = dict(row)
+        names = _road_name_candidates(
+            candidate,
+            fallback_name=candidate.get("official_road_name") or candidate.get("road_name"),
+        )
+        for name in names:
+            index[name].append(candidate)
+    return index
+
+
+def _apply_edmonton_road_enrichment(
+    conn,
+    payload,
+    source_key: str,
+) -> dict[str, Any]:
+    candidate_index = _build_road_segment_index(conn)
+    if not candidate_index:
+        return {
+            "city_record_count": len(payload.records),
+            "named_city_record_count": 0,
+            "matched_city_record_count": 0,
+            "updated_segment_count": 0,
+            "updated_road_count": 0,
+            "unmatched_named_city_record_count": 0,
+        }
+
+    assignments: dict[tuple[str, str], dict[str, Any]] = {}
+    named_city_record_count = 0
+    matched_city_record_count = 0
+
+    for record in payload.records:
+        attrs = _road_attributes_from_record(record)
+        official_name = attrs["official_road_name"]
+        points = _extract_geometry_points(record)
+        if official_name is None or len(points) < 2:
+            continue
+
+        normalized_name = _normalize_road_name(official_name)
+        if normalized_name is None:
+            continue
+        named_city_record_count += 1
+
+        city_center_lon = sum(point[0] for point in points) / len(points)
+        city_center_lat = sum(point[1] for point in points) / len(points)
+        city_length_m = _polyline_length_m(points)
+
+        best_candidate: dict[str, Any] | None = None
+        best_score: tuple[float, float] | None = None
+        for candidate in candidate_index.get(normalized_name, []):
+            distance_m = _distance_meters(
+                city_center_lat,
+                city_center_lon,
+                float(candidate["center_lat"]),
+                float(candidate["center_lon"]),
+            )
+            if distance_m > 35.0:
+                continue
+            length_delta_m = abs((candidate["length_m"] or 0.0) - city_length_m)
+            score = (distance_m, length_delta_m)
+            if best_score is None or score < best_score:
+                best_score = score
+                best_candidate = candidate
+
+        if best_candidate is None or best_score is None:
+            continue
+
+        matched_city_record_count += 1
+        match_key = (str(best_candidate["segment_id"]), str(best_candidate["source_id"]))
+        payload_update = {
+            **attrs,
+            "road_id": str(best_candidate["road_id"]),
+            "source_id": str(best_candidate["source_id"]),
+            "segment_name": _normalize_text(best_candidate["segment_name"]),
+            "road_name": _normalize_text(best_candidate["road_name"]),
+            "match_distance_m": round(best_score[0], 2),
+        }
+        current = assignments.get(match_key)
+        if current is None or payload_update["match_distance_m"] < current["match_distance_m"]:
+            assignments[match_key] = payload_update
+
+    road_updates: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    with transaction(conn):
+        for (segment_id, source_id), attrs in assignments.items():
+            existing_row = conn.execute(
+                """
+                SELECT road_id, segment_name, metadata_json
+                FROM road_segments_prod
+                WHERE segment_id=? AND source_id=?
+                """,
+                (segment_id, source_id),
+            ).fetchone()
+            if existing_row is None:
+                continue
+
+            new_segment_name = (
+                attrs["official_road_name"]
+                if _is_placeholder_road_name(existing_row["segment_name"], segment_id)
+                else existing_row["segment_name"]
+            )
+            segment_metadata = _merge_json_object(
+                existing_row["metadata_json"],
+                {
+                    "edmonton": {
+                        "match_distance_m": attrs["match_distance_m"],
+                        "match_strategy": "normalized_name_plus_centroid",
+                        "source_key": source_key,
+                    }
+                },
+            )
+
+            conn.execute(
+                """
+                UPDATE road_segments_prod
+                SET
+                    segment_name=?,
+                    municipal_segment_id=?,
+                    official_road_name=?,
+                    roadway_category=?,
+                    surface_type=?,
+                    jurisdiction=?,
+                    functional_class=?,
+                    travel_direction=?,
+                    quadrant=?,
+                    from_intersection_id=?,
+                    to_intersection_id=?,
+                    metadata_json=?
+                WHERE segment_id=? AND source_id=?
+                """,
+                (
+                    new_segment_name,
+                    attrs["municipal_segment_id"],
+                    attrs["official_road_name"],
+                    attrs["roadway_category"],
+                    attrs["surface_type"],
+                    attrs["jurisdiction"],
+                    attrs["functional_class"],
+                    attrs["travel_direction"],
+                    attrs["quadrant"],
+                    attrs["from_intersection_id"],
+                    attrs["to_intersection_id"],
+                    segment_metadata,
+                    segment_id,
+                    source_id,
+                ),
+            )
+            road_updates[(str(existing_row["road_id"]), source_id)].append(attrs)
+
+        for (road_id, source_id), values in road_updates.items():
+            road_row = conn.execute(
+                """
+                SELECT road_name, metadata_json
+                FROM roads_prod
+                WHERE road_id=? AND source_id=?
+                """,
+                (road_id, source_id),
+            ).fetchone()
+            if road_row is None:
+                continue
+
+            official_name = _choose_common_value([value.get("official_road_name") for value in values])
+            jurisdiction = _choose_common_value([value.get("jurisdiction") for value in values])
+            functional_class = _choose_common_value([value.get("functional_class") for value in values])
+            quadrant = _choose_common_value([value.get("quadrant") for value in values])
+            road_name = (
+                official_name
+                if _is_placeholder_road_name(road_row["road_name"], road_id) and official_name is not None
+                else road_row["road_name"]
+            )
+            road_metadata = _merge_json_object(
+                road_row["metadata_json"],
+                {
+                    "edmonton": {
+                        "matched_segment_count": len(values),
+                        "source_key": source_key,
+                    }
+                },
+            )
+
+            conn.execute(
+                """
+                UPDATE roads_prod
+                SET
+                    road_name=?,
+                    official_road_name=?,
+                    jurisdiction=?,
+                    functional_class=?,
+                    quadrant=?,
+                    metadata_json=?
+                WHERE road_id=? AND source_id=?
+                """,
+                (
+                    road_name,
+                    official_name,
+                    jurisdiction,
+                    functional_class,
+                    quadrant,
+                    road_metadata,
+                    road_id,
+                    source_id,
+                ),
+            )
+
+    return {
+        "city_record_count": len(payload.records),
+        "named_city_record_count": named_city_record_count,
+        "matched_city_record_count": matched_city_record_count,
+        "updated_segment_count": len(assignments),
+        "updated_road_count": len(road_updates),
+        "unmatched_named_city_record_count": max(named_city_record_count - matched_city_record_count, 0),
+    }
 
 
 def run_geospatial_ingest(
@@ -387,6 +751,25 @@ def run_geospatial_ingest(
             dataset = spec.get("target_dataset", "pois")
         if dataset not in GEOSPATIAL_DATASETS:
             errors.append(f"{source_key} has unsupported target dataset '{dataset}'")
+            continue
+
+        if spec.get("promotion_mode") == "enrich_existing":
+            if dataset != "roads":
+                errors.append(f"{source_key} uses enrich_existing for unsupported dataset '{dataset}'")
+                continue
+            summary = _apply_edmonton_road_enrichment(conn, payload, source_key)
+            results.append(
+                {
+                    "type": "roads",
+                    "version": payload.metadata.get("version"),
+                    "row_count": 0,
+                    "qa_status": "pass",
+                    "promotion_status": "promoted",
+                    "warnings": [],
+                    "enrichment_mode": "update_existing",
+                    **summary,
+                }
+            )
             continue
 
         if payload.size_bytes > GEOSPATIAL_SIZE_LIMIT_BYTES:
@@ -457,6 +840,19 @@ def run_geospatial_ingest(
 
             if dataset == "pois":
                 address = _normalize_text(record.get("address") or record.get("sch_addres") or record.get("business_a"))
+                raw_subcategory = _normalize_text(
+                    record.get("raw_subcategory")
+                    or record.get("facility_type")
+                    or record.get("subsectors")
+                    or record.get("industry_group")
+                    or record.get("naics_description")
+                )
+                neighbourhood = _normalize_text(
+                    record.get("neighbourhood")
+                    or record.get("neighbourhood_name")
+                )
+                source_dataset = spec.get("dataset")
+                source_provider = spec.get("provider") or "City of Edmonton Open Data"
                 poi_row = {
                     "run_id": run_id,
                     "canonical_poi_id": _poi_merge_key(
@@ -471,11 +867,29 @@ def run_geospatial_ingest(
                     ),
                     "name": name,
                     "raw_category": raw_category,
+                    "raw_subcategory": raw_subcategory,
                     "address": address,
                     "lon": float(lon),
                     "lat": float(lat),
+                    "neighbourhood": neighbourhood,
+                    "source_dataset": source_dataset,
+                    "source_provider": source_provider,
                     "source_ids_json": json.dumps([source_id]),
                     "source_entity_ids_json": json.dumps([f"{source_id}:{entity_id}"]),
+                    "metadata_json": json.dumps(
+                        {
+                            "dataset": source_dataset,
+                            "provider": source_provider,
+                            "sources": {
+                                source_id: {
+                                    "entity_id": entity_id,
+                                    "record": record,
+                                }
+                            },
+                        },
+                        sort_keys=True,
+                        default=str,
+                    ),
                     "source_version": payload.metadata.get("version"),
                     "updated_at": payload.metadata.get("publish_date"),
                 }
@@ -496,10 +910,33 @@ def run_geospatial_ingest(
                         "source_id": source_id,
                         "road_name": road_name,
                         "road_type": road_type,
+                        "official_road_name": _normalize_text(
+                            record.get("official_road_name") or record.get("street_nam") or road_name
+                        ),
+                        "jurisdiction": _normalize_text(record.get("jurisdiction") or record.get("responsibl")),
+                        "functional_class": _normalize_text(record.get("functional_class") or record.get("functional")),
+                        "quadrant": _normalize_text(record.get("quadrant")),
                         "source_version": payload.metadata.get("version"),
                         "updated_at": payload.metadata.get("publish_date"),
                         "metadata_json": json.dumps({}),
                     }
+                else:
+                    roads_by_key[road_key]["official_road_name"] = _coalesce_prefer_new(
+                        roads_by_key[road_key].get("official_road_name"),
+                        _normalize_text(record.get("official_road_name") or record.get("street_nam")),
+                    )
+                    roads_by_key[road_key]["jurisdiction"] = _coalesce_prefer_new(
+                        roads_by_key[road_key].get("jurisdiction"),
+                        _normalize_text(record.get("jurisdiction") or record.get("responsibl")),
+                    )
+                    roads_by_key[road_key]["functional_class"] = _coalesce_prefer_new(
+                        roads_by_key[road_key].get("functional_class"),
+                        _normalize_text(record.get("functional_class") or record.get("functional")),
+                    )
+                    roads_by_key[road_key]["quadrant"] = _coalesce_prefer_new(
+                        roads_by_key[road_key].get("quadrant"),
+                        _normalize_text(record.get("quadrant")),
+                    )
 
                 start_lon, start_lat = points[0]
                 end_lon, end_lat = points[-1]
@@ -507,6 +944,7 @@ def run_geospatial_ingest(
                 segment_center_lat = sum(p[1] for p in points) / len(points)
                 lane_count = _safe_int(record.get("lane_count") or record.get("lanes"))
                 sequence_no = _safe_int(record.get("sequence_no") or record.get("segment_sequence"))
+                road_attrs = _road_attributes_from_record(record)
 
                 road_segments.append(
                     {
@@ -518,6 +956,16 @@ def run_geospatial_ingest(
                         "segment_name": name,
                         "segment_type": road_type,
                         "lane_count": lane_count,
+                        "municipal_segment_id": road_attrs["municipal_segment_id"],
+                        "official_road_name": road_attrs["official_road_name"],
+                        "roadway_category": road_attrs["roadway_category"],
+                        "surface_type": road_attrs["surface_type"],
+                        "jurisdiction": road_attrs["jurisdiction"],
+                        "functional_class": road_attrs["functional_class"],
+                        "travel_direction": road_attrs["travel_direction"],
+                        "quadrant": road_attrs["quadrant"],
+                        "from_intersection_id": road_attrs["from_intersection_id"],
+                        "to_intersection_id": road_attrs["to_intersection_id"],
                         "start_lon": start_lon,
                         "start_lat": start_lat,
                         "end_lon": end_lon,
@@ -526,6 +974,7 @@ def run_geospatial_ingest(
                         "center_lat": segment_center_lat,
                         "length_m": _polyline_length_m(points),
                         "geometry_json": json.dumps([[p[0], p[1]] for p in points]),
+                        "metadata_json": json.dumps({}),
                         "source_version": payload.metadata.get("version"),
                         "updated_at": payload.metadata.get("publish_date"),
                     }
@@ -560,11 +1009,13 @@ def run_geospatial_ingest(
             conn.executemany(
                 """
                 INSERT INTO poi_staging (
-                    run_id, canonical_poi_id, name, raw_category, address, lon, lat,
-                    source_ids_json, source_entity_ids_json, source_version, updated_at
+                    run_id, canonical_poi_id, name, raw_category, raw_subcategory, address, lon, lat,
+                    neighbourhood, source_dataset, source_provider, source_ids_json,
+                    source_entity_ids_json, metadata_json, source_version, updated_at
                 ) VALUES (
-                    :run_id, :canonical_poi_id, :name, :raw_category, :address, :lon, :lat,
-                    :source_ids_json, :source_entity_ids_json, :source_version, :updated_at
+                    :run_id, :canonical_poi_id, :name, :raw_category, :raw_subcategory, :address, :lon, :lat,
+                    :neighbourhood, :source_dataset, :source_provider, :source_ids_json,
+                    :source_entity_ids_json, :metadata_json, :source_version, :updated_at
                 )
                 """,
                 list(poi_merged_by_id.values()),
@@ -592,11 +1043,11 @@ def run_geospatial_ingest(
         conn.executemany(
             """
             INSERT INTO roads_staging (
-                run_id, road_id, source_id, road_name, road_type,
-                source_version, updated_at, metadata_json
+                run_id, road_id, source_id, road_name, road_type, official_road_name,
+                jurisdiction, functional_class, quadrant, source_version, updated_at, metadata_json
             ) VALUES (
-                :run_id, :road_id, :source_id, :road_name, :road_type,
-                :source_version, :updated_at, :metadata_json
+                :run_id, :road_id, :source_id, :road_name, :road_type, :official_road_name,
+                :jurisdiction, :functional_class, :quadrant, :source_version, :updated_at, :metadata_json
             )
             """,
             list(roads_by_key.values()),
@@ -606,12 +1057,16 @@ def run_geospatial_ingest(
             """
             INSERT INTO road_segments_staging (
                 run_id, segment_id, road_id, source_id, sequence_no, segment_name,
-                segment_type, lane_count, start_lon, start_lat, end_lon, end_lat,
-                center_lon, center_lat, length_m, geometry_json, source_version, updated_at
+                segment_type, lane_count, municipal_segment_id, official_road_name, roadway_category,
+                surface_type, jurisdiction, functional_class, travel_direction, quadrant,
+                from_intersection_id, to_intersection_id, start_lon, start_lat, end_lon, end_lat,
+                center_lon, center_lat, length_m, geometry_json, metadata_json, source_version, updated_at
             ) VALUES (
                 :run_id, :segment_id, :road_id, :source_id, :sequence_no, :segment_name,
-                :segment_type, :lane_count, :start_lon, :start_lat, :end_lon, :end_lat,
-                :center_lon, :center_lat, :length_m, :geometry_json, :source_version, :updated_at
+                :segment_type, :lane_count, :municipal_segment_id, :official_road_name, :roadway_category,
+                :surface_type, :jurisdiction, :functional_class, :travel_direction, :quadrant,
+                :from_intersection_id, :to_intersection_id, :start_lon, :start_lat, :end_lon, :end_lat,
+                :center_lon, :center_lat, :length_m, :geometry_json, :metadata_json, :source_version, :updated_at
             )
             """,
             road_segments,
@@ -658,9 +1113,11 @@ def run_geospatial_ingest(
                     conn.execute(
                         """
                         INSERT INTO roads_prod (
-                            road_id, source_id, road_name, road_type, source_version, updated_at, metadata_json
+                            road_id, source_id, road_name, road_type, official_road_name,
+                            jurisdiction, functional_class, quadrant, source_version, updated_at, metadata_json
                         )
-                        SELECT road_id, source_id, road_name, road_type, source_version, updated_at, metadata_json
+                        SELECT road_id, source_id, road_name, road_type, official_road_name,
+                               jurisdiction, functional_class, quadrant, source_version, updated_at, metadata_json
                         FROM roads_staging
                         WHERE run_id=?
                         """,
@@ -670,12 +1127,16 @@ def run_geospatial_ingest(
                         """
                         INSERT INTO road_segments_prod (
                             segment_id, road_id, source_id, sequence_no, segment_name, segment_type, lane_count,
-                            start_lon, start_lat, end_lon, end_lat, center_lon, center_lat, length_m, geometry_json,
-                            source_version, updated_at
+                            municipal_segment_id, official_road_name, roadway_category, surface_type,
+                            jurisdiction, functional_class, travel_direction, quadrant,
+                            from_intersection_id, to_intersection_id, start_lon, start_lat, end_lon, end_lat,
+                            center_lon, center_lat, length_m, geometry_json, metadata_json, source_version, updated_at
                         )
                         SELECT segment_id, road_id, source_id, sequence_no, segment_name, segment_type, lane_count,
-                               start_lon, start_lat, end_lon, end_lat, center_lon, center_lat, length_m, geometry_json,
-                               source_version, updated_at
+                               municipal_segment_id, official_road_name, roadway_category, surface_type,
+                               jurisdiction, functional_class, travel_direction, quadrant,
+                               from_intersection_id, to_intersection_id, start_lon, start_lat, end_lon, end_lat,
+                               center_lon, center_lat, length_m, geometry_json, metadata_json, source_version, updated_at
                         FROM road_segments_staging
                         WHERE run_id=?
                         """,
@@ -692,20 +1153,27 @@ def run_geospatial_ingest(
                     conn.executemany(
                         """
                         INSERT INTO poi_prod (
-                            canonical_poi_id, name, raw_category, address, lon, lat,
-                            source_ids_json, source_entity_ids_json, source_version, updated_at
+                            canonical_poi_id, name, raw_category, raw_subcategory, address, lon, lat,
+                            neighbourhood, source_dataset, source_provider, source_ids_json,
+                            source_entity_ids_json, metadata_json, source_version, updated_at
                         ) VALUES (
-                            :canonical_poi_id, :name, :raw_category, :address, :lon, :lat,
-                            :source_ids_json, :source_entity_ids_json, :source_version, :updated_at
+                            :canonical_poi_id, :name, :raw_category, :raw_subcategory, :address, :lon, :lat,
+                            :neighbourhood, :source_dataset, :source_provider, :source_ids_json,
+                            :source_entity_ids_json, :metadata_json, :source_version, :updated_at
                         )
                         ON CONFLICT(canonical_poi_id) DO UPDATE SET
                             name=excluded.name,
                             raw_category=excluded.raw_category,
+                            raw_subcategory=excluded.raw_subcategory,
                             address=excluded.address,
                             lon=excluded.lon,
                             lat=excluded.lat,
+                            neighbourhood=excluded.neighbourhood,
+                            source_dataset=excluded.source_dataset,
+                            source_provider=excluded.source_provider,
                             source_ids_json=excluded.source_ids_json,
                             source_entity_ids_json=excluded.source_entity_ids_json,
+                            metadata_json=excluded.metadata_json,
                             source_version=excluded.source_version,
                             updated_at=excluded.updated_at
                         """,
@@ -713,7 +1181,7 @@ def run_geospatial_ingest(
                     )
             for result in results:
                 result["promotion_status"] = "promoted"
-                if result["type"] == "roads":
+                if result["type"] == "roads" and not result.get("enrichment_mode"):
                     result["road_count"] = len(roads_by_key)
                     result["segment_count"] = len(road_segments)
                 record_dataset_version(
@@ -721,7 +1189,11 @@ def run_geospatial_ingest(
                     dataset_type=f"geospatial:{result['type']}",
                     version_id=result.get("version") or run_id,
                     source_version=result.get("version"),
-                    provenance="open geospatial source",
+                    provenance=(
+                        "Edmonton road network enrichment"
+                        if result.get("enrichment_mode")
+                        else "open geospatial source"
+                    ),
                     run_id=run_id,
                 )
         except Exception as exc:

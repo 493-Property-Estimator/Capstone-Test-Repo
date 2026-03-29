@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestingStage Transit</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">TestingStage</p>
+          <h1>Property API Playground</h1>
+          <p>Transit stop exploration, route visualization, and journey planning on the local database.</p>
+        </div>
+        <nav class="nav">
+          <a data-nav href="/">Map nearest property</a>
+          <a data-nav href="/top-x">Top x nearby POIs</a>
+          <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/osrm">OSRM</a>
+          <a data-nav href="/transit">Transit</a>
+          <a data-nav href="/crime">Crime</a>
+          <a data-nav href="/neighborhood-results">Neighborhood results</a>
+        </nav>
+        <p class="sidebar-note">
+          Transit queries use <code>transit_prod</code>. Addresses are resolved through the local
+          property database when you provide text instead of coordinates.
+        </p>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <p class="eyebrow">Page 7</p>
+          <h2>Transit routes, stops, and journey planning</h2>
+          <p>
+            Load all stops, inspect a selected route, or plan a walking-plus-transit journey using
+            either coordinates or a property/address text match.
+          </p>
+        </section>
+
+        <section class="layout-grid">
+          <section class="panel stack">
+            <div>
+              <h3>Transit controls</h3>
+              <p>Use the buttons independently or combine them on the same map.</p>
+            </div>
+
+            <div class="button-row">
+              <button id="load-stops-button" type="button">Show all stops</button>
+              <button id="clear-map-button" class="ghost" type="button">Clear transit layers</button>
+            </div>
+
+            <label>
+              Route
+              <select id="route-select">
+                <option value="">Loading routes...</option>
+              </select>
+            </label>
+            <div class="button-row">
+              <button id="show-route-button" type="button">Show route</button>
+              <button id="show-route-stops-button" class="secondary" type="button">Show route stops</button>
+            </div>
+
+            <div class="field-grid">
+              <label>
+                Origin
+                <input
+                  id="journey-origin"
+                  type="text"
+                  placeholder="53.5461,-113.4938 or 10160 103 STREET NW"
+                />
+              </label>
+              <label>
+                Destination
+                <input
+                  id="journey-destination"
+                  type="text"
+                  placeholder="53.5585,-113.4690 or 8715 112 ST NW"
+                />
+              </label>
+            </div>
+            <button id="plan-journey-button" type="button">Plan transit journey</button>
+            <div id="transit-status" class="status">Loading transit routes...</div>
+          </section>
+
+          <div class="hero map-card">
+            <div class="map-toolbar">
+              <div>
+                <h3>Transit map</h3>
+                <p class="muted small">Amber: stops. Blue: route lines. Green/Red: journey endpoints.</p>
+              </div>
+            </div>
+            <div id="transit-map-root" class="map-root"></div>
+          </div>
+        </section>
+
+        <section class="wide-layout-grid">
+          <section class="panel stack">
+            <div>
+              <h3>Route details</h3>
+              <p>Shows headsigns, shape count, and mapped stops for the selected route.</p>
+            </div>
+            <div id="route-result" class="result-card">No route selected yet.</div>
+          </section>
+
+          <section class="panel stack">
+            <div>
+              <h3>Journey result</h3>
+              <p>Planner prefers fewer transfers, then shorter total travel distance.</p>
+            </div>
+            <div id="journey-result" class="result-card">No journey planned yet.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="/transit-page.js"></script>
+  </body>
+</html>

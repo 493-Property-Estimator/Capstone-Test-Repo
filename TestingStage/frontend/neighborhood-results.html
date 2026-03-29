@@ -18,6 +18,9 @@
           <a data-nav href="/">Map nearest property</a>
           <a data-nav href="/top-x">Top x nearby POIs</a>
           <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/osrm">OSRM</a>
+          <a data-nav href="/transit">Transit</a>
+          <a data-nav href="/crime">Crime</a>
           <a data-nav href="/neighborhood-results">Neighborhood results</a>
         </nav>
       </aside>
@@ -37,6 +40,13 @@
               Neighborhood
               <select id="neighborhood-select"></select>
             </label>
+            <label>
+              Result detail
+              <select id="detail-level-select">
+                <option value="high">High level</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </label>
             <button id="load-neighborhood" type="button">Get results</button>
             <div id="neighborhood-status" class="status">Loading neighborhoods...</div>
           </section>
@@ -51,6 +61,9 @@
             </div>
             <div id="neighborhood-results" class="list">
               <div class="result-card">No neighborhood selected yet.</div>
+            </div>
+            <div id="neighborhood-road-results" class="list">
+              <div class="result-card">Detailed road results appear here when detailed mode is selected.</div>
             </div>
           </section>
         </section>

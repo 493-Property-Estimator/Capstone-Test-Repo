@@ -165,18 +165,19 @@ a {
 .pair-grid {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .field-grid {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .pair-grid {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .triple-grid {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 label {
@@ -200,6 +201,20 @@ select {
   border-radius: 12px;
   padding: 12px 14px;
   color: var(--ink);
+  width: 100%;
+  min-width: 0;
+}
+
+textarea {
+  border: 1px solid rgba(20, 33, 61, 0.15);
+  background: #fffdf8;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--ink);
+  min-height: 120px;
+  resize: vertical;
+  width: 100%;
+  min-width: 0;
 }
 
 button {
@@ -286,6 +301,46 @@ button.ghost {
   gap: 12px;
 }
 
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wide-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.wide-layout-grid > * {
+  min-width: 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(20, 33, 61, 0.12);
+  vertical-align: top;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-family: "Courier New", Courier, monospace;
+}
+
 .muted {
   color: var(--muted);
 }
@@ -296,7 +351,8 @@ button.ghost {
 
 @media (max-width: 1100px) {
   .shell,
-  .layout-grid {
+  .layout-grid,
+  .wide-layout-grid {
     grid-template-columns: 1fr;
   }
 
@@ -306,6 +362,12 @@ button.ghost {
 
   .map-root {
     height: 420px;
+  }
+}
+
+@media (max-width: 1320px) {
+  .wide-layout-grid {
+    grid-template-columns: 1fr;
   }
 }
 
