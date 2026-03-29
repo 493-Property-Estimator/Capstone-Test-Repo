@@ -18,6 +18,9 @@
           <a data-nav href="/">Map nearest property</a>
           <a data-nav href="/top-x">Top x nearby POIs</a>
           <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/osrm">OSRM</a>
+          <a data-nav href="/transit">Transit</a>
+          <a data-nav href="/crime">Crime</a>
           <a data-nav href="/neighborhood-results">Neighborhood results</a>
         </nav>
       </aside>
@@ -25,8 +28,11 @@
       <main class="content">
         <section class="hero">
           <p class="eyebrow">Page 2</p>
-          <h2>Top x nearby points of interest</h2>
-          <p>Enter a latitude, longitude, and count, then request the closest schools or parks.</p>
+          <h2>POI lookups and filters</h2>
+          <p>
+            Keep the original quick buttons for schools and parks, or run a broader POI query by
+            source, neighbourhood, category, type, and optional nearby radius.
+          </p>
         </section>
 
         <section class="layout-grid">
@@ -49,7 +55,35 @@
               <button id="schools-button" type="button">Get closest schools</button>
               <button id="parks-button" type="button">Get closest parks</button>
             </div>
-            <button id="tbd-button" class="secondary" type="button">TBD</button>
+            <div class="field-grid">
+              <label>
+                Source key
+                <input id="source-input" type="text" placeholder="geospatial.business_census" />
+              </label>
+              <label>
+                Neighbourhood
+                <select id="neighbourhood-input">
+                  <option value="">No neighbourhood filter</option>
+                </select>
+              </label>
+              <label>
+                Category
+                <input id="category-input" type="text" placeholder="Business / Park / Arena" />
+              </label>
+              <label>
+                Type
+                <input id="type-input" type="text" placeholder="Facility type or subsector" />
+              </label>
+            </div>
+            <div class="pair-grid">
+              <label>
+                Nearby radius (m)
+                <input id="radius-input" type="number" min="1" value="1500" />
+              </label>
+              <div class="button-row">
+                <button id="poi-query-button" class="secondary" type="button">Run POI query</button>
+              </div>
+            </div>
             <div id="topx-status" class="status">Waiting for a request.</div>
           </section>
 

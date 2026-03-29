@@ -24,6 +24,18 @@
         "canonical_subcategory": "Clinic",
         "rule_id": "map-health-centre",
         "rationale": "taxonomy synonym"
+      },
+      "Business": {
+        "canonical_category": "Commerce",
+        "canonical_subcategory": "Business",
+        "rule_id": "map-business",
+        "rationale": "business census source category"
+      },
+      "Recreation Facility": {
+        "canonical_category": "Recreation",
+        "canonical_subcategory": "Facility",
+        "rule_id": "map-recreation-facility",
+        "rationale": "generic recreation facility grouping"
       }
     }
   },
