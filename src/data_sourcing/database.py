@@ -277,6 +277,35 @@ def init_db(conn: sqlite3.Connection) -> None:
             limited_accuracy INTEGER NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS crime_summary_staging (
+            run_id TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            neighbourhood TEXT NOT NULL,
+            crime_type TEXT NOT NULL,
+            incident_count INTEGER,
+            rate_per_100k REAL,
+            year INTEGER,
+            geography_level TEXT,
+            raw_metric_name TEXT,
+            source_version TEXT,
+            updated_at TEXT,
+            PRIMARY KEY (run_id, source_id, neighbourhood, crime_type, year)
+        );
+
+        CREATE TABLE IF NOT EXISTS crime_summary_prod (
+            source_id TEXT NOT NULL,
+            neighbourhood TEXT NOT NULL,
+            crime_type TEXT NOT NULL,
+            incident_count INTEGER,
+            rate_per_100k REAL,
+            year INTEGER,
+            geography_level TEXT,
+            raw_metric_name TEXT,
+            source_version TEXT,
+            updated_at TEXT,
+            PRIMARY KEY (source_id, neighbourhood, crime_type, year)
+        );
+
         CREATE TABLE IF NOT EXISTS assessments_staging (
             run_id TEXT NOT NULL,
             record_id TEXT NOT NULL,

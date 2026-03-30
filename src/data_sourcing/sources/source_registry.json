@@ -65,6 +65,30 @@
       "ingestion_notes": "Suppressed values handled as limited-accuracy indicators.",
       "downstream_pipelines": []
     },
+    "crime.statscan_police_service": {
+      "enabled": false,
+      "pipeline": "crime",
+      "city": "Edmonton",
+      "dataset": "Statistics Canada Police-Service Crime Summary",
+      "description": "Official police-service level crime summary intended for local file download and SQLite ingestion.",
+      "ingestion_technique": "local_csv",
+      "local_path": "src/data_sourcing/data/StatsCan_Police_Service_Crime_Edmonton.csv",
+      "remote_url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3510018301",
+      "link_status": "planned",
+      "field_map": {
+        "year": "REF_DATE",
+        "region_name": "GEO",
+        "crime_type": "Violations",
+        "incident_count": "VALUE",
+        "unit": "UOM",
+        "geography_level": "=police_service"
+      },
+      "target_geographies": ["Edmonton", "Edmonton Police Service"],
+      "include_counts": true,
+      "include_rates": true,
+      "ingestion_notes": "Designed for StatsCan CSV downloads saved locally first. Produces crime_summary_prod rows at city/police-service scope, not neighbourhood incident records.",
+      "downstream_pipelines": []
+    },
     "assessments.property_tax": {
       "enabled": true,
       "pipeline": "assessments",

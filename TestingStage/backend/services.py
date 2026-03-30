@@ -985,9 +985,17 @@ class SQLiteCrimeProvider(CrimeProvider):
                 ).fetchall()
             }
             if "crime_summary_prod" in tables:
-                return "summary"
+                row = connection.execute(
+                    "SELECT COUNT(*) AS row_count FROM crime_summary_prod"
+                ).fetchone()
+                if int(row["row_count"] or 0) > 0:
+                    return "summary"
             if "crime_incidents_prod" in tables:
-                return "incidents"
+                row = connection.execute(
+                    "SELECT COUNT(*) AS row_count FROM crime_incidents_prod"
+                ).fetchone()
+                if int(row["row_count"] or 0) > 0:
+                    return "incidents"
         return None
 
     def summary_by_neighbourhood(self, neighbourhood: str) -> dict[str, Any]:

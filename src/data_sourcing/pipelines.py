@@ -1371,6 +1371,283 @@ def run_census_ingest(conn, trigger: str = "manual", source_overrides: dict[str,
     }
 
 
+def _crime_count_key(row: dict[str, Any]) -> tuple[str, str, str, int]:
+    year = _safe_int(row.get("year")) or 0
+    return (
+        str(row.get("source_id") or ""),
+        str(row.get("neighbourhood") or ""),
+        str(row.get("crime_type") or ""),
+        year,
+    )
+
+
+def _normalize_crime_metric_name(record: dict[str, Any]) -> str | None:
+    return _normalize_text(
+        record.get("crime_type")
+        or record.get("metric_name")
+        or record.get("statistics")
+        or record.get("indicator")
+        or record.get("violation")
+    )
+
+
+def _normalize_crime_geography(record: dict[str, Any]) -> str | None:
+    return _normalize_text(
+        record.get("neighbourhood")
+        or record.get("region_name")
+        or record.get("geo")
+        or record.get("geography")
+        or record.get("police_service")
+    )
+
+
+def _normalize_crime_year(record: dict[str, Any]) -> int | None:
+    raw = record.get("year") or record.get("ref_date") or record.get("reference_period")
+    text = _normalize_text(raw)
+    if not text:
+        return None
+    leading = text.split("-")[0].split("/")[0]
+    return _safe_int(leading)
+
+
+def run_crime_ingest(
+    conn,
+    trigger: str = "manual",
+    source_overrides: dict[str, str] | None = None,
+    source_keys: list[str] | None = None,
+) -> dict[str, Any]:
+    run_id = _new_run_id("crime")
+    started_at = utc_now()
+    warnings: list[str] = []
+    errors: list[str] = []
+    selected_source_keys = source_keys[:] if source_keys else ["crime.statscan_police_service"]
+
+    refined: list[dict[str, Any]] = []
+    latest_year = 0
+    missing_value_rows = 0
+    malformed_rows = 0
+
+    for source_key in selected_source_keys:
+        payload = load_payload_for_source(source_key, source_overrides)
+        source_spec = get_source_spec(source_key)
+        include_rates = bool(source_spec.get("include_rates", True))
+        include_counts = bool(source_spec.get("include_counts", True))
+        geography_filter = {
+            value.upper()
+            for value in source_spec.get("target_geographies", [])
+            if _normalize_text(value)
+        }
+
+        raw_rows: list[dict[str, Any]] = []
+        dropped_rows = 0
+        for record in payload.records:
+            geography = _normalize_crime_geography(record)
+            metric_name = _normalize_crime_metric_name(record)
+            year = _normalize_crime_year(record)
+            value = _safe_float(record.get("incident_count") or record.get("value"))
+            geography_upper = (geography or "").upper()
+            if geography_filter and not any(
+                geography_upper == target or geography_upper.startswith(target) or target in geography_upper
+                for target in geography_filter
+            ):
+                dropped_rows += 1
+                continue
+            missing = []
+            if geography is None:
+                missing.append("neighbourhood/region_name")
+            if metric_name is None:
+                missing.append("crime_type/statistics")
+            if year is None:
+                missing.append("year/ref_date")
+            if value is None:
+                missing.append("incident_count/value")
+            if missing:
+                if missing == ["incident_count/value"]:
+                    missing_value_rows += 1
+                else:
+                    malformed_rows += 1
+                continue
+
+            unit = _normalize_text(record.get("unit") or record.get("uom") or record.get("value_unit")) or ""
+            lowered_metric = metric_name.lower()
+            lowered_unit = unit.lower()
+            is_rate_metric = "rate" in lowered_metric or "/100,000" in lowered_metric or "per 100,000" in lowered_metric
+            is_rate_unit = "100,000" in lowered_unit or "rate" in lowered_unit
+            rate_value = value if (is_rate_metric or is_rate_unit) else None
+            incident_count = int(round(value)) if rate_value is None else None
+
+            if rate_value is not None and not include_rates:
+                dropped_rows += 1
+                continue
+            if incident_count is not None and not include_counts:
+                dropped_rows += 1
+                continue
+
+            geography_level = _normalize_text(record.get("geography_level")) or "police_service"
+            raw_rows.append(
+                {
+                    "source_id": source_key,
+                    "neighbourhood": geography,
+                    "crime_type": metric_name,
+                    "incident_count": incident_count,
+                    "rate_per_100k": rate_value,
+                    "year": year,
+                    "geography_level": geography_level,
+                    "raw_metric_name": metric_name,
+                    "source_version": _normalize_text(payload.metadata.get("source_name"))
+                    or _normalize_text(payload.metadata.get("version"))
+                    or str(year),
+                    "updated_at": utc_now(),
+                    "raw_record_json": json.dumps(record, sort_keys=True),
+                }
+            )
+            latest_year = max(latest_year, year)
+
+        if dropped_rows:
+            warnings.append(f"{source_key} dropped {dropped_rows} non-target rows")
+
+        counts_by_key: dict[tuple[str, str, int], dict[str, Any]] = {}
+        rates_by_key: dict[tuple[str, str, int], dict[str, Any]] = {}
+        for row in raw_rows:
+            key = _crime_count_key(row)
+            if row["incident_count"] is not None:
+                current = counts_by_key.get(key)
+                if current is None or (
+                    int(row["incident_count"]) > int(current["incident_count"])
+                    or (
+                        int(row["incident_count"]) == int(current["incident_count"])
+                        and str(row["crime_type"]).upper() < str(current["crime_type"]).upper()
+                    )
+                ):
+                    counts_by_key[key] = row
+            elif row["rate_per_100k"] is not None:
+                current = rates_by_key.get(key)
+                if current is None or (
+                    float(row["rate_per_100k"]) > float(current["rate_per_100k"])
+                    or (
+                        float(row["rate_per_100k"]) == float(current["rate_per_100k"])
+                        and str(row["crime_type"]).upper() < str(current["crime_type"]).upper()
+                    )
+                ):
+                    rates_by_key[key] = row
+
+        if not counts_by_key and not rates_by_key:
+            warnings.append(f"{source_key} produced no valid crime summary rows")
+            continue
+
+        merged_keys = sorted(set(counts_by_key) | set(rates_by_key))
+        for key in merged_keys:
+            count_row = counts_by_key.get(key)
+            rate_row = rates_by_key.get(key)
+            base_row = count_row or rate_row
+            assert base_row is not None
+            refined.append(
+                {
+                    "run_id": run_id,
+                    "source_id": source_key,
+                    "neighbourhood": base_row["neighbourhood"],
+                    "crime_type": base_row["crime_type"],
+                    "incident_count": count_row["incident_count"] if count_row else None,
+                    "rate_per_100k": rate_row["rate_per_100k"] if rate_row else None,
+                    "year": base_row["year"],
+                    "geography_level": base_row["geography_level"],
+                    "raw_metric_name": base_row["raw_metric_name"],
+                    "source_version": base_row["source_version"],
+                    "updated_at": base_row["updated_at"],
+                }
+            )
+
+    if missing_value_rows:
+        warnings.append(f"skipped {missing_value_rows} crime rows with blank VALUE fields")
+    if malformed_rows:
+        warnings.append(f"skipped {malformed_rows} malformed crime rows missing required dimensions")
+
+    conn.execute("DELETE FROM crime_summary_staging WHERE run_id=?", (run_id,))
+    if refined:
+        conn.executemany(
+            """
+            INSERT INTO crime_summary_staging (
+                run_id, source_id, neighbourhood, crime_type, incident_count, rate_per_100k,
+                year, geography_level, raw_metric_name, source_version, updated_at
+            ) VALUES (
+                :run_id, :source_id, :neighbourhood, :crime_type, :incident_count, :rate_per_100k,
+                :year, :geography_level, :raw_metric_name, :source_version, :updated_at
+            )
+            """,
+            refined,
+        )
+
+    status = "failed" if errors or not refined else "succeeded"
+    promotion_status = "failed"
+    if refined and not errors:
+        try:
+            with transaction(conn):
+                touched_sources = sorted({row["source_id"] for row in refined})
+                placeholders = ",".join("?" for _ in touched_sources)
+                conn.execute(
+                    f"DELETE FROM crime_summary_prod WHERE source_id IN ({placeholders})",
+                    touched_sources,
+                )
+                conn.execute(
+                    """
+                    INSERT INTO crime_summary_prod (
+                        source_id, neighbourhood, crime_type, incident_count, rate_per_100k,
+                        year, geography_level, raw_metric_name, source_version, updated_at
+                    )
+                    SELECT source_id, neighbourhood, crime_type, incident_count, rate_per_100k,
+                           year, geography_level, raw_metric_name, source_version, updated_at
+                    FROM crime_summary_staging
+                    WHERE run_id=?
+                    """,
+                    (run_id,),
+                )
+            promotion_status = "promoted"
+            record_dataset_version(
+                conn,
+                dataset_type="crime",
+                version_id=str(latest_year or run_id),
+                source_version=str(latest_year or ""),
+                provenance=f"crime summary ({', '.join(selected_source_keys)})",
+                run_id=run_id,
+            )
+        except Exception as exc:
+            status = "failed"
+            errors.append(f"promotion failed: {exc}")
+            add_alert(conn, run_id, "error", f"crime promotion failed: {exc}")
+
+    completed_at = utc_now()
+    metadata = {
+        "row_count": len(refined),
+        "source_keys": selected_source_keys,
+        "latest_year": latest_year or None,
+        "promotion_status": promotion_status,
+    }
+    upsert_run_log(
+        conn,
+        run_id=run_id,
+        story="crime",
+        trigger_type=trigger,
+        status=status,
+        started_at=started_at,
+        completed_at=completed_at,
+        warnings=warnings,
+        errors=errors,
+        metadata=metadata,
+    )
+    conn.commit()
+
+    return {
+        "run_id": run_id,
+        "status": status,
+        "row_count": len(refined),
+        "latest_year": latest_year or None,
+        "promotion_status": promotion_status,
+        "warnings": warnings,
+        "errors": errors,
+        "completed_at": completed_at,
+    }
+
+
 def run_assessment_ingest(
     conn,
     trigger: str = "manual",

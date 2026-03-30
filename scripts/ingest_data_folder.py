@@ -147,6 +147,21 @@ def _pick_business_census_path(data_dir: Path) -> Path | None:
     )
 
 
+def _pick_crime_summary_path(data_dir: Path) -> Path | None:
+    preferred = _pick_latest_matching(
+        data_dir,
+        required_fragments=["crime", "police"],
+        allowed_suffixes=(".csv", ".json", ".xlsx"),
+    )
+    if preferred:
+        return preferred
+    return _pick_latest_matching(
+        data_dir,
+        required_fragments=["crime"],
+        allowed_suffixes=(".csv", ".json", ".xlsx"),
+    )
+
+
 def _pick_recreation_facilities_path(data_dir: Path) -> Path | None:
     return _pick_latest_matching(
         data_dir,
@@ -277,6 +292,18 @@ def discover_sources(data_dir: Path, include_osm: bool = False) -> tuple[list[Pl
         )
     else:
         notes.append("No business census file matched Edmonton Business Census*.csv or Edmonton Business Census*.zip")
+
+    crime_summary = _pick_crime_summary_path(data_dir)
+    if crime_summary:
+        planned.append(
+            PlannedSource(
+                source_key="crime.statscan_police_service",
+                file_path=crime_summary,
+                reason="latest crime summary CSV/JSON/XLSX",
+            )
+        )
+    else:
+        notes.append("No crime summary file matched Crime*.csv/.json/.xlsx")
 
     recreation_facilities = _pick_recreation_facilities_path(data_dir)
     if recreation_facilities:
