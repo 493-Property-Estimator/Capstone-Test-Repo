@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestingStage Neighborhood Results</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">TestingStage</p>
+          <h1>Property API Playground</h1>
+          <p>Neighborhood summary calls against the current sample database.</p>
+        </div>
+        <nav class="nav">
+          <a data-nav href="/">Map nearest property</a>
+          <a data-nav href="/estimator">Property estimator</a>
+          <a data-nav href="/top-x">Top x nearby POIs</a>
+          <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/osrm">OSRM</a>
+          <a data-nav href="/transit">Transit</a>
+          <a data-nav href="/crime">Crime</a>
+          <a data-nav href="/neighborhood-results">Neighborhood results</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <p class="eyebrow">Page 4</p>
+          <h2>Neighborhood results</h2>
+          <p>
+            Choose a neighborhood and load the summary metrics requested for this testing stage.
+          </p>
+        </section>
+
+        <section class="layout-grid">
+          <section class="panel stack">
+            <label>
+              Neighborhood
+              <select id="neighborhood-select"></select>
+            </label>
+            <label>
+              Result detail
+              <select id="detail-level-select">
+                <option value="high">High level</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </label>
+            <button id="load-neighborhood" type="button">Get results</button>
+            <div id="neighborhood-status" class="status">Loading neighborhoods...</div>
+          </section>
+
+          <section class="panel stack">
+            <div>
+              <h3>Summary output</h3>
+              <p>
+                The current sample DB does not carry final neighborhood polygons, so POI counts and
+                road length are derived from the property bounding box for the selected neighborhood.
+              </p>
+            </div>
+            <div id="neighborhood-results" class="list">
+              <div class="result-card">No neighborhood selected yet.</div>
+            </div>
+            <div id="neighborhood-road-results" class="list">
+              <div class="result-card">Detailed road results appear here when detailed mode is selected.</div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/neighborhood-page.js"></script>
+  </body>
+</html>

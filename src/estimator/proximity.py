@@ -11,8 +11,8 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
-from data_sourcing.config import DEFAULT_DB_PATH
-from data_sourcing.database import connect
+from src.data_sourcing.config import DEFAULT_DB_PATH
+from src.data_sourcing.database import connect
 
 Point = tuple[float, float]
 DistanceMode = str
@@ -33,6 +33,10 @@ PLAYGROUND_QUERY = {
 PARK_QUERY = {
     "source_ids": {"geospatial.parks"},
     "raw_categories": {"park", "dog_park"},
+}
+LIBRARY_QUERY = {
+    "source_ids": set(),
+    "raw_categories": {"library", "public library", "virtual library"},
 }
 ROAD_MODE_CANDIDATE_MULTIPLIER = 25
 ROAD_MODE_MIN_CANDIDATES = 200
@@ -137,6 +141,129 @@ def get_nearest_parks(
     return _get_nearest_geospatial_rows(point, PARK_QUERY, limit, distance_mode, db_path)
 
 
+def get_nearest_libraries(
+    point: Point,
+    limit: int = 5,
+    distance_mode: DistanceMode = "manhattan",
+    db_path: Path | str = DEFAULT_DB_PATH,
+) -> list[dict[str, Any]]:
+    """Return the nearest libraries to a point using POI data."""
+
+    lon, lat = _validate_point(point)
+    resolved_limit = _validate_limit(limit)
+    mode = _normalize_distance_mode(distance_mode)
+    rows = _fetch_library_rows(
+        db_path=db_path,
+        limit=_candidate_limit(resolved_limit) if mode == "road" else resolved_limit,
+        center=(lon, lat),
+    )
+    return _rank_rows(rows, center=(lon, lat), limit=resolved_limit, mode=mode, db_path=db_path)
+
+
+def get_neighbourhood_context(
+    point: Point,
+    other_limit: int = 4,
+    db_path: Path | str = DEFAULT_DB_PATH,
+) -> dict[str, Any]:
+    """Return primary and nearby neighbourhood aggregates using property centroids."""
+
+    lon, lat = _validate_point(point)
+    resolved_limit = _validate_limit(other_limit)
+    rows = _fetch_neighbourhood_aggregates(db_path)
+    if not rows:
+        return {
+            "primary_neighbourhood": None,
+            "primary_average_assessment": None,
+            "other_neighbourhoods": [],
+            "resolution_method": "unavailable",
+        }
+
+    ranked = []
+    for row in rows:
+        centroid = (float(row["centroid_lon"]), float(row["centroid_lat"]))
+        ranked.append(
+            {
+                **row,
+                "distance_m": round(_geodesic_distance_m((lon, lat), centroid), 2),
+            }
+        )
+    ranked.sort(
+        key=lambda item: (
+            item["distance_m"],
+            str(item["neighbourhood"]).upper(),
+        )
+    )
+    primary = ranked[0]
+    others = [item for item in ranked[1:] if item["neighbourhood"] != primary["neighbourhood"]]
+    return {
+        "primary_neighbourhood": primary["neighbourhood"],
+        "primary_average_assessment": primary["average_assessment"],
+        "primary_property_count": primary["property_count"],
+        "primary_centroid": {
+            "lat": primary["centroid_lat"],
+            "lon": primary["centroid_lon"],
+        },
+        "other_neighbourhoods": others[:resolved_limit],
+        "resolution_method": "nearest_neighbourhood_centroid",
+    }
+
+
+def get_downtown_accessibility(
+    point: Point,
+    downtown_point: Point = (-113.4938, 53.5461),
+) -> dict[str, Any]:
+    """Return straight-line accessibility to the default downtown Edmonton point."""
+
+    lon, lat = _validate_point(point)
+    downtown_lon, downtown_lat = _validate_point(downtown_point)
+    return {
+        "target": {
+            "name": "Downtown Edmonton",
+            "lat": downtown_lat,
+            "lon": downtown_lon,
+        },
+        "straight_line_m": round(
+            _geodesic_distance_m((lon, lat), (downtown_lon, downtown_lat)),
+            2,
+        ),
+        "distance_mode": "straight_line",
+    }
+
+
+def group_comparables_by_attributes(
+    point: Point,
+    attributes: dict[str, Any] | None,
+    limit: int = 20,
+    db_path: Path | str = DEFAULT_DB_PATH,
+) -> dict[str, list[dict[str, Any]]]:
+    """Return nearby property comparables split by whether they match supplied attributes."""
+
+    lon, lat = _validate_point(point)
+    resolved_limit = _validate_limit(limit)
+    rows = _fetch_properties(
+        db_path=db_path,
+        limit=max(resolved_limit * 4, 60),
+        center=(lon, lat),
+    )
+    ranked = _rank_rows(rows, center=(lon, lat), limit=None, mode="manhattan", db_path=db_path)
+    normalized_attributes = _normalize_comparable_attributes(attributes or {})
+
+    matching: list[dict[str, Any]] = []
+    non_matching: list[dict[str, Any]] = []
+    for row in ranked:
+        candidate = dict(row)
+        candidate["attribute_match"] = _matches_comparable_attributes(candidate, normalized_attributes)
+        if normalized_attributes and candidate["attribute_match"]:
+            matching.append(candidate)
+        else:
+            non_matching.append(candidate)
+
+    return {
+        "matching": matching[:resolved_limit],
+        "non_matching": non_matching[:resolved_limit],
+    }
+
+
 def _get_nearest_geospatial_rows(
     point: Point,
     query_spec: dict[str, set[str]],
@@ -190,7 +317,13 @@ def _fetch_properties(
             point_location,
             zoning,
             lot_size,
-            year_built
+            total_gross_area,
+            year_built,
+            garage,
+            tax_class,
+            assessment_class_1,
+            assessment_class_2,
+            assessment_class_3
         FROM property_locations_prod
         WHERE lon IS NOT NULL
           AND lat IS NOT NULL
@@ -218,7 +351,13 @@ def _fetch_properties_by_street(db_path: Path | str, street_name: str) -> list[d
             point_location,
             zoning,
             lot_size,
-            year_built
+            total_gross_area,
+            year_built,
+            garage,
+            tax_class,
+            assessment_class_1,
+            assessment_class_2,
+            assessment_class_3
         FROM property_locations_prod
         WHERE lon IS NOT NULL
           AND lat IS NOT NULL
@@ -281,6 +420,56 @@ def _fetch_geospatial_rows(
         fallback_sql += " ORDER BY ABS(lon - ?) + ABS(lat - ?) LIMIT ?"
         fallback_params.extend([center[0], center[1], limit])
     return _query_rows(db_path, fallback_sql, fallback_params)
+
+
+def _fetch_library_rows(
+    db_path: Path | str,
+    limit: int | None,
+    center: Point,
+) -> list[dict[str, Any]]:
+    _require_table(db_path, "poi_prod")
+    sql = """
+        SELECT
+            canonical_poi_id AS entity_id,
+            source_dataset AS source_id,
+            name,
+            COALESCE(raw_subcategory, raw_category) AS raw_category,
+            'point' AS canonical_geom_type,
+            lat,
+            lon
+        FROM poi_prod
+        WHERE lon IS NOT NULL
+          AND lat IS NOT NULL
+          AND (
+            LOWER(COALESCE(raw_category, '')) = 'library'
+            OR LOWER(COALESCE(raw_subcategory, '')) LIKE '%library%'
+          )
+    """
+    params: list[Any] = []
+    if limit is not None:
+        sql += " ORDER BY ABS(lon - ?) + ABS(lat - ?) LIMIT ?"
+        params.extend([center[0], center[1], limit])
+    return _query_rows(db_path, sql, params)
+
+
+def _fetch_neighbourhood_aggregates(db_path: Path | str) -> list[dict[str, Any]]:
+    _require_table(db_path, "property_locations_prod")
+    sql = """
+        SELECT
+            neighbourhood,
+            AVG(assessment_value) AS average_assessment,
+            COUNT(*) AS property_count,
+            AVG(lat) AS centroid_lat,
+            AVG(lon) AS centroid_lon
+        FROM property_locations_prod
+        WHERE neighbourhood IS NOT NULL
+          AND TRIM(neighbourhood) <> ''
+          AND assessment_value IS NOT NULL
+          AND lat IS NOT NULL
+          AND lon IS NOT NULL
+        GROUP BY neighbourhood
+    """
+    return _query_rows(db_path, sql, [])
 
 
 def _query_rows(db_path: Path | str, sql: str, params: list[Any]) -> list[dict[str, Any]]:
@@ -355,8 +544,69 @@ def _rank_rows(
             raise RoadNetworkError("could not route to any matching rows on the current road graph")
         return []
 
-    ranked.sort(key=lambda item: item["distance_m"])
+    ranked.sort(
+        key=lambda item: (
+            item["distance_m"],
+            str(item.get("canonical_location_id") or item.get("entity_id") or item.get("name") or ""),
+        )
+    )
     return ranked[:limit] if limit is not None else ranked
+
+
+def _normalize_comparable_attributes(attributes: dict[str, Any]) -> dict[str, Any]:
+    normalized: dict[str, Any] = {}
+    for key in (
+        "year_built",
+        "lot_size",
+        "total_gross_area",
+        "garage",
+        "tax_class",
+        "assessment_class_1",
+        "assessment_class_2",
+        "assessment_class_3",
+        "zoning",
+    ):
+        if key not in attributes:
+            continue
+        value = attributes[key]
+        if key in {"year_built", "lot_size", "total_gross_area"}:
+            if value in (None, ""):
+                continue
+            normalized[key] = float(value)
+        else:
+            text = str(value).strip()
+            if text:
+                normalized[key] = text.upper()
+    return normalized
+
+
+def _matches_comparable_attributes(
+    candidate: dict[str, Any],
+    normalized_attributes: dict[str, Any],
+) -> bool:
+    if not normalized_attributes:
+        return False
+
+    for key, expected in normalized_attributes.items():
+        actual = candidate.get(key)
+        if key == "year_built":
+            if actual is None:
+                return False
+            if abs(float(actual) - float(expected)) > 5:
+                return False
+        elif key in {"lot_size", "total_gross_area"}:
+            if actual in (None, ""):
+                return False
+            actual_value = float(actual)
+            lower_bound = float(expected) * 0.8
+            upper_bound = float(expected) * 1.2
+            if not lower_bound <= actual_value <= upper_bound:
+                return False
+        else:
+            actual_text = str(actual or "").strip().upper()
+            if actual_text != expected:
+                return False
+    return True
 
 
 def _validate_point(point: Point) -> Point:

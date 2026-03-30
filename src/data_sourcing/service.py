@@ -12,6 +12,7 @@ from .database import add_alert, connect, init_db, log_source_check, upsert_sour
 from .pipelines import (
     run_assessment_ingest,
     run_census_ingest,
+    run_crime_ingest,
     run_deduplication,
     run_geospatial_ingest,
     run_poi_standardization,
@@ -21,11 +22,12 @@ from .source_fetcher import load_payload_for_source, resolve_source_location
 from .source_registry import get_source_spec, list_sources
 from .workflow import run_refresh_workflow
 
-PIPELINE_ORDER = ["geospatial", "transit", "census", "assessments", "poi_standardization", "deduplication"]
+PIPELINE_ORDER = ["geospatial", "transit", "census", "crime", "assessments", "poi_standardization", "deduplication"]
 PIPELINE_DEPENDENCIES = {
     "geospatial": [],
     "transit": [],
     "census": ["geospatial"],
+    "crime": [],
     "assessments": ["geospatial"],
     "poi_standardization": ["geospatial"],
     "deduplication": ["poi_standardization"],
@@ -171,6 +173,22 @@ class IngestionService:
                     )
                 elif pipeline == "census":
                     outputs[pipeline] = run_census_ingest(conn, trigger=trigger, source_overrides=source_overrides)
+                elif pipeline == "crime":
+                    crime_source_keys = [key for key in valid_source_keys if key.startswith("crime.")]
+                    if not crime_source_keys:
+                        outputs[pipeline] = {
+                            "status": "skipped",
+                            "reason": "no valid crime sources selected",
+                            "warnings": [],
+                            "errors": [],
+                        }
+                        continue
+                    outputs[pipeline] = run_crime_ingest(
+                        conn,
+                        trigger=trigger,
+                        source_overrides=source_overrides,
+                        source_keys=crime_source_keys,
+                    )
                 elif pipeline == "transit":
                     transit_source_keys = [key for key in valid_source_keys if key.startswith("transit.")]
                     if not transit_source_keys:

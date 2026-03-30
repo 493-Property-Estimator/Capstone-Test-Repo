@@ -32,6 +32,7 @@ REFRESH_DEPENDENCIES = {
     "geospatial": [],
     "transit": [],
     "census": ["geospatial"],
+    "crime": [],
     "assessments": ["geospatial"],
     "poi_standardization": ["geospatial"],
     "deduplication": ["poi_standardization"],
