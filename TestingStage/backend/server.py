@@ -22,6 +22,7 @@ class TestingStageHandler(SimpleHTTPRequestHandler):
     api_prefix = "/api"
     route_aliases = {
         "/": "index.html",
+        "/estimator": "estimator.html",
         "/top-x": "top-x.html",
         "/distance-points": "distance-points.html",
         "/neighborhood-results": "neighborhood-results.html",
@@ -217,6 +218,20 @@ class TestingStageHandler(SimpleHTTPRequestHandler):
                     raise ValueError("Both origin and destination are required.")
                 self._send_json(
                     self.data_service.plan_transit_journey(origin, destination)
+                )
+                return
+
+            if parsed_url.path == "/api/property-estimate":
+                lat, lon = self._extract_lat_lon(body)
+                property_attributes = body.get("property_attributes")
+                if property_attributes is not None and not isinstance(property_attributes, dict):
+                    raise ValueError("property_attributes must be an object when provided.")
+                self._send_json(
+                    self.data_service.get_property_estimate(
+                        lat,
+                        lon,
+                        property_attributes=property_attributes,
+                    )
                 )
                 return
 

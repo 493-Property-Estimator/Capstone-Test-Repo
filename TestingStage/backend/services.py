@@ -15,6 +15,7 @@ from typing import Any
 
 from src.data_sourcing.database import connect as connect_db
 from src.data_sourcing.database import init_db as init_open_data_db
+from src.estimator.property_estimator import PropertyEstimator
 from src.estimator.simple_estimator import summarize_property_cluster
 
 
@@ -1141,6 +1142,7 @@ class DataService:
         self._road_graph = RoadGraph(db_path)
         self._transit = TransitNetwork(db_path)
         self._osrm = OsrmService()
+        self._property_estimator = PropertyEstimator(db_path)
         provider = SQLiteCrimeProvider(db_path)
         self._crime_provider: CrimeProvider = (
             provider if provider.is_available() else UnavailableCrimeProvider()
@@ -1620,6 +1622,18 @@ class DataService:
             return summary
 
         raise ValueError("Provide either neighbourhood or property_query.")
+
+    def get_property_estimate(
+        self,
+        lat: float,
+        lon: float,
+        property_attributes: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return self._property_estimator.estimate(
+            lat=lat,
+            lon=lon,
+            property_attributes=property_attributes,
+        )
 
     def _resolve_location_input(self, raw_value: dict[str, Any], label: str) -> dict[str, Any]:
         if not isinstance(raw_value, dict):
