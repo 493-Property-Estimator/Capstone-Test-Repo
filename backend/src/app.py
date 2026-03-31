@@ -24,6 +24,7 @@ from backend.src.api.search import router as search_router
 from backend.src.api.locations import router as locations_router
 from backend.src.api.estimates import router as estimates_router
 from backend.src.api.layers import router as layers_router
+from backend.src.api.properties import router as properties_router
 from backend.src.api.health import router as health_router
 from backend.src.jobs.precompute_grid import router as jobs_router
 
@@ -80,6 +81,7 @@ app.include_router(search_router, prefix="/api/v1")
 app.include_router(locations_router, prefix="/api/v1")
 app.include_router(estimates_router, prefix="/api/v1", dependencies=[])
 app.include_router(layers_router, prefix="/api/v1")
+app.include_router(properties_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(health_router)
 

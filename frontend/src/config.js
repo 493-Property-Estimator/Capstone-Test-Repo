@@ -1,5 +1,5 @@
 export const API_BASE_URL = "http://localhost:8000/api/v1";
-export const USE_MOCK_API = true;
+export const USE_MOCK_API = false;
 export const OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 export const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';

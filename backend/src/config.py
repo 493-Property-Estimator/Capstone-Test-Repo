@@ -26,8 +26,8 @@ def load_settings() -> Settings:
 
 
 EDMONTON_BOUNDS = {
-    "west": -113.7136,
-    "south": 53.3958,
-    "east": -113.2714,
-    "north": 53.7160,
+    "west": -113.7134,
+    "south": 53.3385,
+    "east": -113.2784,
+    "north": 53.7152,
 }

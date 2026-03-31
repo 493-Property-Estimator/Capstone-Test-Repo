@@ -5,3 +5,4 @@ src/data_sourcing/cache/
 src/data_sourcing/sources/cache/
 __pycache__/
 Property_Assessment_Data_(Current_Calendar_Year)_20260330.csv
+.venv/

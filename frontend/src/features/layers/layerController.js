@@ -14,6 +14,7 @@ export function createLayerController({
   let lastRenderedPropertyLayer = null;
   let propertyAbortController = null;
   const propertyResponseCache = new Map();
+  const PROPERTY_CACHE_TTL_MS = 30_000;
 
   function buildViewportKey(viewport = {}) {
     return [
@@ -23,6 +24,38 @@ export function createLayerController({
       Number(viewport.north || 0).toFixed(3),
       Number(viewport.zoom || 0).toFixed(2)
     ].join("|");
+  }
+
+  function normalizeViewport(viewport = {}) {
+    return {
+      west: Number(viewport.west),
+      south: Number(viewport.south),
+      east: Number(viewport.east),
+      north: Number(viewport.north),
+      zoom: Number(viewport.zoom)
+    };
+  }
+
+  function getCachedPropertyResponse(viewportKey) {
+    const entry = propertyResponseCache.get(viewportKey);
+
+    if (!entry) {
+      return null;
+    }
+
+    if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) {
+      propertyResponseCache.delete(viewportKey);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  function cachePropertyResponse(viewportKey, data) {
+    propertyResponseCache.set(viewportKey, {
+      cachedAt: Date.now(),
+      data
+    });
   }
 
   function renderControls() {
@@ -112,11 +145,12 @@ export function createLayerController({
   }
 
   async function loadPropertyLayer(viewport) {
-    const viewportKey = buildViewportKey(viewport);
+    const normalizedViewport = normalizeViewport(viewport);
+    const viewportKey = buildViewportKey(normalizedViewport);
     const nextRequestSeq = store.getState().propertyLayer.requestSeq + 1;
+    const cached = getCachedPropertyResponse(viewportKey);
 
-    if (propertyResponseCache.has(viewportKey)) {
-      const cached = propertyResponseCache.get(viewportKey);
+    if (cached) {
       store.updatePropertyLayer({
         ...cached,
         status: cached.coverage_status === "partial" ? "partial" : "ready",
@@ -141,8 +175,8 @@ export function createLayerController({
 
     try {
       const response = await apiClient.getProperties({
-        ...viewport,
-        limit: viewport.zoom >= 17 ? 4000 : 5000,
+        ...normalizedViewport,
+        limit: normalizedViewport.zoom >= 17 ? 4000 : 5000,
         signal: propertyAbortController.signal
       });
 
@@ -161,7 +195,7 @@ export function createLayerController({
         viewportKey
       };
 
-      propertyResponseCache.set(viewportKey, patch);
+      cachePropertyResponse(viewportKey, patch);
       store.updatePropertyLayer({
         ...patch,
         status: response.coverage_status === "partial" || response.status === "partial"
@@ -169,6 +203,11 @@ export function createLayerController({
           : "ready"
       });
       setText(statusElement, "Ready");
+      buildAdjacentViewports(normalizedViewport)
+        .slice(0, 2)
+        .forEach((adjacentViewport) => {
+          prefetchPropertyViewport(adjacentViewport);
+        });
     } catch (error) {
       if (error?.name === "AbortError") {
         return;
@@ -189,6 +228,63 @@ export function createLayerController({
       });
       setText(statusElement, "Unavailable");
     }
+  }
+
+  async function prefetchPropertyViewport(viewport) {
+    const normalizedViewport = normalizeViewport(viewport);
+    const viewportKey = buildViewportKey(normalizedViewport);
+
+    if (getCachedPropertyResponse(viewportKey)) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.getProperties({
+        ...normalizedViewport,
+        limit: normalizedViewport.zoom >= 17 ? 4000 : 5000
+      });
+
+      cachePropertyResponse(viewportKey, {
+        renderMode: response.render_mode,
+        clusters: response.clusters || [],
+        properties: response.properties || [],
+        nextCursor: response.page?.next_cursor || null,
+        warnings: response.warnings || [],
+        legend: response.legend || store.getState().propertyLayer.legend,
+        coverage_status: response.coverage_status || "complete",
+        viewportKey
+      });
+    } catch {
+      // Ignore prefetch failures.
+    }
+  }
+
+  function buildAdjacentViewports(viewport) {
+    const width = viewport.east - viewport.west;
+    const height = viewport.north - viewport.south;
+
+    return [
+      {
+        ...viewport,
+        west: viewport.west + width,
+        east: viewport.east + width
+      },
+      {
+        ...viewport,
+        west: viewport.west - width,
+        east: viewport.east - width
+      },
+      {
+        ...viewport,
+        south: viewport.south + height,
+        north: viewport.north + height
+      },
+      {
+        ...viewport,
+        south: viewport.south - height,
+        north: viewport.north - height
+      }
+    ];
   }
 
   const refreshVisibleLayers = debounce(() => {
