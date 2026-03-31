@@ -20,7 +20,10 @@ export function createMapSelectionController({
 
       if (response.status === "resolved" && response.location) {
         store.setState({ selectedLocation: response.location });
-        mapAdapter.setView(response.location);
+        mapAdapter.setView(response.location, {
+          preserveZoom: true,
+          panOnly: true
+        });
         return;
       }
 

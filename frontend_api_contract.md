@@ -803,6 +803,7 @@ async function resolveAddress(query) {}
 async function resolveMapClick(payload) {}
 async function getEstimate(payload) {}
 async function getLayerData({ layerId, west, south, east, north, zoom }) {}
+async function getProperties({ west, south, east, north, zoom, limit, cursor }) {}
 ```
 
 Expected usage:
@@ -813,11 +814,218 @@ const api = {
   resolveAddress,
   resolveMapClick,
   getEstimate,
-  getLayerData
+  getLayerData,
+  getProperties
 };
 ```
 
-## 7. Backend Implementation Notes
+## 7. Property Viewport Data for Assessment Map
+
+Used for the always-on assessment-property layer. This endpoint is intended to
+replace frontend-side clustering of raw property points.
+
+### Endpoint
+
+`GET /api/v1/properties?west=<w>&south=<s>&east=<e>&north=<n>&zoom=<z>&limit=<n>&cursor=<token>`
+
+### Query Parameters
+
+- `west`, `south`, `east`, `north`:
+  - required viewport bounds in WGS84
+- `zoom`:
+  - required map zoom level
+- `limit`:
+  - optional backend page size hint
+  - recommended default `5000`
+- `cursor`:
+  - optional pagination token when the backend decides the viewport result
+    must be split across pages
+
+### Backend Behavior Rules
+
+- At low zoom, the backend SHOULD return clustered results only.
+- At medium zoom, the backend MAY return denser clusters or hybrid results.
+- At high zoom, the backend SHOULD return individual property points.
+- The backend SHOULD avoid returning every raw property in a large viewport
+  when `zoom` is too low to inspect them meaningfully.
+- The backend SHOULD keep the response shape stable regardless of whether the
+  result contains clusters, individual properties, or both.
+
+### Success Response `200 OK`
+
+```json
+{
+  "request_id": "d97cf9ec-66f0-48ff-b5d5-2f2c8f2bce19",
+  "status": "ok",
+  "coverage_status": "complete",
+  "viewport": {
+    "west": -113.7134,
+    "south": 53.3385,
+    "east": -113.2784,
+    "north": 53.7152,
+    "zoom": 11
+  },
+  "render_mode": "cluster",
+  "legend": {
+    "title": "Assessment Properties",
+    "items": [
+      {
+        "label": "Cluster",
+        "color": "#a43434",
+        "shape": "circle"
+      }
+    ]
+  },
+  "clusters": [
+    {
+      "cluster_id": "cluster-z11-001",
+      "center": {
+        "lat": 53.5461,
+        "lng": -113.4938
+      },
+      "count": 187,
+      "bounds": {
+        "west": -113.5038,
+        "south": 53.5398,
+        "east": -113.4821,
+        "north": 53.5552
+      },
+      "sample_properties": [
+        {
+          "canonical_location_id": "loc_9981766",
+          "canonical_address": "1815 HASWELL WAY NW, Edmonton, AB",
+          "assessment_value": 661500
+        }
+      ]
+    }
+  ],
+  "properties": [],
+  "page": {
+    "has_more": false,
+    "next_cursor": null
+  },
+  "warnings": []
+}
+```
+
+### Success Response: High-Zoom Individual Properties `200 OK`
+
+```json
+{
+  "request_id": "a915db56-b1aa-4c09-bba8-63c465eb5f06",
+  "status": "ok",
+  "coverage_status": "complete",
+  "viewport": {
+    "west": -113.602,
+    "south": 53.447,
+    "east": -113.592,
+    "north": 53.456,
+    "zoom": 18
+  },
+  "render_mode": "property",
+  "legend": {
+    "title": "Assessment Properties",
+    "items": [
+      {
+        "label": "Property",
+        "color": "#a43434",
+        "shape": "circle"
+      }
+    ]
+  },
+  "clusters": [],
+  "properties": [
+    {
+      "canonical_location_id": "loc_9981766",
+      "canonical_address": "1815 HASWELL WAY NW, Edmonton, AB",
+      "coordinates": {
+        "lat": 53.45193997726757,
+        "lng": -113.59785527397807
+      },
+      "neighbourhood": "HADDOW",
+      "ward": "sipiwiyiniwak",
+      "assessment_value": 661500,
+      "tax_class": "Residential",
+      "source_meta": {
+        "provider": "city_of_edmonton",
+        "dataset_id": "q7d6-ambg",
+        "record_id": "9981766",
+        "license": "Open Government Licence",
+        "attribution": "City of Edmonton Open Data"
+      }
+    }
+  ],
+  "page": {
+    "has_more": false,
+    "next_cursor": null
+  },
+  "warnings": []
+}
+```
+
+### Partial / Paginated Response `200 OK`
+
+```json
+{
+  "request_id": "fd20371f-9863-44bf-a270-c0e2f82358ce",
+  "status": "partial",
+  "coverage_status": "partial",
+  "viewport": {
+    "west": -113.7134,
+    "south": 53.3385,
+    "east": -113.2784,
+    "north": 53.7152,
+    "zoom": 17
+  },
+  "render_mode": "property",
+  "legend": {
+    "title": "Assessment Properties",
+    "items": [
+      {
+        "label": "Property",
+        "color": "#a43434",
+        "shape": "circle"
+      }
+    ]
+  },
+  "clusters": [],
+  "properties": [],
+  "page": {
+    "has_more": true,
+    "next_cursor": "viewport-17-page-2"
+  },
+  "warnings": [
+    {
+      "code": "RESULT_TRUNCATED",
+      "severity": "info",
+      "title": "Viewport results paginated",
+      "message": "Only part of the visible property set was returned in this response.",
+      "affected_factors": [],
+      "dismissible": true
+    }
+  ]
+}
+```
+
+### Error Statuses
+
+- `400` invalid bounds or zoom
+- `404` unsupported property source
+- `503` property-layer service unavailable
+
+### Frontend Integration Rules
+
+- The frontend SHOULD request this endpoint for every settled viewport update.
+- The frontend SHOULD debounce rapid pan/zoom events before requesting.
+- The frontend SHOULD cancel or ignore stale in-flight requests when a newer
+  viewport request is issued.
+- The frontend SHOULD keep the previous rendered property data visible until the
+  newest successful response arrives.
+- The frontend SHOULD only render from `clusters` when `render_mode` is
+  `"cluster"` and from `properties` when `render_mode` is `"property"`.
+- The frontend MAY support hybrid rendering if the backend later returns both.
+
+## 8. Backend Implementation Notes
 
 - Use stable field names exactly as shown to avoid frontend adapter churn.
 - Do not mix HTML into responses.
@@ -830,7 +1038,7 @@ const api = {
 - `source_meta` SHOULD be included when backend data comes from City of Edmonton datasets or other external open-data providers.
 - `source_data` SHOULD be limited to fields useful for UI display, traceability, or debugging; do not pass through full raw upstream records by default.
 
-## 8. Minimum Endpoint Set for Backend Team
+## 9. Minimum Endpoint Set for Backend Team
 
 If the backend team wants the smallest viable integration target first, implement these in order:
 
@@ -839,3 +1047,4 @@ If the backend team wants the smallest viable integration target first, implemen
 3. `POST /api/v1/locations/resolve-click`
 4. `POST /api/v1/estimates`
 5. `GET /api/v1/layers/{layer_id}`
+6. `GET /api/v1/properties`
