@@ -1,4 +1,7 @@
 src/data_sourcing/data/
 src/data_sourcing/open_data.db
 src/data_sourcing/__pycache__/
+src/data_sourcing/cache/
+src/data_sourcing/sources/cache/
 __pycache__/
+Property_Assessment_Data_(Current_Calendar_Year)_20260330.csv

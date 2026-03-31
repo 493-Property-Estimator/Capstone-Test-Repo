@@ -6,9 +6,7 @@
     <title>Property Value Estimator</title>
     <link
       rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
+      href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
     />
     <link rel="stylesheet" href="./styles/app.css" />
   </head>
@@ -16,12 +14,26 @@
     <div class="app-shell">
       <aside class="sidebar">
         <header class="panel panel-brand">
-          <p class="eyebrow">Property Value Estimator</p>
+          <div class="brand-row">
+            <p class="eyebrow">Property Value Estimator</p>
+            <span id="environment-badge" class="environment-badge">Mock API</span>
+          </div>
           <h1>Edmonton Property Explorer</h1>
           <p class="panel-copy">
             Search an address, click the map, and inspect estimate context
             from open-data layers.
           </p>
+          <div class="quick-actions">
+            <button id="example-address-1" class="button button-secondary" type="button">
+              Load Downtown Example
+            </button>
+            <button id="example-address-2" class="button button-secondary" type="button">
+              Load Highlands Example
+            </button>
+            <button id="example-property-abbottsfield" class="button button-secondary" type="button">
+              Go To Abbotsfield Sample
+            </button>
+          </div>
         </header>
 
         <section class="panel" aria-labelledby="search-heading">
@@ -45,6 +57,14 @@
           <p id="search-helper" class="helper-text">
             Enter at least 3 characters to load suggestions.
           </p>
+          <div class="quick-actions">
+            <button id="search-ambiguous" class="button button-secondary" type="button">
+              Test Ambiguous
+            </button>
+            <button id="search-unsupported" class="button button-secondary" type="button">
+              Test Unsupported
+            </button>
+          </div>
           <div id="suggestions" class="suggestions" aria-live="polite"></div>
           <div id="candidate-results" class="candidate-results"></div>
         </section>
@@ -66,6 +86,9 @@
           <div id="validation-message" class="validation-message is-hidden"></div>
           <div id="location-summary" class="location-summary">
             Select a property to request an estimate.
+          </div>
+          <div id="selection-meta" class="selection-meta">
+            Choose a location by search, map click, or manual coordinates.
           </div>
           <div class="form-grid">
             <div>
@@ -89,9 +112,14 @@
               <input id="floor-area-input" class="text-input" type="number" min="0" step="1" />
             </div>
           </div>
-          <button id="estimate-submit" class="button button-primary" type="button">
-            Get Estimate
-          </button>
+          <div class="quick-actions">
+            <button id="estimate-submit" class="button button-primary" type="button">
+              Get Estimate
+            </button>
+            <button id="reset-selection" class="button button-secondary" type="button">
+              Reset
+            </button>
+          </div>
           <div id="warning-indicator" class="warning-indicator is-hidden"></div>
           <section id="warning-panel" class="warning-panel is-hidden"></section>
           <section id="estimate-panel" class="estimate-panel">
@@ -105,18 +133,19 @@
           <div class="toolbar-copy">
             <p class="eyebrow">Interactive Map</p>
             <h2>OpenStreetMap View</h2>
+            <p class="map-note">
+              Click to select a property. Hold and drag to pan without sending a selection request.
+            </p>
           </div>
           <div id="map-message" class="map-message">Map ready.</div>
         </div>
-        <div id="map-root" class="map-root" aria-label="Property map"></div>
+        <div id="map-root" class="map-root" aria-label="Property map">
+          <aside id="property-hover-card" class="property-hover-card is-hidden"></aside>
+        </div>
       </main>
     </div>
 
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-    ></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script type="module" src="./src/app.js"></script>
   </body>
 </html>

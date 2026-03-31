@@ -4,13 +4,26 @@
       "enabled": true,
       "pipeline": "geospatial",
       "city": "Edmonton",
-      "dataset": "Road Centerline",
-      "description": "Road and transportation geometry used for road proximity and travel features.",
-      "ingestion_technique": "local_json",
-      "local_path": "geospatial_roads.json",
+      "dataset": "Road Network",
+      "description": "City road centerline attributes used to enrich the existing road network without adding rows.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "src/data_sourcing/data/Road Network_20260328.zip",
       "remote_url": "https://data.edmonton.ca/",
       "link_status": "needs_verification",
-      "ingestion_notes": "Use local snapshot for deterministic ingest. Replace remote_url with direct endpoint for live pulls.",
+      "promotion_mode": "enrich_existing",
+      "field_map": {
+        "municipal_segment_id": "centerline",
+        "roadway_category": "centerli_2",
+        "surface_type": "road_segme",
+        "functional_class": "functional",
+        "jurisdiction": "responsibl",
+        "official_road_name": "street_nam",
+        "quadrant": "quadrant",
+        "travel_direction": "digitizing",
+        "from_intersection_id": "from_inter",
+        "to_intersection_id": "to_interse"
+      },
+      "ingestion_notes": "Matches Edmonton road centerlines onto existing road_segments_prod rows by normalized street name and centroid proximity, then updates the matched rows with municipal attributes.",
       "downstream_pipelines": []
     },
     "geospatial.boundaries": {
@@ -50,6 +63,30 @@
       "remote_url": "https://data.edmonton.ca/",
       "link_status": "needs_verification",
       "ingestion_notes": "Suppressed values handled as limited-accuracy indicators.",
+      "downstream_pipelines": []
+    },
+    "crime.statscan_police_service": {
+      "enabled": false,
+      "pipeline": "crime",
+      "city": "Edmonton",
+      "dataset": "Statistics Canada Police-Service Crime Summary",
+      "description": "Official police-service level crime summary intended for local file download and SQLite ingestion.",
+      "ingestion_technique": "local_csv",
+      "local_path": "src/data_sourcing/data/StatsCan_Police_Service_Crime_Edmonton.csv",
+      "remote_url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3510018301",
+      "link_status": "planned",
+      "field_map": {
+        "year": "REF_DATE",
+        "region_name": "GEO",
+        "crime_type": "Violations",
+        "incident_count": "VALUE",
+        "unit": "UOM",
+        "geography_level": "=police_service"
+      },
+      "target_geographies": ["Edmonton", "Edmonton Police Service"],
+      "include_counts": true,
+      "include_rates": true,
+      "ingestion_notes": "Designed for StatsCan CSV downloads saved locally first. Produces crime_summary_prod rows at city/police-service scope, not neighbourhood incident records.",
       "downstream_pipelines": []
     },
     "assessments.property_tax": {
@@ -387,6 +424,7 @@
       "enabled": true,
       "pipeline": "geospatial",
       "city": "Edmonton",
+      "provider": "City of Edmonton Open Data",
       "dataset": "Edmonton Business Census",
       "description": "Business locations and attributes for employment and commercial context.",
       "ingestion_technique": "local_shapefile",
@@ -395,13 +433,39 @@
       "link_status": "downloaded",
       "field_map": {
         "entity_id": "objectid",
-        "name": "business_n",
+        "name": "Business Name",
         "raw_category": "=Business",
-        "address": "business_a",
+        "raw_subcategory": "Business Description",
+        "address": "Business Address",
+        "neighbourhood": "Neighbourhood Name",
+        "facility_type": "Subsectors",
+        "lon": "Longitude",
+        "lat": "Latitude"
+      },
+      "ingestion_notes": "Business census records are normalized into poi_prod while preserving source-specific fields in metadata_json for later filtering and enrichment.",
+      "downstream_pipelines": ["poi_standardization", "deduplication"]
+    },
+    "geospatial.recreation_facilities": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "provider": "City of Edmonton Open Data",
+      "dataset": "Recreation Facilities",
+      "description": "Recreation facility locations and categories for amenity and POI querying.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "src/data_sourcing/data/Recreation Facilities_20260328.zip",
+      "remote_url": "",
+      "link_status": "planned",
+      "field_map": {
+        "entity_id": "Facility Name",
+        "name": "Facility Name",
+        "raw_category": "Category",
+        "raw_subcategory": "Facility Type",
+        "address": "Address",
         "lon": "longitude",
         "lat": "latitude"
       },
-      "ingestion_notes": "Business type details remain preserved in raw source records for later enrichment.",
+      "ingestion_notes": "Supports either CSV or shapefile-style exports; raw category and facility type are preserved for POI filtering.",
       "downstream_pipelines": ["poi_standardization", "deduplication"]
     },
     "geospatial.police_stations": {

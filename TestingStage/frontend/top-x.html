@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestingStage Top X</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">TestingStage</p>
+          <h1>Property API Playground</h1>
+          <p>Top-x calls for the closest schools and parks to a point.</p>
+        </div>
+        <nav class="nav">
+          <a data-nav href="/">Map nearest property</a>
+          <a data-nav href="/estimator">Property estimator</a>
+          <a data-nav href="/top-x">Top x nearby POIs</a>
+          <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/osrm">OSRM</a>
+          <a data-nav href="/transit">Transit</a>
+          <a data-nav href="/crime">Crime</a>
+          <a data-nav href="/neighborhood-results">Neighborhood results</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <p class="eyebrow">Page 2</p>
+          <h2>POI lookups and filters</h2>
+          <p>
+            Keep the original quick buttons for schools and parks, or run a broader POI query by
+            source, neighbourhood, category, type, and optional nearby radius.
+          </p>
+        </section>
+
+        <section class="layout-grid">
+          <section class="panel stack">
+            <div class="triple-grid">
+              <label>
+                Latitude
+                <input id="lat-input" type="number" step="0.000001" value="53.5461" />
+              </label>
+              <label>
+                Longitude
+                <input id="lon-input" type="number" step="0.000001" value="-113.4938" />
+              </label>
+              <label>
+                Number to get
+                <input id="limit-input" type="number" min="1" max="100" value="5" />
+              </label>
+            </div>
+            <div class="pair-grid">
+              <button id="schools-button" type="button">Get closest schools</button>
+              <button id="parks-button" type="button">Get closest parks</button>
+            </div>
+            <div class="field-grid">
+              <label>
+                Source key
+                <input id="source-input" type="text" placeholder="geospatial.business_census" />
+              </label>
+              <label>
+                Neighbourhood
+                <select id="neighbourhood-input">
+                  <option value="">No neighbourhood filter</option>
+                </select>
+              </label>
+              <label>
+                Category
+                <input id="category-input" type="text" placeholder="Business / Park / Arena" />
+              </label>
+              <label>
+                Type
+                <input id="type-input" type="text" placeholder="Facility type or subsector" />
+              </label>
+            </div>
+            <div class="pair-grid">
+              <label>
+                Nearby radius (m)
+                <input id="radius-input" type="number" min="1" value="1500" />
+              </label>
+              <div class="button-row">
+                <button id="poi-query-button" class="secondary" type="button">Run POI query</button>
+              </div>
+            </div>
+            <div id="topx-status" class="status">Waiting for a request.</div>
+          </section>
+
+          <section class="panel stack">
+            <div>
+              <h3>Results</h3>
+              <p>The backend reads raw POI categories from the sample database.</p>
+            </div>
+            <div id="topx-results" class="list">
+              <div class="result-card">No results yet.</div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/top-x-page.js"></script>
+  </body>
+</html>
