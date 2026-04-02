@@ -1,0 +1,21 @@
+canonical_location_id,source_record_id,source_type,source_name,match_method,reason_code,confidence,normalized_address,raw_source_address,suite,house_number,street_name,legal_description,lat,lon
+loc-0481,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3000 MAYNARD WAY NW 101,,101,3000,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 481,53.5481,-113.5481
+loc-0482,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3000 MAYNARD WAY NW 102,,102,3000,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 482,53.5482,-113.5482
+loc-0483,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3001 MAYNARD WAY NW 101,,101,3001,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 483,53.5483,-113.5483
+loc-0484,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3001 MAYNARD WAY NW 102,,102,3001,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 484,53.5484,-113.5484
+loc-0485,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3002 MAYNARD WAY NW 101,,101,3002,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 485,53.5485,-113.5485
+loc-0486,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3002 MAYNARD WAY NW 102,,102,3002,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 486,53.5486,-113.5486
+loc-0487,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3003 MAYNARD WAY NW 101,,101,3003,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 487,53.5487,-113.5487
+loc-0488,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3003 MAYNARD WAY NW 102,,102,3003,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 488,53.5488,-113.5488
+loc-0489,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3004 MAYNARD WAY NW 101,,101,3004,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 489,53.5489,-113.5489
+loc-0490,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3004 MAYNARD WAY NW 102,,102,3004,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 490,53.549,-113.549
+loc-0491,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3005 MAYNARD WAY NW 101,,101,3005,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 491,53.5491,-113.5491
+loc-0492,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3005 MAYNARD WAY NW 102,,102,3005,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 492,53.5492,-113.5492
+loc-0493,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3006 MAYNARD WAY NW 101,,101,3006,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 493,53.5493,-113.5493
+loc-0494,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3006 MAYNARD WAY NW 102,,102,3006,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 494,53.5494,-113.5494
+loc-0495,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3007 MAYNARD WAY NW 101,,101,3007,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 495,53.5495,-113.5495
+loc-0496,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3007 MAYNARD WAY NW 102,,102,3007,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 496,53.5496,-113.5496
+loc-0497,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3008 MAYNARD WAY NW 101,,101,3008,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 497,53.5497,-113.5497
+loc-0498,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3008 MAYNARD WAY NW 102,,102,3008,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 498,53.5498,-113.5498
+loc-0499,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3009 MAYNARD WAY NW 101,,101,3009,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 499,53.5499,-113.5499
+loc-0500,,property_candidate,property_locations_prod,duplicate_base_address_group,duplicate_base_address_group,0.99,3009 MAYNARD WAY NW 102,,102,3009,MAYNARD WAY NW,PLAN 1 BLK 1 LOT 500,53.55,-113.55

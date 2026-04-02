@@ -27,6 +27,8 @@ def _quote_identifier(name: str) -> str:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
+    from .attribute_schema import apply_attribute_schema
+
     conn.executescript(
         """
         CREATE TABLE IF NOT EXISTS run_logs (
@@ -704,6 +706,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             conn.execute(statement)
         except sqlite3.OperationalError:
             pass
+    apply_attribute_schema(conn)
     conn.commit()
 
 

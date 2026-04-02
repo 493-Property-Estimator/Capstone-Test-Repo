@@ -1,0 +1,25 @@
+[
+  {
+    "address": "784 Abbottsfield Road NW",
+    "house_number": "784",
+    "street_name": "Abbottsfield Road NW",
+    "legal_description": "Plan: 8823090 Unit: 70",
+    "lat": 53.5763290135707,
+    "lon": -113.392303500264,
+    "permit_description": "Renovation for 3 bedroom 2 bathroom townhouse unit",
+    "source_record_id": "permit-json-001",
+    "observed_at": "2026-03-20T10:00:00+00:00"
+  },
+  {
+    "address": "7510 89 Street NW Suite 209",
+    "suite": "209",
+    "house_number": "7510",
+    "street_name": "89 Street NW",
+    "legal_description": "Plan: 0624094 Unit: 36",
+    "lat": 53.5113332440987,
+    "lon": -113.463824626685,
+    "permit_description": "Interior work for 2 bedroom 2 bathroom condo",
+    "source_record_id": "permit-json-002",
+    "observed_at": "2026-03-20T10:05:00+00:00"
+  }
+]
