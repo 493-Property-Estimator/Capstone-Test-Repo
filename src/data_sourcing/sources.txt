@@ -201,3 +201,9 @@ Assessment Class % 3: Text
 Latitude: Text
 Longitude: Text
 Point Location: Text
+
+https://extranet.gov.ab.ca/srd/geodiscover/srd_pub/boundaries/census/Alberta_Census_Boundaries_SHP.zip
+
+
+https://www12.statcan.gc.ca/census-recensement/alternative_alternatif.cfm?l=eng&dispext=zip&t=lcsd000a25a_e.zip&k=%20%20%20%2031995&loc=/census-recensement/2011/geo/bound-limit/files-fichiers/lcsd000a25a_e.zip
+

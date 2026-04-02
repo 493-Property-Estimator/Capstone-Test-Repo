@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.db.queries import fetch_geospatial_features
+from backend.src.db.queries import decode_geometry, fetch_geospatial_features
 from backend.src.services.errors import error_response
 
 router = APIRouter()
@@ -11,9 +11,12 @@ router = APIRouter()
 LAYER_LEGENDS = {
     "schools": {"title": "Schools", "items": [{"label": "School", "color": "#1f6feb", "shape": "circle"}]},
     "parks": {"title": "Parks", "items": [{"label": "Park", "color": "#2ea043", "shape": "circle"}]},
-    "green_spaces": {"title": "Green Spaces", "items": [{"label": "Green Space", "color": "#2ea043", "shape": "circle"}]},
-    "police": {"title": "Police", "items": [{"label": "Police", "color": "#f85149", "shape": "square"}]},
     "playgrounds": {"title": "Playgrounds", "items": [{"label": "Playground", "color": "#f0883e", "shape": "circle"}]},
+    "police_stations": {"title": "Police Stations", "items": [{"label": "Police Station", "color": "#f85149", "shape": "square"}]},
+    "municipal_wards": {"title": "Municipal Wards", "items": [{"label": "Ward Boundary", "color": "#b45309", "shape": "polygon"}]},
+    "provincial_districts": {"title": "Provincial Districts", "items": [{"label": "Provincial District", "color": "#7c3aed", "shape": "polygon"}]},
+    "federal_districts": {"title": "Federal Districts", "items": [{"label": "Federal District", "color": "#0f766e", "shape": "polygon"}]},
+    "census_subdivisions": {"title": "Census Subdivisions", "items": [{"label": "Census Subdivision", "color": "#475569", "shape": "polygon"}]},
 }
 
 
@@ -36,14 +39,12 @@ async def get_layer(request: Request, layer_id: str, west: float, south: float, 
     features = [
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [row["lon"], row["lat"]],
-            },
+            "geometry": decode_geometry(row),
             "properties": {
                 "id": row["entity_id"],
                 "name": row["name"],
                 "category": row["raw_category"],
+                "source_id": row["source_id"],
                 "address": None,
             },
         }

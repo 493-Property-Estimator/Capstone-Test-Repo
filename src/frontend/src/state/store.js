@@ -1,8 +1,8 @@
-import { DEFAULT_LOCATION, LAYER_DEFINITIONS } from "../config.js";
+import { LAYER_DEFINITIONS } from "../config.js";
 
 export function createStore() {
   let state = {
-    selectedLocation: DEFAULT_LOCATION,
+    selectedLocation: null,
     latestClickId: null,
     activeLayers: LAYER_DEFINITIONS.reduce((accumulator, layer) => {
       accumulator[layer.id] = { enabled: false, status: "idle", data: null };

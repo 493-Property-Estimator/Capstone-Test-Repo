@@ -51,7 +51,8 @@ def _init_db(db_path: Path):
             raw_category TEXT,
             canonical_geom_type TEXT,
             lon REAL,
-            lat REAL
+            lat REAL,
+            geometry_json TEXT DEFAULT '{}'
         )
         """
     )
@@ -79,12 +80,12 @@ def _init_db(db_path: Path):
     conn.execute(
         """
         INSERT INTO geospatial_prod (
-            dataset_type, entity_id, source_id, name, raw_category, canonical_geom_type, lon, lat
+            dataset_type, entity_id, source_id, name, raw_category, canonical_geom_type, lon, lat, geometry_json
         ) VALUES
-            ('schools', 'school_001', 'geospatial.school_locations', 'Test School', 'school', 'point', -113.4938, 53.5461),
-            ('parks', 'park_001', 'geospatial.parks', 'Test Park', 'park', 'point', -113.4940, 53.5460),
-            ('police', 'police_001', 'geospatial.police_stations', 'Police', 'police', 'point', -113.4935, 53.5462),
-            ('playgrounds', 'pg_001', 'geospatial.playgrounds', 'Playground', 'playground', 'point', -113.4930, 53.5463)
+            ('schools', 'school_001', 'geospatial.school_locations', 'Test School', 'school', 'Point', -113.4938, 53.5461, '{"type":"Point","coordinates":[-113.4938,53.5461]}'),
+            ('parks', 'park_001', 'geospatial.parks', 'Test Park', 'park', 'Point', -113.4940, 53.5460, '{"type":"Point","coordinates":[-113.494,53.546]}'),
+            ('police', 'police_001', 'geospatial.police_stations', 'Police', 'police', 'Point', -113.4935, 53.5462, '{"type":"Point","coordinates":[-113.4935,53.5462]}'),
+            ('playgrounds', 'pg_001', 'geospatial.playgrounds', 'Playground', 'playground', 'Point', -113.4930, 53.5463, '{"type":"Point","coordinates":[-113.493,53.5463]}')
         """
     )
     conn.execute(

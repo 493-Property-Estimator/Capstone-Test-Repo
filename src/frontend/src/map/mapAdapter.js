@@ -12,10 +12,12 @@ export function createMapAdapter({
   root,
   onMapClick,
   onViewportChange,
-  messageElement
+  messageElement,
+  onSelectionCleared
 }) {
   let clickHandler = onMapClick;
   let viewportChangeHandler = onViewportChange;
+  let selectionClearedHandler = onSelectionCleared;
   let marker = null;
   let layerContainer = null;
   let map = null;
@@ -103,6 +105,15 @@ export function createMapAdapter({
     }
 
     marker.bindPopup(location.canonical_address || "Selected property");
+    marker.off("click");
+    marker.on("click", () => marker.openPopup());
+    marker.off("contextmenu");
+    marker.on("contextmenu", () => {
+      clearSelection();
+      if (selectionClearedHandler) {
+        selectionClearedHandler();
+      }
+    });
   }
 
   function setView(location) {
@@ -114,10 +125,29 @@ export function createMapAdapter({
     map.flyTo([location.coordinates.lat, location.coordinates.lng], 15, {
       duration: 0.8
     });
+    marker.openPopup();
     setText(
       messageElement,
       `Viewing ${location.canonical_address || "selected property"}`
     );
+  }
+
+  function clearSelection() {
+    if (map && marker) {
+      map.removeLayer(marker);
+      marker = null;
+    }
+    setText(messageElement, "Selection cleared.");
+  }
+
+  function focusEdmonton() {
+    if (!map) {
+      return;
+    }
+    map.fitBounds(EDMONTON_BOUNDS, {
+      padding: [24, 24]
+    });
+    setText(messageElement, "Viewing Edmonton.");
   }
 
   function renderLayers(activeLayers) {
@@ -193,7 +223,7 @@ export function createMapAdapter({
       const label = createElement(
         "span",
         null,
-        `${layerId} · ${layerState.status || "loaded"}`
+        `${definition?.label || layerId} · ${layerState.status || "loaded"}`
       );
       chip.appendChild(swatch);
       chip.appendChild(label);
@@ -201,22 +231,11 @@ export function createMapAdapter({
     });
   }
 
-  root.addEventListener("click", (event) => {
-    const rect = root.getBoundingClientRect();
-    const xRatio = (event.clientX - rect.left) / rect.width;
-    const yRatio = (event.clientY - rect.top) / rect.height;
-    const lng = bounds.west + xRatio * (bounds.east - bounds.west);
-    const lat = bounds.north - yRatio * (bounds.north - bounds.south);
-
-    clickHandler({
-      lat: Number(lat.toFixed(5)),
-      lng: Number(lng.toFixed(5))
-    });
-  });
-
   renderBase();
 
   return {
+    clearSelection,
+    focusEdmonton,
     setView,
     renderLayers,
     setClickHandler(handler) {
@@ -224,6 +243,9 @@ export function createMapAdapter({
     },
     setViewportChangeHandler(handler) {
       viewportChangeHandler = handler;
+    },
+    setSelectionClearedHandler(handler) {
+      selectionClearedHandler = handler;
     },
     getViewport() {
       if (!map) {

@@ -8,7 +8,7 @@ from typing import Any
 import uuid
 
 from .config import DEFAULT_DB_PATH
-from .database import add_alert, connect, init_db, log_source_check, upsert_source_config
+from .database import add_alert, connect, init_db, inspect_db, log_source_check, upsert_source_config
 from .pipelines import (
     run_assessment_ingest,
     run_census_ingest,
@@ -43,12 +43,29 @@ class IngestionService:
         init_db(conn)
         return conn
 
+    def _resolved_db_path(self) -> str:
+        return str(Path(self.db_path).expanduser().resolve())
+
     def init_database(self) -> dict[str, Any]:
         conn = self._connect()
         try:
             self._sync_source_configs(conn)
             conn.commit()
-            return {"status": "ok", "db": str(self.db_path)}
+            return {"status": "ok", "db": self._resolved_db_path()}
+        finally:
+            conn.close()
+
+    def database_path(self) -> dict[str, Any]:
+        return {"db": self._resolved_db_path()}
+
+    def database_summary(self) -> dict[str, Any]:
+        conn = self._connect()
+        try:
+            self._sync_source_configs(conn)
+            conn.commit()
+            summary = inspect_db(conn)
+            summary["db"] = self._resolved_db_path()
+            return summary
         finally:
             conn.close()
 

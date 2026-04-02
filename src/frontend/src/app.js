@@ -15,7 +15,14 @@ const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
   onMapClick: () => {},
-  onViewportChange: () => {}
+  onViewportChange: () => {},
+  onSelectionCleared() {
+    store.setState({
+      selectedLocation: null,
+      estimate: null,
+      warningsCollapsed: false
+    });
+  }
 });
 
 const handleMapClick = createMapSelectionController({
@@ -71,10 +78,4 @@ createWarningController({
   store,
   warningPanel: document.getElementById("warning-panel"),
   warningIndicator: document.getElementById("warning-indicator")
-});
-
-store.subscribe((state) => {
-  if (state.selectedLocation) {
-    mapAdapter.setView(state.selectedLocation);
-  }
 });

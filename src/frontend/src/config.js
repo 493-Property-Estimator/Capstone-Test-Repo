@@ -12,8 +12,12 @@ export const EDMONTON_BOUNDS = [
 export const LAYER_DEFINITIONS = [
   { id: "schools", label: "Schools", color: "#1f6feb" },
   { id: "parks", label: "Parks", color: "#2e8b57" },
-  { id: "census_boundaries", label: "Census Boundaries", color: "#a44dc5" },
-  { id: "assessment_zones", label: "Assessment Zones", color: "#c46b15" }
+  { id: "playgrounds", label: "Playgrounds", color: "#f0883e" },
+  { id: "police_stations", label: "Police Stations", color: "#b91c1c" },
+  { id: "municipal_wards", label: "Municipal Wards", color: "#b45309" },
+  { id: "provincial_districts", label: "Provincial Districts", color: "#7c3aed" },
+  { id: "federal_districts", label: "Federal Districts", color: "#0f766e" },
+  { id: "census_subdivisions", label: "Census Subdivisions", color: "#475569" }
 ];
 
 export const DEFAULT_LOCATION = {

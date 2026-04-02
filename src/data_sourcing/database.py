@@ -21,6 +21,11 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _quote_identifier(name: str) -> str:
+    escaped = name.replace('"', '""')
+    return f'"{escaped}"'
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
@@ -90,6 +95,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             canonical_geom_type TEXT NOT NULL,
             lon REAL NOT NULL,
             lat REAL NOT NULL,
+            geometry_json TEXT NOT NULL DEFAULT '{}',
             source_version TEXT,
             updated_at TEXT,
             PRIMARY KEY (run_id, dataset_type, entity_id)
@@ -104,6 +110,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             canonical_geom_type TEXT NOT NULL,
             lon REAL NOT NULL,
             lat REAL NOT NULL,
+            geometry_json TEXT NOT NULL DEFAULT '{}',
             source_version TEXT,
             updated_at TEXT,
             PRIMARY KEY (dataset_type, entity_id)
@@ -638,6 +645,8 @@ def init_db(conn: sqlite3.Connection) -> None:
     for statement in (
         "ALTER TABLE source_configs ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE source_configs ADD COLUMN field_map_json TEXT NOT NULL DEFAULT '{}'",
+        "ALTER TABLE geospatial_staging ADD COLUMN geometry_json TEXT NOT NULL DEFAULT '{}'",
+        "ALTER TABLE geospatial_prod ADD COLUMN geometry_json TEXT NOT NULL DEFAULT '{}'",
         "ALTER TABLE poi_standardized_staging ADD COLUMN poi_type_id INTEGER",
         "ALTER TABLE poi_standardized_prod ADD COLUMN poi_type_id INTEGER",
         "ALTER TABLE poi_staging ADD COLUMN raw_subcategory TEXT",
@@ -696,6 +705,45 @@ def init_db(conn: sqlite3.Connection) -> None:
         except sqlite3.OperationalError:
             pass
     conn.commit()
+
+
+def inspect_db(conn: sqlite3.Connection) -> dict[str, Any]:
+    tables = [
+        row["name"]
+        for row in conn.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+            """
+        )
+    ]
+
+    summaries: list[dict[str, Any]] = []
+    for table_name in tables:
+        columns = [
+            {
+                "name": column["name"],
+                "type": column["type"],
+                "not_null": bool(column["notnull"]),
+                "default": column["dflt_value"],
+                "primary_key_position": column["pk"],
+            }
+            for column in conn.execute(f"PRAGMA table_info({_quote_identifier(table_name)})")
+        ]
+        row_count = conn.execute(
+            f"SELECT COUNT(*) AS row_count FROM {_quote_identifier(table_name)}"
+        ).fetchone()["row_count"]
+        summaries.append(
+            {
+                "table": table_name,
+                "row_count": row_count,
+                "columns": columns,
+            }
+        )
+
+    return {"tables": summaries}
 
 
 @contextmanager

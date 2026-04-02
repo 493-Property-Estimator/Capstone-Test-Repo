@@ -378,6 +378,84 @@
       "ingestion_notes": "Supports green space features and amenity scoring.",
       "downstream_pipelines": []
     },
+    "geospatial.municipal_wards": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "City of Edmonton Ward Boundaries",
+      "description": "Municipal ward boundaries from the City of Edmonton open data export.",
+      "ingestion_technique": "local_csv",
+      "local_path": "src/data_sourcing/data/City_of_Edmonton_Ward_Boundary_and_Council_Composition_Current_20260401.csv",
+      "remote_url": "https://data.edmonton.ca/",
+      "link_status": "downloaded",
+      "target_dataset": "boundaries",
+      "geometry_wkt_field": "geometry_multipolygon",
+      "field_map": {
+        "entity_id": "name_1",
+        "name": "name_2",
+        "raw_category": "=Municipal Ward"
+      },
+      "ingestion_notes": "CSV includes WKT multipolygon geometry for current Edmonton wards.",
+      "downstream_pipelines": []
+    },
+    "geospatial.provincial_districts": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Alberta Provincial Electoral Districts",
+      "description": "Provincial electoral district polygons covering Edmonton.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "src/data_sourcing/data/2019Boundaries_ED-Shapefiles.zip",
+      "remote_url": "https://open.canada.ca/",
+      "link_status": "downloaded",
+      "target_dataset": "boundaries",
+      "field_map": {
+        "entity_id": "EDNumber20",
+        "name": "EDName2017",
+        "raw_category": "=Provincial District"
+      },
+      "ingestion_notes": "Projected shapefile geometry is reprojected to WGS84 during ingest before rendering.",
+      "downstream_pipelines": []
+    },
+    "geospatial.federal_districts": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Federal Electoral Districts",
+      "description": "Federal electoral district polygons covering Edmonton.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "src/data_sourcing/data/FederalElectoralDistricts_2025_SHP.zip",
+      "remote_url": "https://open.canada.ca/",
+      "link_status": "downloaded",
+      "target_dataset": "boundaries",
+      "field_map": {
+        "entity_id": "FED_NUM",
+        "name": "ED_NAMEE",
+        "raw_category": "=Federal District"
+      },
+      "ingestion_notes": "Projected shapefile geometry is reprojected to WGS84 during ingest before rendering.",
+      "downstream_pipelines": []
+    },
+    "geospatial.census_subdivisions": {
+      "enabled": true,
+      "pipeline": "geospatial",
+      "city": "Edmonton",
+      "dataset": "Census Subdivisions",
+      "description": "Statistics Canada census subdivision polygons around Edmonton.",
+      "ingestion_technique": "local_shapefile",
+      "local_path": "src/data_sourcing/data/Alberta_Census_Boundaries_SHP.zip",
+      "remote_url": "https://www12.statcan.gc.ca/",
+      "link_status": "downloaded",
+      "target_dataset": "boundaries",
+      "shapefile_layer": "AB_CSD_2021",
+      "field_map": {
+        "entity_id": "CSDUID",
+        "name": "CSDNAME",
+        "raw_category": "=Census Subdivision"
+      },
+      "ingestion_notes": "Uses the Alberta-specific Statistics Canada boundary layer and reprojects geometry to WGS84 during ingest.",
+      "downstream_pipelines": []
+    },
     "geospatial.libraries": {
       "enabled": true,
       "pipeline": "geospatial",

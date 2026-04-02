@@ -374,6 +374,31 @@ def _extract_geometry_points(record: dict[str, Any]) -> list[tuple[float, float]
     return []
 
 
+def _build_geometry_payload(
+    record: dict[str, Any],
+    dataset: str,
+    points: list[tuple[float, float]],
+) -> dict[str, Any]:
+    raw_geometry = record.get("geometry_payload")
+    if isinstance(raw_geometry, dict) and raw_geometry.get("type") and raw_geometry.get("coordinates") is not None:
+        return raw_geometry
+
+    if dataset == "roads":
+        return {
+            "type": "MultiLineString",
+            "coordinates": [[[lon, lat] for lon, lat in points]],
+        }
+    if dataset == "boundaries":
+        return {
+            "type": "Polygon",
+            "coordinates": [[[lon, lat] for lon, lat in points]],
+        }
+    if points:
+        lon, lat = points[0]
+        return {"type": "Point", "coordinates": [lon, lat]}
+    return {"type": "Point", "coordinates": [0.0, 0.0]}
+
+
 def _polyline_length_m(points: list[tuple[float, float]]) -> float:
     if len(points) < 2:
         return 0.0
@@ -716,12 +741,6 @@ def run_geospatial_ingest(
     errors: list[str] = []
     results: list[dict[str, Any]] = []
 
-    geom_map = {
-        "roads": "MultiLineString",
-        "boundaries": "MultiPolygon",
-        "pois": "Point",
-    }
-
     if source_keys is not None:
         geospatial_sources = [key for key in source_keys if key.startswith("geospatial.")]
     else:
@@ -812,6 +831,8 @@ def run_geospatial_ingest(
             center_lat = sum(p[1] for p in points) / len(points)
             lon = center_lon
             lat = center_lat
+            geometry_payload = _build_geometry_payload(record, dataset, points)
+            canonical_geom_type = str(geometry_payload.get("type") or "Point")
 
             if not (-180 <= lon <= 180 and -90 <= lat <= 90):
                 if -180 <= lat <= 180 and -90 <= lon <= 90:
@@ -830,9 +851,10 @@ def run_geospatial_ingest(
                     "source_id": source_id,
                     "name": name,
                     "raw_category": raw_category,
-                    "canonical_geom_type": geom_map[dataset],
+                    "canonical_geom_type": canonical_geom_type,
                     "lon": float(lon),
                     "lat": float(lat),
+                    "geometry_json": json.dumps(geometry_payload),
                     "source_version": payload.metadata.get("version"),
                     "updated_at": payload.metadata.get("publish_date"),
                 }
@@ -995,10 +1017,10 @@ def run_geospatial_ingest(
             """
             INSERT INTO geospatial_staging (
                 run_id, dataset_type, entity_id, source_id, name, raw_category,
-                canonical_geom_type, lon, lat, source_version, updated_at
+                canonical_geom_type, lon, lat, geometry_json, source_version, updated_at
             ) VALUES (
                 :run_id, :dataset_type, :entity_id, :source_id, :name, :raw_category,
-                :canonical_geom_type, :lon, :lat, :source_version, :updated_at
+                :canonical_geom_type, :lon, :lat, :geometry_json, :source_version, :updated_at
             )
             """,
             refined,
@@ -1089,10 +1111,10 @@ def run_geospatial_ingest(
                         """
                         INSERT INTO geospatial_prod (
                             dataset_type, entity_id, source_id, name, raw_category,
-                            canonical_geom_type, lon, lat, source_version, updated_at
+                            canonical_geom_type, lon, lat, geometry_json, source_version, updated_at
                         )
                         SELECT dataset_type, entity_id, source_id, name, raw_category,
-                               canonical_geom_type, lon, lat, source_version, updated_at
+                               canonical_geom_type, lon, lat, geometry_json, source_version, updated_at
                         FROM geospatial_staging
                         WHERE run_id=? AND dataset_type=?
                         """,

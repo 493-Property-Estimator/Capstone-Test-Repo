@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -109,13 +110,28 @@ def fetch_geospatial_features(
     east: float,
     north: float,
 ) -> list[dict[str, Any]]:
-    sql = """
-        SELECT dataset_type, entity_id, source_id, name, raw_category, canonical_geom_type, lon, lat
-        FROM geospatial_prod
-        WHERE lon BETWEEN ? AND ? AND lat BETWEEN ? AND ?
-    """
+    boundary_layers = {
+        "municipal_wards",
+        "provincial_districts",
+        "federal_districts",
+        "census_subdivisions",
+        "census_boundaries",
+    }
+    if layer_id.lower() in boundary_layers:
+        sql = """
+            SELECT dataset_type, entity_id, source_id, name, raw_category, canonical_geom_type, lon, lat, geometry_json
+            FROM geospatial_prod
+        """
+        params: tuple[float, ...] = ()
+    else:
+        sql = """
+            SELECT dataset_type, entity_id, source_id, name, raw_category, canonical_geom_type, lon, lat, geometry_json
+            FROM geospatial_prod
+            WHERE lon BETWEEN ? AND ? AND lat BETWEEN ? AND ?
+        """
+        params = (west, east, south, north)
     with connect(db_path) as conn:
-        rows = conn.execute(sql, (west, east, south, north)).fetchall()
+        rows = conn.execute(sql, params).fetchall()
     features = []
     for row in rows:
         row = dict(row)
@@ -128,16 +144,49 @@ def fetch_geospatial_features(
 def _matches_layer(layer_id: str, row: dict[str, Any]) -> bool:
     dataset_type = (row.get("dataset_type") or "").lower()
     raw_category = (row.get("raw_category") or "").lower()
+    source_id = (row.get("source_id") or "").lower()
     layer = layer_id.lower()
-    if layer in dataset_type:
-        return True
-    if layer in raw_category:
-        return True
-    if layer == "green_spaces" and raw_category in {"park", "dog_park"}:
-        return True
-    if layer == "parks" and raw_category in {"park", "dog_park"}:
-        return True
-    return False
+    aliases = {
+        "schools": {"source_ids": {"geospatial.school_locations"}, "raw_categories": {"school"}},
+        "parks": {"source_ids": {"geospatial.parks"}, "raw_categories": {"park", "dog_park"}},
+        "playgrounds": {"source_ids": {"geospatial.playgrounds"}, "raw_categories": {"playground"}},
+        "police_stations": {"source_ids": {"geospatial.police_stations"}, "raw_categories": {"police"}},
+        "municipal_wards": {"source_ids": {"geospatial.municipal_wards"}},
+        "provincial_districts": {"source_ids": {"geospatial.provincial_districts"}},
+        "federal_districts": {"source_ids": {"geospatial.federal_districts"}},
+        "census_subdivisions": {"source_ids": {"geospatial.census_subdivisions"}},
+        "census_boundaries": {
+            "source_ids": {
+                "geospatial.municipal_wards",
+                "geospatial.provincial_districts",
+                "geospatial.federal_districts",
+                "geospatial.census_subdivisions",
+            }
+        },
+    }
+    config = aliases.get(layer)
+    if config:
+        if source_id in config.get("source_ids", set()):
+            return True
+        if raw_category in config.get("raw_categories", set()):
+            return True
+        return False
+    return layer in dataset_type or layer in raw_category
+
+
+def decode_geometry(row: dict[str, Any]) -> dict[str, Any]:
+    raw_geometry = row.get("geometry_json")
+    if raw_geometry:
+        try:
+            geometry = json.loads(raw_geometry)
+        except json.JSONDecodeError:
+            geometry = None
+        if isinstance(geometry, dict) and geometry.get("type") and geometry.get("coordinates") is not None:
+            return geometry
+    return {
+        "type": "Point",
+        "coordinates": [row["lon"], row["lat"]],
+    }
 
 
 def get_latest_dataset_version(db_path: Path) -> str | None:

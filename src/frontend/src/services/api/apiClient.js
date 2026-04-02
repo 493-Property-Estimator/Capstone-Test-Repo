@@ -1,11 +1,13 @@
 import { API_BASE_URL } from "../../config.js";
 
 async function request(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (options.body !== undefined && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
+    headers,
     ...options
   });
 

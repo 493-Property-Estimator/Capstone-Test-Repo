@@ -178,6 +178,9 @@ export function createEstimateController({
     if (location?.coordinates) {
       formElements.latitudeInput.value = String(location.coordinates.lat);
       formElements.longitudeInput.value = String(location.coordinates.lng);
+    } else {
+      formElements.latitudeInput.value = "";
+      formElements.longitudeInput.value = "";
     }
     setText(
       locationSummary,

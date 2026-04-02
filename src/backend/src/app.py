@@ -26,6 +26,7 @@ from backend.src.api.estimates import router as estimates_router
 from backend.src.api.layers import router as layers_router
 from backend.src.api.health import router as health_router
 from backend.src.jobs.precompute_grid import router as jobs_router
+from data_sourcing.database import connect as connect_data_db, init_db as init_data_db
 
 settings = load_settings()
 metrics = Metrics()
@@ -35,11 +36,23 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],
+    allow_origins=[
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def initialize_database() -> None:
+    conn = connect_data_db(settings.data_db_path)
+    try:
+        init_data_db(conn)
+    finally:
+        conn.close()
 
 
 @app.middleware("http")

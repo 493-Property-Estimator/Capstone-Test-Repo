@@ -27,12 +27,17 @@ export function createSearchController({
 
       if (response.status === "resolved" && response.location) {
         setText(statusElement, "Resolved");
+        setText(helperText, "Address resolved.");
+        clearElement(suggestionsRoot);
+        clearElement(candidateResultsRoot);
         onLocationResolved(response.location);
         return;
       }
 
       if (response.status === "ambiguous") {
         setText(statusElement, "Ambiguous");
+        setText(helperText, "Multiple address candidates found.");
+        clearElement(suggestionsRoot);
         renderCandidates(response.candidates || []);
         return;
       }
@@ -47,6 +52,7 @@ export function createSearchController({
       }
 
       setText(statusElement, "No match");
+      clearElement(candidateResultsRoot);
       setText(
         helperText,
         "No matching address found. Try postal code, city, or a more specific address."

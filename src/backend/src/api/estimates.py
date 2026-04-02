@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import time
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from backend.src.config import EDMONTON_BOUNDS
-from backend.src.db.queries import get_location_by_id, resolve_address, get_latest_dataset_version
-from backend.src.services.validation import validate_location_payload, coords_in_bounds
-from backend.src.services.errors import validation_error_response, error_response
-from backend.src.services.features import compute_proximity_factors, compute_comparable_adjustment
-from backend.src.services.warnings import build_missing_data_warning, build_routing_warning
-from backend.src.services.routing import compute_distance
+from backend.src.db.queries import get_location_by_id, resolve_address
+from backend.src.services.errors import error_response, validation_error_response
+from backend.src.services.validation import coords_in_bounds, validate_location_payload
+from estimator import estimate_property_value
 
 router = APIRouter()
 
@@ -20,29 +17,23 @@ async def create_estimate(request: Request, payload: dict):
     request_id = request.state.request_id
     issues = validate_location_payload(payload)
     if issues:
-        status = 422 if any(i.reason in {"out_of_range", "not_numeric"} for i in issues) else 400
+        status = 422 if any(issue.reason in {"out_of_range", "not_numeric"} for issue in issues) else 400
         body, status_code = validation_error_response(request_id, issues, status)
         return JSONResponse(status_code=status_code, content=body)
 
     location = payload.get("location") or {}
-    options = payload.get("options") or {}
-    strict = options.get("strict") if options.get("strict") is not None else request.app.state.settings.enable_strict_mode_default
-    required_factors = options.get("required_factors") or []
-
+    property_details = payload.get("property_details") or {}
     settings = request.app.state.settings
-    cache = request.app.state.cache
-    metrics = request.app.state.metrics
 
     canonical = None
-    coords = None
     if location.get("canonical_location_id"):
         canonical = get_location_by_id(settings.data_db_path, location["canonical_location_id"])
-    if location.get("address"):
+    if canonical is None and location.get("address"):
         matches = resolve_address(settings.data_db_path, location["address"], limit=1)
         canonical = matches[0] if matches else None
-    if location.get("coordinates"):
-        coords = location.get("coordinates")
-    elif canonical and canonical.lat is not None and canonical.lon is not None:
+
+    coords = location.get("coordinates")
+    if coords is None and canonical and canonical.lat is not None and canonical.lon is not None:
         coords = {"lat": canonical.lat, "lng": canonical.lon}
 
     if coords is None:
@@ -69,142 +60,95 @@ async def create_estimate(request: Request, payload: dict):
             ),
         )
 
-    dataset_version = get_latest_dataset_version(settings.data_db_path)
-    cache_key = _cache_key(coords, location, options)
-    cached, cache_status = cache.get(cache_key, dataset_version)
-    if cached:
-        metrics.cache_hit_ratio = cache.ratio()
-        response = cached
-        response["request_id"] = request_id
-        headers = {"X-Cache-Status": cache_status.upper()}
-        return JSONResponse(status_code=200, content=response, headers=headers)
-
-    valuation_start = time.time()
-    baseline_value = None
-    canonical_id = canonical.canonical_location_id if canonical else None
-    if canonical and canonical.assessment_value is not None:
-        baseline_value = canonical.assessment_value
-    if baseline_value is None:
+    try:
+        estimate = estimate_property_value(
+            settings.data_db_path,
+            lat=float(coords["lat"]),
+            lon=float(coords["lng"]),
+            property_attributes=property_details,
+        )
+    except ValueError as exc:
         return JSONResponse(
             status_code=424,
             content=error_response(
                 request_id,
-                code="BASELINE_MISSING",
-                message="Baseline assessment value unavailable.",
-                details={"canonical_location_id": canonical_id},
+                code="ESTIMATE_UNAVAILABLE",
+                message=str(exc),
+                details={},
                 retryable=False,
             ),
         )
 
-    point = (coords["lng"], coords["lat"])
-    factor_results, missing = compute_proximity_factors(point, settings.data_db_path)
+    return _adapt_estimator_response(estimate, canonical, request_id)
 
-    approximations = []
-    routing_warning = None
-    if factor_results:
-        # treat routing as approximated for proximity distances
-        routing = compute_distance(
-            origin=(coords["lat"], coords["lng"]),
-            target=(coords["lat"], coords["lng"]),
-            routing_enabled=settings.enable_routing,
-            metrics=metrics,
-        )
-        if routing.fallback_used:
-            approximations.append("commute_accessibility")
-            routing_warning = build_routing_warning(["commute_accessibility"], routing.reason)
 
-    if strict and required_factors:
-        missing_required = [f for f in required_factors if f in missing]
-        if missing_required:
-            return JSONResponse(
-                status_code=424,
-                content={
-                    "request_id": request_id,
-                    "error": {
-                        "code": "REQUIRED_FACTOR_MISSING",
-                        "message": "Required factor unavailable.",
-                        "details": {"missing_required_datasets": missing_required},
-                        "retryable": False,
-                    },
-                },
-            )
+def _adapt_estimator_response(estimate: dict, canonical, request_id: str) -> dict:
+    matched_property = estimate.get("matched_property") or {}
+    query_point = estimate.get("query_point") or {}
+    warnings = [_adapt_warning(item) for item in estimate.get("warnings", [])]
+    factor_breakdown = [_adapt_factor(item) for item in estimate.get("feature_breakdown", {}).get("valuation_adjustments", [])]
+    confidence_score = float(estimate.get("confidence_score") or 0.0)
+    completeness_score = float(estimate.get("completeness_score") or 0.0)
 
-    adjustments_sum = sum(fr.value for fr in factor_results)
-    comp_adjustment = compute_comparable_adjustment(point, baseline_value, settings.data_db_path)
-    final_estimate = max(0.0, baseline_value + adjustments_sum + comp_adjustment)
-    range_low = max(0.0, final_estimate * 0.93)
-    range_high = final_estimate * 1.07
-
-    confidence = _confidence_from_missing(len(missing), total=max(len(factor_results), 1))
-
-    warnings = build_missing_data_warning(missing)
-    if routing_warning:
-        warnings.append(routing_warning)
-
-    response = {
+    return {
         "request_id": request_id,
-        "estimate_id": f"est_{canonical_id or 'coords'}",
-        "status": "partial" if missing else "ok",
+        "estimate_id": estimate.get("request_id"),
+        "status": "partial" if warnings or estimate.get("missing_factors") else "ok",
         "location": {
-            "canonical_location_id": canonical_id,
-            "canonical_address": _format_address(canonical),
-            "coordinates": coords,
+            "canonical_location_id": matched_property.get("canonical_location_id")
+            or getattr(canonical, "canonical_location_id", None),
+            "canonical_address": matched_property.get("address") or _format_address(canonical),
+            "coordinates": {
+                "lat": query_point.get("lat"),
+                "lng": query_point.get("lon"),
+            },
             "region": "Edmonton",
-            "neighbourhood": canonical.neighbourhood if canonical else None,
-            "coverage_status": "supported",
+            "neighbourhood": matched_property.get("neighbourhood") or getattr(canonical, "neighbourhood", None),
+            "coverage_status": "supported"
+            if _in_bounds(query_point.get("lat"), query_point.get("lon"))
+            else "unsupported",
         },
-        "baseline_value": baseline_value,
-        "final_estimate": final_estimate,
-        "range": {"low": range_low, "high": range_high},
-        "factor_breakdown": [
-            {
-                "factor_id": fr.factor_id,
-                "label": fr.label,
-                "value": fr.value,
-                "status": fr.status,
-                "summary": fr.summary,
-            }
-            for fr in factor_results
-        ],
-        "confidence": confidence,
+        "baseline_value": estimate.get("baseline", {}).get("assessment_value"),
+        "final_estimate": estimate.get("final_estimate"),
+        "range": {
+            "low": estimate.get("low_estimate"),
+            "high": estimate.get("high_estimate"),
+        },
+        "factor_breakdown": factor_breakdown,
+        "confidence": {
+            "score": round(confidence_score, 2),
+            "percentage": int(round(confidence_score * 100)),
+            "label": str(estimate.get("confidence_label") or "unknown"),
+            "completeness": "complete" if completeness_score >= 0.99 else "partial",
+        },
         "warnings": warnings,
-        "missing_factors": missing,
-        "approximations": approximations,
+        "missing_factors": estimate.get("missing_factors", []),
+        "approximations": estimate.get("fallback_flags", []),
     }
 
-    metrics.record_valuation((time.time() - valuation_start) * 1000)
-    cache.set(cache_key, response, dataset_version)
-    metrics.cache_hit_ratio = cache.ratio()
-    headers = {"X-Cache-Status": cache_status.upper()}
-    return JSONResponse(status_code=200, content=response, headers=headers)
 
-
-def _cache_key(coords: dict, location: dict, options: dict) -> str:
-    key_parts = [
-        f"lat={coords.get('lat')}",
-        f"lng={coords.get('lng')}",
-        f"id={location.get('canonical_location_id')}",
-        f"addr={location.get('address')}",
-        f"options={sorted(options.items())}",
-    ]
-    return "|".join(key_parts)
-
-
-def _confidence_from_missing(missing_count: int, total: int) -> dict:
-    completeness_ratio = max(0.0, 1.0 - missing_count / max(total, 1))
-    score = round(0.6 + 0.4 * completeness_ratio, 2)
-    percentage = int(score * 100)
-    if score >= 0.85:
-        label = "high"
-    elif score >= 0.7:
-        label = "medium"
-    else:
-        label = "low"
+def _adapt_factor(item: dict) -> dict:
+    metadata = item.get("metadata") or {}
+    summary_bits = [f"{key.replace('_', ' ')}: {value}" for key, value in metadata.items()]
     return {
-        "score": score,
-        "percentage": percentage,
-        "label": label,
-        "completeness": "complete" if missing_count == 0 else "partial",
+        "factor_id": item.get("code"),
+        "label": item.get("label"),
+        "value": item.get("value"),
+        "status": "available",
+        "summary": "; ".join(summary_bits) if summary_bits else "Derived from the estimator feature model.",
+    }
+
+
+def _adapt_warning(item: dict) -> dict:
+    severity = item.get("severity") or "warning"
+    title = str(item.get("code") or "estimator_warning").replace("_", " ").title()
+    return {
+        "code": item.get("code"),
+        "severity": severity,
+        "title": title,
+        "message": item.get("message") or "Estimator warning.",
+        "affected_factors": [],
+        "dismissible": False,
     }
 
 
@@ -216,3 +160,12 @@ def _format_address(record) -> str | None:
     if house and street:
         return f"{house} {street}, Edmonton, AB"
     return street or None
+
+
+def _in_bounds(lat: float | None, lng: float | None) -> bool:
+    if lat is None or lng is None:
+        return False
+    return (
+        EDMONTON_BOUNDS["west"] <= lng <= EDMONTON_BOUNDS["east"]
+        and EDMONTON_BOUNDS["south"] <= lat <= EDMONTON_BOUNDS["north"]
+    )

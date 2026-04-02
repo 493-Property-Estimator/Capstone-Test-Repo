@@ -38,6 +38,12 @@ pip install -r src/backend/requirements.txt
 pip install -r src/backend/requirements-dev.txt
 ```
 
+If you want the database-backed app running locally, initialize the SQLite database first:
+
+```bash
+./ingest init-db
+```
+
 ### Frontend
 
 Run directly from repo root:
@@ -84,30 +90,65 @@ The API will be available at:
 http://localhost:8000/api/v1
 ```
 
+Recommended startup flow from the repo root:
+
+1. `./ingest init-db`
+2. `python3 -m uvicorn backend.src.app:app --reload --port 8000`
+3. `python3 -m http.server 8080 --directory src/frontend`
+4. Open `http://localhost:8080`
+
 ### Database
 
 Initialize the SQLite database schema:
 
 ```bash
-python3 -m src.data_sourcing.cli init-db --db src/data_sourcing/open_data.db
+./ingest init-db
 ```
 
 List configured ingestion sources:
 
 ```bash
-python3 -m src.data_sourcing.cli list-sources --db src/data_sourcing/open_data.db
+./ingest list-sources
 ```
 
 Run a refresh ingestion workflow:
 
 ```bash
-python3 -m src.data_sourcing.cli run-refresh --db src/data_sourcing/open_data.db --trigger on_demand
+./ingest run-refresh --trigger on_demand
+```
+
+Show the database file currently in use:
+
+```bash
+./ingest db-path
+```
+
+Show a readable database summary with schema and row counts:
+
+```bash
+./ingest db-summary
 ```
 
 If you want to ingest recognized local files from `src/data_sourcing/data`, use:
 
 ```bash
 python3 scripts/init_and_ingest_open_data.py
+```
+
+### TestingStage Test Page
+
+This repo also includes a simple combined frontend/backend playground that serves a test page against the sample SQLite database.
+
+Run from the repo root:
+
+```bash
+python3 TestingStage/backend/server.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:8010
 ```
 
 ## Runtime Notes

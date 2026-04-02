@@ -27,6 +27,7 @@ export function createLayerController({
       toggle.checked = layerState.enabled;
       toggle.addEventListener("change", () => {
         if (toggle.checked) {
+          mapAdapter.focusEdmonton();
           loadLayer(layer.id);
         } else {
           store.updateLayer(layer.id, { enabled: false, status: "idle", data: null });
@@ -80,7 +81,7 @@ export function createLayerController({
         status: data.coverage_status === "partial" ? "partial" : "ready",
         data
       });
-      setText(statusElement, "Ready");
+      setText(statusElement, data.coverage_status === "partial" ? "Partial" : "Ready");
     } catch (error) {
       store.updateLayer(layerId, { enabled: false, status: "unavailable", data: null });
       setText(statusElement, "Unavailable");
