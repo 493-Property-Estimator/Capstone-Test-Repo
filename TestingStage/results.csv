@@ -1,0 +1,401 @@
+mls_number,listing_id,address,neighbourhood,postal_code,price,bedrooms,bathrooms,building_type,ownership_type,size_interior_sqft,lot_size,year_built,latitude,longitude,listing_url
+E4250241,23344660,#1503 10046 117 ST NW|Edmonton,Alberta T5K1X2,,494800,,,,Condominium/Strata,,,,53.5401954,-113.5236031,https://www.realtor.ca/real-estate/23344660/1503-10046-117-st-nw-edmonton-wihkwentowin
+E4332832,25401655,1730 ELLERSLIE RD SW|Edmonton,Alberta T6X1A7,,6300000,,,,Freehold,,,,53.42604235,-113.37003485,https://www.realtor.ca/real-estate/25401655/1730-ellerslie-rd-sw-edmonton-alces
+E4366391,26315995,#606 11025 Jasper AV NW|Edmonton,Alberta T5K0K7,,139900,,,,Condominium/Strata,,,,53.5406116,-113.5108438,https://www.realtor.ca/real-estate/26315995/606-11025-jasper-av-nw-edmonton-wihkwentowin
+E4368281,26370590,#119 12110 106 AV NW NW|Edmonton,Alberta T5N4R9,,218000,,,,Condominium/Strata,,,,53.5496792,-113.5313609,https://www.realtor.ca/real-estate/26370590/119-12110-106-av-nw-nw-edmonton-westmount
+E4376738,26614753,2503 227 AV NW NW|Edmonton,Alberta T5Y6H5,,19919250,,,,Freehold,,,,53.6830889,-113.3015353,https://www.realtor.ca/real-estate/26614753/2503-227-av-nw-nw-edmonton-rural-north-east-horse-hills
+E4378304,26654752,16820 41 AV SW SW|Edmonton,Alberta T6W1A6,,3900000,,,,Freehold,,,,53.3967977,-113.6114678,https://www.realtor.ca/real-estate/26654752/16820-41-av-sw-sw-edmonton-glenridding-ravine
+E4381949,26748131,20375 18 ST NW|Edmonton,Alberta T5Y6B7,,5249650,,,,Freehold,,,,53.6686606,-113.3627228,https://www.realtor.ca/real-estate/26748131/20375-18-st-nw-edmonton-edmonton-energy-and-technology-park
+E4382795,26772494,11206 85 ST NW|Edmonton,Alberta T5B3C7,,590000,,,,Freehold,,,,53.56130351,-113.47205404,https://www.realtor.ca/real-estate/26772494/11206-85-st-nw-edmonton-parkdale-edmonton
+E4385515,26846186,#223 10142 111 ST NW NW|Edmonton,Alberta T5K1K6,,299900,,,,Condominium/Strata,,,,53.5421145,-113.5126547,https://www.realtor.ca/real-estate/26846186/223-10142-111-st-nw-nw-edmonton-wihkwentowin
+E4392332,27034333,9109 98 ST NW NW|Edmonton,Alberta T6E3M6,,295000,,,,Freehold,,,,53.52651038,-113.4825358,https://www.realtor.ca/real-estate/27034333/9109-98-st-nw-nw-edmonton-mill-creek-ravine-south
+E4402611,27305097,#1801 9939 109 ST NW|Edmonton,Alberta T5K1H6,,1170000,,,,Condominium/Strata,,,,53.53839608,-113.5077814,https://www.realtor.ca/real-estate/27305097/1801-9939-109-st-nw-edmonton-downtown-edmonton
+E4408480,27484145,#21B 25012 STURGEON RD|Rural Sturgeon County,Alberta T8T0C3,,3750000,,,,,,,,53.68061398,-113.54519606,https://www.realtor.ca/real-estate/27484145/21b-25012-sturgeon-rd-rural-sturgeon-county-sturgeon-crest
+E4414076,27667093,#22 10331 106 ST NW|Edmonton,Alberta T5J1H8,,197000,,,,Condominium/Strata,,,,53.545444,-113.5026589,https://www.realtor.ca/real-estate/27667093/22-10331-106-st-nw-edmonton-downtown-edmonton
+E4416406,27748184,#44 5 Rondeau DR|St. Albert,Alberta T8N7X8,,449900,,,,Condominium/Strata,,,,53.6110947,-113.6444282,https://www.realtor.ca/real-estate/27748184/44-5-rondeau-dr-st-albert-south-riel
+E4416572,27752994,544 TWP RR 245|Rural Sturgeon County,Alberta T8T1L6,,1977000,,,,,,,,53.70149145,-113.50521151,https://www.realtor.ca/real-estate/27752994/544-twp-rr-245-rural-sturgeon-county-none
+E4417134,27770404,9556 99A ST NW|Edmonton,Alberta T6E3W7,,880000,,,,Freehold,,,,53.5341956,-113.4858201,https://www.realtor.ca/real-estate/27770404/9556-99a-st-nw-edmonton-strathcona
+E4418792,27828764,#416 10333 112 ST NW|Edmonton,Alberta T5K0B4,,235000,,,,Condominium/Strata,,,,53.54523628,-113.51385599,https://www.realtor.ca/real-estate/27828764/416-10333-112-st-nw-edmonton-wihkwentowin
+E4421175,27905738,4002 Ginsberg CR NW|Edmonton,Alberta T5T4V2,,1149000,,,,Freehold,,,,53.50405774,-113.67898955,https://www.realtor.ca/real-estate/27905738/4002-ginsberg-cr-nw-edmonton-granville-edmonton
+E4427315,28070798,#103 9819 104 ST NW|Edmonton,Alberta T5R0Z8,,259500,,,,Condominium/Strata,,,,53.53630568,-113.4987702,https://www.realtor.ca/real-estate/28070798/103-9819-104-st-nw-edmonton-downtown-edmonton
+E4430712,28162528,12 IVY CR|Sherwood Park,Alberta T8A1W4,,465000,,,,Freehold,,,,53.51236,-113.30133,https://www.realtor.ca/real-estate/28162528/12-ivy-cr-sherwood-park-maplewood-sherwood-park
+E4430874,28168716,#1003 11969 JASPER AV NW|Edmonton,Alberta T5K0P1,,680000,,,,Condominium/Strata,,,,53.54058651,-113.52886656,https://www.realtor.ca/real-estate/28168716/1003-11969-jasper-av-nw-edmonton-wihkwentowin
+E4431053,28174674,51208 RGE ROAD 233|Rural Strathcona County,Alberta T8B1K8,,2999999,,,,,,,,53.3970775,-113.3204789,https://www.realtor.ca/real-estate/28174674/51208-rge-road-233-rural-strathcona-county-none
+E4432411,28208076,#404 10624 123 ST NW|Edmonton,Alberta T5N1P2,,115000,,,,Condominium/Strata,,,,53.5502002,-113.5344341,https://www.realtor.ca/real-estate/28208076/404-10624-123-st-nw-edmonton-westmount
+E4432435,28208246,10815 65 AV NW|Edmonton,Alberta T5Y4G6,,305000,,,,Freehold,,,,53.5018467,-113.5101431,https://www.realtor.ca/real-estate/28208246/10815-65-av-nw-edmonton-allendale
+E4432592,28212195,2103 ELLERSLIE RD SW|Edmonton,Alberta T6X1A7,,4500000,,,,Freehold,,,,53.42432975,-113.37907143,https://www.realtor.ca/real-estate/28212195/2103-ellerslie-rd-sw-edmonton-decoteau
+E4433766,28244944,11721 80 ST NW|Edmonton,Alberta T5B2N4,,939900,,,,Freehold,,,,53.56958048,-113.46373514,https://www.realtor.ca/real-estate/28244944/11721-80-st-nw-edmonton-parkdale-edmonton
+E4434403,28256928,15807 30 AV SW SW|Edmonton,Alberta T6W4X3,,998800,,,,Freehold,,,,53.4082991,-113.5994106,https://www.realtor.ca/real-estate/28256928/15807-30-av-sw-sw-edmonton-glenridding-ravine
+E4435989,28299318,21120 25 Ave NW|Edmonton,Alberta T6M3H1,,489900,,,,Freehold,,,,53.4556435,-113.6804173,https://www.realtor.ca/real-estate/28299318/21120-25-ave-nw-edmonton-the-uplands
+E4436846,28323824,14004 89A AV NW NW|Edmonton,Alberta T5R0J5,,2549900,,,,Freehold,,,,53.52245343,-113.56289085,https://www.realtor.ca/real-estate/28323824/14004-89a-av-nw-nw-edmonton-parkview
+E4437450,28338261,32 WINDERMERE DR SW|Edmonton,Alberta T6W0S2,,1999900,,,,Freehold,,,,53.4328911,-113.631627,https://www.realtor.ca/real-estate/28338261/32-windermere-dr-sw-edmonton-windermere
+E4437896,28352373,#22 3466 KESWICK BV SW|Edmonton,Alberta T6W3S4,,749000,,,,Condominium/Strata,,,,53.42164346,-113.65170607,https://www.realtor.ca/real-estate/28352373/22-3466-keswick-bv-sw-edmonton-keswick
+E4438933,28380067,#205 25122 STURGEON RD|Rural Sturgeon County,Alberta T8T1S6,,3398000,,,,,,,,53.66714793,-113.5838079,https://www.realtor.ca/real-estate/28380067/205-25122-sturgeon-rd-rural-sturgeon-county-rivers-gate
+E4438962,28380850,9654 83 AV NW|Edmonton,Alberta T6C1C2,,899900,,,,Freehold,,,,53.51934886,-113.47934452,https://www.realtor.ca/real-estate/28380850/9654-83-av-nw-edmonton-strathcona
+E4439876,28400904,Address not available,,,180000,,,,Condominium/Strata,,,,53.40007445,-113.57969144,https://www.realtor.ca/real-estate/28400904/edmonton
+E4440176,28411685,16427 115 ST NW|Edmonton,Alberta T5X5E8,,209999,,,,Condominium/Strata,,,,53.62512211,-113.52133872,https://www.realtor.ca/real-estate/28411685/16427-115-st-nw-edmonton-dunluce
+E4440305,28415762,#202 860 SECORD BV NW|Edmonton,Alberta T5T7R9,,165000,,,,Condominium/Strata,,,,53.5270685,-113.7068608,https://www.realtor.ca/real-estate/28415762/202-860-secord-bv-nw-edmonton-secord
+E4440360,28417646,#115 10118 106 AV NW|Edmonton,Alberta T5H0B8,,214777,,,,Condominium/Strata,,,,53.55033888,-113.4950594,https://www.realtor.ca/real-estate/28417646/115-10118-106-av-nw-edmonton-central-mcdougall
+E4441136,28434644,#3802 10180 103 ST NW|Edmonton,Alberta T5J0L1,,875000,,,,Condominium/Strata,,,,53.54290491,-113.49779153,https://www.realtor.ca/real-estate/28434644/3802-10180-103-st-nw-edmonton-downtown-edmonton
+E4441331,28439741,#302 3670 139 AV NW|Edmonton,Alberta T5Y3N5,,216500,,,,Condominium/Strata,,,,53.60343638,-113.40026319,https://www.realtor.ca/real-estate/28439741/302-3670-139-av-nw-edmonton-clareview-town-centre
+E4441613,28449244,9524 129A AV NW|Edmonton,Alberta T5E0N8,,379999,,,,Freehold,,,,53.58810304,-113.48877648,https://www.realtor.ca/real-estate/28449244/9524-129a-av-nw-edmonton-killarney
+E4441715,28452532,#510 10024 JASPER AV NW|Edmonton,Alberta T5J1R9,,149900,,,,Condominium/Strata,,,,53.54145372,-113.49144866,https://www.realtor.ca/real-estate/28452532/510-10024-jasper-av-nw-edmonton-downtown-edmonton
+E4441779,28454310,9634 157 ST NW|Edmonton,Alberta T5P2T2,,2350000,,,,Freehold,,,,53.53422551,-113.59261364,https://www.realtor.ca/real-estate/28454310/9634-157-st-nw-edmonton-glenwood-edmonton
+E4441848,28456023,11344 123 ST NW|Edmonton,Alberta R5M0E9,,400000,,,,Freehold,,,,53.56334456,-113.53453517,https://www.realtor.ca/real-estate/28456023/11344-123-st-nw-edmonton-inglewood-edmonton
+E4441988,28459286,8807 99 AV NW|Edmonton,Alberta T5H4N5,,2750000,,,,Freehold,,,,53.54098602,-113.46632966,https://www.realtor.ca/real-estate/28459286/8807-99-av-nw-edmonton-riverdale
+E4442598,28473407,4150 195 AV NW|Edmonton,Alberta T5Y6N4,,2595000,,,,Freehold,,,,53.65793933,-113.40487508,https://www.realtor.ca/real-estate/28473407/4150-195-av-nw-edmonton-edmonton-energy-and-technology-park
+E4443134,28492976,8715 SASKATCHEWAN DR NW|Edmonton,Alberta T6G2A9,,950000,,,,Freehold,,,,53.52369858,-113.54034574,https://www.realtor.ca/real-estate/28492976/8715-saskatchewan-dr-nw-edmonton-windsor-park-edmonton
+E4443138,28492980,4111 Whispering River Dr. DR SW|Edmonton,Alberta T6W2E1,,4190000,,,,Freehold,,,,53.4497186,-113.6100969,https://www.realtor.ca/real-estate/28492980/4111-whispering-river-dr-dr-sw-edmonton-windermere
+E4443263,28495728,#123 2098 BLACKMUD CREEK DR SW|Edmonton,Alberta T6W1T7,,225000,,,,Condominium/Strata,,,,53.422196,-113.51518308,https://www.realtor.ca/real-estate/28495728/123-2098-blackmud-creek-dr-sw-edmonton-blackmud-creek
+E4443441,28499279,12219 101 ST NW|Edmonton,Alberta T5G2C5,,449900,,,,Condominium/Strata,,,,53.5774673,-113.4933518,https://www.realtor.ca/real-estate/28499279/12219-101-st-nw-edmonton-westwood-edmonton
+E4443454,28499392,#1403 14105 WEST BLOCK DR NW|Edmonton,Alberta T5N1L5,,1750000,,,,Condominium/Strata,,,,53.5435235,-113.56483221,https://www.realtor.ca/real-estate/28499392/1403-14105-west-block-dr-nw-edmonton-glenora
+E4443540,28501229,12605 107 AV NW|Edmonton,Alberta T5M1Z5,,399000,,,,Freehold,,,,53.55077438,-113.53989354,https://www.realtor.ca/real-estate/28501229/12605-107-av-nw-edmonton-westmount
+E4443837,28507524,#114 2430 GUARDIAN RD NW|Edmonton,Alberta T5T2P5,,188000,,,,Condominium/Strata,,,,53.5094565,-113.6733816,https://www.realtor.ca/real-estate/28507524/114-2430-guardian-rd-nw-edmonton-glastonbury
+E4444076,28515487,#125 2098 BLACKMUD CREEK DR SW|Edmonton,Alberta T6W1T7,,225000,,,,Condominium/Strata,,,,53.42220956,-113.51546739,https://www.realtor.ca/real-estate/28515487/125-2098-blackmud-creek-dr-sw-edmonton-blackmud-creek
+E4444271,28521037,628 ORTONA WY NW NW|Edmonton,Alberta T5E6S9,,624900,,,,Freehold,,,,53.6041745,-113.4951436,https://www.realtor.ca/real-estate/28521037/628-ortona-wy-nw-nw-edmonton-griesbach
+E4444335,28522656,#108 10518 113 ST NW|Edmonton,Alberta T5H0C6,,225000,,,,Condominium/Strata,,,,53.5486659,-113.5161418,https://www.realtor.ca/real-estate/28522656/108-10518-113-st-nw-edmonton-queen-mary-park
+E4444366,28523202,1604 BLACKMORE CO SW|Edmonton,Alberta T6W1J2,,685999,,,,Freehold,,,,53.4190558,-113.5072845,https://www.realtor.ca/real-estate/28523202/1604-blackmore-co-sw-edmonton-blackmud-creek
+E4444599,28528430,TWP 534 RR232|Rural Strathcona County,Alberta T8Z4V4,,1795000,,,,,,,,53.59971957,-113.28406136,https://www.realtor.ca/real-estate/28528430/twp-534-rr232-rural-strathcona-county-none
+E4444742,28531457,#404 10320 113 ST NW|Edmonton,Alberta T5K1P6,,169900,,,,Condominium/Strata,,,,53.54532427,-113.51636139,https://www.realtor.ca/real-estate/28531457/404-10320-113-st-nw-edmonton-wihkwentowin
+E4445216,28542253,14807 98 AV NW|Edmonton,Alberta T5N0H1,,2200000,,,,Freehold,,,,53.53600178,-113.57747622,https://www.realtor.ca/real-estate/28542253/14807-98-av-nw-edmonton-crestwood
+E4445311,28545418,5316 129 AV NW|Edmonton,Alberta T5A0A3,,445000,,,,Freehold,,,,53.58785,-113.42346,https://www.realtor.ca/real-estate/28545418/5316-129-av-nw-edmonton-kennedale-industrial
+E4445437,28549424,13137 214 ST NW|Edmonton,Alberta T5S0T7,,450238,,,,Freehold,,,,53.59009199,-113.68270314,https://www.realtor.ca/real-estate/28549424/13137-214-st-nw-edmonton-trumpeter-area
+E4445438,28549425,13125 214 ST NW|Edmonton,Alberta T5S0T7,,478415,,,,Freehold,,,,53.58913382,-113.67983603,https://www.realtor.ca/real-estate/28549425/13125-214-st-nw-edmonton-trumpeter-area
+E4446760,28582560,#306 10232 115 ST NW|Edmonton,Alberta T5K1T8,,299900,,,,Condominium/Strata,,,,53.5438188,-113.520087,https://www.realtor.ca/real-estate/28582560/306-10232-115-st-nw-edmonton-wihkwentowin
+E4446910,28586160,#4 11518 76 AV NW|Edmonton,Alberta T6G0K7,,405000,,,,Condominium/Strata,,,,53.51247594,-113.52931485,https://www.realtor.ca/real-estate/28586160/4-11518-76-av-nw-edmonton-belgravia
+E4447100,28590657,4804 154 ST NW|Edmonton,Alberta T6H5K7,,2495000,,,,Freehold,,,,53.48624562,-113.58469844,https://www.realtor.ca/real-estate/28590657/4804-154-st-nw-edmonton-ramsay-heights
+E4447546,28599353,10220 CONNAUGHT DR NW|Edmonton,Alberta T5N3J7,,800000,,,,Freehold,,,,53.5434983,-113.54166762,https://www.realtor.ca/real-estate/28599353/10220-connaught-dr-nw-edmonton-glenora
+E4447987,28612093,11242 95A ST NW|Edmonton,Alberta T5G1N8,,329000,,,,Freehold,,,,53.56235072,-113.48901326,https://www.realtor.ca/real-estate/28612093/11242-95a-st-nw-edmonton-alberta-avenue
+E4448186,28617273,#121 17404 64 AV NW|Edmonton,Alberta T5T6X4,,202000,,,,Condominium/Strata,,,,53.5004828,-113.6238385,https://www.realtor.ca/real-estate/28617273/121-17404-64-av-nw-edmonton-callingwood-south
+E4448200,28617628,#401 11969 JASPER AV NW|Edmonton,Alberta T5K0P1,,239900,,,,Condominium/Strata,,,,53.5407899,-113.5288965,https://www.realtor.ca/real-estate/28617628/401-11969-jasper-av-nw-edmonton-wihkwentowin
+E4448367,28621307,11331 84 ST ST NW|Edmonton,Alberta T5B3B3,,299900,,,,Freehold,,,,53.563735,-113.4700377,https://www.realtor.ca/real-estate/28621307/11331-84-st-st-nw-edmonton-parkdale-edmonton
+E4448397,28622176,5557 SCHONSEE DR NW|Edmonton,Alberta T5Z0R8,,599920,,,,Freehold,,,,53.6354121,-113.46278362,https://www.realtor.ca/real-estate/28622176/5557-schonsee-dr-nw-edmonton-crystallina-nera-west
+E4448834,28630519,#415 12650 142 AV NW|Edmonton,Alberta T5X0J4,,369369,,,,Condominium/Strata,,,,53.60450325,-113.54057169,https://www.realtor.ca/real-estate/28630519/415-12650-142-av-nw-edmonton-baranow
+E4448983,28635952,15860 41 AV SW|Edmonton,Alberta T6W1A6,,1948000,,,,Freehold,,,,53.39621212,-113.59536959,https://www.realtor.ca/real-estate/28635952/15860-41-av-sw-edmonton-chappelle-area
+E4449208,28643342,1308 LAKEWOOD W NW|Edmonton,Alberta T6K3P2,,209900,,,,Condominium/Strata,,,,53.4552783,-113.4609827,https://www.realtor.ca/real-estate/28643342/1308-lakewood-w-nw-edmonton-tipaskan
+E4449225,28643863,#61 1503 MILL WOODS E NW|Edmonton,Alberta T6L4C2,,189900,,,,Condominium/Strata,,,,53.44378698,-113.40257728,https://www.realtor.ca/real-estate/28643863/61-1503-mill-woods-e-nw-edmonton-crawford-plains
+E4449230,28643906,11484 139 AV NW|Edmonton,Alberta T5X3L4,,225000,,,,Condominium/Strata,,,,53.60254287,-113.51888378,https://www.realtor.ca/real-estate/28643906/11484-139-av-nw-edmonton-carlisle
+E4449252,28644682,#117 226 Macewan road SW SW|Edmonton,Alberta T6W0C5,,239800,,,,Condominium/Strata,,,,53.4292004,-113.527296,https://www.realtor.ca/real-estate/28644682/117-226-macewan-road-sw-sw-edmonton-macewan
+E4449350,28647447,#707 10108 125 ST NW|Edmonton,Alberta T5N4B6,,465000,,,,Condominium/Strata,,,,53.54223536,-113.53809548,https://www.realtor.ca/real-estate/28647447/707-10108-125-st-nw-edmonton-westmount
+E4449479,28650043,#410 9120 156 ST NW|Edmonton,Alberta T5R1Y8,,162500,,,,Condominium/Strata,,,,53.52643637,-113.59105052,https://www.realtor.ca/real-estate/28650043/410-9120-156-st-nw-edmonton-meadowlark-park-edmonton
+E4450369,28671525,7806 145 ST NW|Edmonton,Alberta T5R0S6,,349900,,,,Freehold,,,,53.5132695,-113.5722339,https://www.realtor.ca/real-estate/28671525/7806-145-st-nw-edmonton-laurier-heights
+E4450646,28677146,8812 183 AV NW|Edmonton,Alberta T5Z0S8,,689900,,,,Freehold,,,,53.6455641,-113.475824,https://www.realtor.ca/real-estate/28677146/8812-183-av-nw-edmonton-klarvatten
+E4450683,28677602,2038 Collip Crescent SW|Edmonton,Alberta T6W5B1,,775000,,,,Freehold,,,,53.41299005,-113.51841328,https://www.realtor.ca/real-estate/28677602/2038-collip-crescent-sw-edmonton-cavanagh
+E4450912,28682898,11623 105 AV NW NW|Edmonton,Alberta T5H0L9,,329000,,,,Condominium/Strata,,,,53.5481162,-113.5223924,https://www.realtor.ca/real-estate/28682898/11623-105-av-nw-nw-edmonton-queen-mary-park
+E4451028,28684795,9230 117 ST NW NW|Edmonton,Alberta T6G1S2,,450000,,,,Freehold,,,,53.5290678,-113.5330455,https://www.realtor.ca/real-estate/28684795/9230-117-st-nw-nw-edmonton-windsor-park-edmonton
+E4451039,28684918,11032 128 ST NW|Edmonton,Alberta T5M0W6,,739900,,,,Freehold,,,,53.5583153,-113.5433887,https://www.realtor.ca/real-estate/28684918/11032-128-st-nw-edmonton-westmount
+E4451219,28690307,11036 128 ST NW|Edmonton,Alberta T5M0W6,,739900,,,,Freehold,,,,53.5583105,-113.5433346,https://www.realtor.ca/real-estate/28690307/11036-128-st-nw-edmonton-westmount
+E4451477,28698873,8824 183 AV NW|Edmonton,Alberta T5Z0S8,,699900,,,,Freehold,,,,53.6455169,-113.4762724,https://www.realtor.ca/real-estate/28698873/8824-183-av-nw-edmonton-klarvatten
+E4451483,28699085,11607 46 AV NW|Edmonton,Alberta T6H0A6,,449900,,,,Freehold,,,,53.4835696,-113.532612,https://www.realtor.ca/real-estate/28699085/11607-46-av-nw-edmonton-malmo-plains
+E4451486,28699149,4111 WESTCLIFF HEATH HE SW|Edmonton,Alberta T6W0X9,,1500000,,,,Freehold,,,,53.43359059,-113.62466502,https://www.realtor.ca/real-estate/28699149/4111-westcliff-heath-he-sw-edmonton-windermere
+E4451973,28709580,4112 GINSBURG PL NW|Edmonton,Alberta T5T4V1,,999000,,,,Freehold,,,,53.50554309,-113.67894917,https://www.realtor.ca/real-estate/28709580/4112-ginsburg-pl-nw-edmonton-granville-edmonton
+E4452068,28711621,1401 AINSLIE WD SW|Edmonton,Alberta T6W3E9,,799900,,,,Freehold,,,,53.431018,-113.599832,https://www.realtor.ca/real-estate/28711621/1401-ainslie-wd-sw-edmonton-ambleside
+E4452076,28711736,#323 16303 95 ST NW|Edmonton,Alberta T5Z3V1,,215000,,,,Condominium/Strata,,,,53.62533273,-113.48674819,https://www.realtor.ca/real-estate/28711736/323-16303-95-st-nw-edmonton-eaux-claires
+E4452531,28722594,#404 10335 117 ST NW|Edmonton,Alberta T5K1X8,,98000,,,,Condominium/Strata,,,,53.5458171,-113.5228101,https://www.realtor.ca/real-estate/28722594/404-10335-117-st-nw-edmonton-wihkwentowin
+E4452980,28734998,#16 West 1033 Youville DR W NW|Edmonton,Alberta T6L6V9,,299000,,,,Condominium/Strata,,,,53.463203,-113.4330426,https://www.realtor.ca/real-estate/28734998/16-west-1033-youville-dr-w-nw-edmonton-tawa
+E4453105,28737585,9220 114 AV NW|Edmonton,Alberta T5G0K3,,145000,,,,Freehold,,,,53.56446523,-113.48368712,https://www.realtor.ca/real-estate/28737585/9220-114-av-nw-edmonton-alberta-avenue
+E4453458,28743967,#501 8340 JASPER AV NW|Edmonton,Alberta T5H4C6,,174500,,,,Condominium/Strata,,,,53.55583397,-113.47039827,https://www.realtor.ca/real-estate/28743967/501-8340-jasper-av-nw-edmonton-cromdale
+E4453461,28744064,1214 EATON LN NW|Edmonton,Alberta T6M1M9,,700000,,,,Freehold,,,,53.4628488,-113.6762991,https://www.realtor.ca/real-estate/28744064/1214-eaton-ln-nw-edmonton-edgemont-edmonton
+E4453671,28750882,#810 5151 WINDERMERE BV SW|Edmonton,Alberta T6W2K4,,369900,,,,Condominium/Strata,,,,53.4342533,-113.6010963,https://www.realtor.ca/real-estate/28750882/810-5151-windermere-bv-sw-edmonton-ambleside
+E4453710,28752631,#303 6220 FULTON RD NW|Edmonton,Alberta T6A3T4,,290000,,,,Condominium/Strata,,,,53.54560003,-113.42779261,https://www.realtor.ca/real-estate/28752631/303-6220-fulton-rd-nw-edmonton-fulton-place
+E4453864,28757061,176 RIVER PT NW|Edmonton,Alberta T5A4Y5,,289900,,,,Freehold,,,,53.5966151,-113.37700721,https://www.realtor.ca/real-estate/28757061/176-river-pt-nw-edmonton-kernohan
+E4453918,28758559,#1904 9020 JASPER AV NW|Edmonton,Alberta T5H3S8,,475000,,,,Condominium/Strata,,,,53.55112999,-113.47439624,https://www.realtor.ca/real-estate/28758559/1904-9020-jasper-av-nw-edmonton-boyle-street
+E4453929,28759031,60 LAURALCREST PL|St. Albert,Alberta T8N7H4,,750000,,,,Freehold,,,,53.64293849,-113.66258574,https://www.realtor.ca/real-estate/28759031/60-lauralcrest-pl-st-albert-lacombe-park
+E4454229,28765467,8105 95A ST NW|Edmonton,Alberta T6C3Y1,,1100000,,,,Freehold,,,,53.51724272,-113.4752648,https://www.realtor.ca/real-estate/28765467/8105-95a-st-nw-edmonton-ritchie
+E4454339,28767841,#334 10121 80 AV NW|Edmonton,Alberta T6E0B9,,219000,,,,Condominium/Strata,,,,53.51570413,-113.4928209,https://www.realtor.ca/real-estate/28767841/334-10121-80-av-nw-edmonton-ritchie
+E4454665,28775856,16608 9 ST NE|Edmonton,Alberta T5Y0P6,,1285000,,,,Freehold,,,,53.6275622,-113.33163897,https://www.realtor.ca/real-estate/28775856/16608-9-st-ne-edmonton-horse-hill-neighbourhood-1a
+E4454750,28778398,6720 20 AV NW|Edmonton,Alberta T6K2H2,,510000,,,,Freehold,,,,53.4516278,-113.43696573,https://www.realtor.ca/real-estate/28778398/6720-20-av-nw-edmonton-ekota
+E4454763,28778913,#114 6220 FULTON RD NW|Edmonton,Alberta T6A3T4,,274900,,,,Condominium/Strata,,,,53.54611955,-113.42728883,https://www.realtor.ca/real-estate/28778913/114-6220-fulton-rd-nw-edmonton-fulton-place
+E4454863,28782125,9747 158 ST NW|Edmonton,Alberta T5P2X2,,2399999,,,,Freehold,,,,53.536011,-113.5933203,https://www.realtor.ca/real-estate/28782125/9747-158-st-nw-edmonton-glenwood-edmonton
+E4455086,28787415,51313 Range Road 261|Rural Parkland County,Alberta T7Y1B4,,4600000,,,,,,,,53.41540547,-113.7135526,https://www.realtor.ca/real-estate/28787415/51313-range-road-261-rural-parkland-county-none
+E4455126,28788225,9826 158 ST NW|Edmonton,Alberta T5P2X3,,615000,,,,Freehold,,,,53.5370445,-113.5943146,https://www.realtor.ca/real-estate/28788225/9826-158-st-nw-edmonton-glenwood-edmonton
+E4455694,28801701,#707 9917 110 ST NW|Edmonton,Alberta T5K2N4,,139800,,,,Condominium/Strata,,,,53.5378845,-113.5099158,https://www.realtor.ca/real-estate/28801701/707-9917-110-st-nw-edmonton-wihkwentowin
+E4455697,28801710,#607 9917 110 ST NW|Edmonton,Alberta T5K2N4,,138800,,,,Condominium/Strata,,,,53.5378845,-113.5099158,https://www.realtor.ca/real-estate/28801710/607-9917-110-st-nw-edmonton-wihkwentowin
+E4455768,28805455,8916 148 ST NW|Edmonton,Alberta T5R1A1,,570000,,,,Freehold,,,,53.5218369,-113.57670636,https://www.realtor.ca/real-estate/28805455/8916-148-st-nw-edmonton-parkview
+E4456202,28818078,#201 11046 130 ST NW|Edmonton,Alberta T5M0Z7,,142999,,,,Condominium/Strata,,,,53.55866611,-113.5465216,https://www.realtor.ca/real-estate/28818078/201-11046-130-st-nw-edmonton-westmount
+E4456285,28819782,#206 9917 110 ST NW|Edmonton,Alberta T5K2N4,,143800,,,,Condominium/Strata,,,,53.5378845,-113.5099158,https://www.realtor.ca/real-estate/28819782/206-9917-110-st-nw-edmonton-wihkwentowin
+E4456544,28825368,#143 8735 165 ST NW|Edmonton,Alberta T5R2R6,,135000,,,,Condominium/Strata,,,,53.52081263,-113.60814137,https://www.realtor.ca/real-estate/28825368/143-8735-165-st-nw-edmonton-west-meadowlark-park
+E4456550,28825552,#401 10028 119 ST NW|Edmonton,Alberta T5K1Y8,,410000,,,,Condominium/Strata,,,,53.54055089,-113.52744038,https://www.realtor.ca/real-estate/28825552/401-10028-119-st-nw-edmonton-wihkwentowin
+E4456709,28829907,#311 2624 MILL WOODS RD E NW|Edmonton,Alberta T6L5K7,,131000,,,,Condominium/Strata,,,,53.4589315,-113.4089699,https://www.realtor.ca/real-estate/28829907/311-2624-mill-woods-rd-e-nw-edmonton-weinlos
+E4456799,28833114,11823 SASKATCHEWAN DR NW|Edmonton,Alberta T6G2D3,,4490000,,,,Freehold,,,,53.53032608,-113.53575859,https://www.realtor.ca/real-estate/28833114/11823-saskatchewan-dr-nw-edmonton-windsor-park-edmonton
+E4456986,28840821,#307 10134 100 ST NW|Edmonton,Alberta T5J0N8,,179000,,,,Condominium/Strata,,,,53.54193542,-113.49070883,https://www.realtor.ca/real-estate/28840821/307-10134-100-st-nw-edmonton-downtown-edmonton
+E4457104,28845105,#201 10010 119 ST NW NW|Edmonton,Alberta T5K1Y8,,598900,,,,Condominium/Strata,,,,53.5401775,-113.5271302,https://www.realtor.ca/real-estate/28845105/201-10010-119-st-nw-nw-edmonton-wihkwentowin
+E4457194,28848369,8915 STRATHEARN DR NW|Edmonton,Alberta T6C4C8,,5000000,,,,Freehold,,,,53.5357505,-113.4639481,https://www.realtor.ca/real-estate/28848369/8915-strathearn-dr-nw-edmonton-strathearn
+E4457267,28849985,9346 72 AV NW|Edmonton,Alberta T6E0Y2,,1250000,,,,Freehold,,,,53.50864496,-113.47277448,https://www.realtor.ca/real-estate/28849985/9346-72-av-nw-edmonton-ritchie
+E4457298,28850813,6808 95 AV NW|Edmonton,Alberta T6B1A8,,559900,,,,Freehold,,,,53.5343568,-113.433605,https://www.realtor.ca/real-estate/28850813/6808-95-av-nw-edmonton-ottewell
+E4457406,28853391,#2103 10011 123 ST NW|Edmonton,Alberta T5N1M9,,220900,,,,Condominium/Strata,,,,53.5410956,-113.53359218,https://www.realtor.ca/real-estate/28853391/2103-10011-123-st-nw-edmonton-wihkwentowin
+E4457616,28858298,#2901 10238 103 ST NW|Edmonton,Alberta T5J0G6,,1200000,,,,Condominium/Strata,,,,53.5442144,-113.4976251,https://www.realtor.ca/real-estate/28858298/2901-10238-103-st-nw-edmonton-downtown-edmonton
+E4457988,28870081,#26 1295 CARTER CREST RD NW|Edmonton,Alberta T5R2N6,,378000,,,,Condominium/Strata,,,,53.46313175,-113.58417958,https://www.realtor.ca/real-estate/28870081/26-1295-carter-crest-rd-nw-edmonton-carter-crest
+E4458147,28876544,285 HARRISON DR NW|Edmonton,Alberta T5A2X5,,204900,,,,Condominium/Strata,,,,53.5901714,-113.4105241,https://www.realtor.ca/real-estate/28876544/285-harrison-dr-nw-edmonton-homesteader
+E4458155,28876810,13320 139 ST NW|Edmonton,Alberta T8R1J6,,379000,,,,Freehold,,,,53.5941371,-113.5608177,https://www.realtor.ca/real-estate/28876810/13320-139-st-nw-edmonton-wellington
+E4458254,28879285,#118 16807 100 AV NW|Edmonton,Alberta T5P4Z6,,187000,,,,Condominium/Strata,,,,53.5388416,-113.6113696,https://www.realtor.ca/real-estate/28879285/118-16807-100-av-nw-edmonton-glenwood-edmonton
+E4458282,28879725,1602 106 ST NW|Edmonton,Alberta T6J5B6,,1100000,,,,Freehold,,,,53.44417,-113.50252,https://www.realtor.ca/real-estate/28879725/1602-106-st-nw-edmonton-bearspaw-edmonton
+E4458552,28887631,7780 JASPER AV NW|Edmonton,Alberta T5H3R8,,699000,,,,Freehold,,,,53.5579657,-113.4610395,https://www.realtor.ca/real-estate/28887631/7780-jasper-av-nw-edmonton-cromdale
+E4458666,28890346,#68 5 Rondeau DR|St. Albert,Alberta T8N7X8,,587895,,,,Condominium/Strata,,,,53.61061096,-113.64391322,https://www.realtor.ca/real-estate/28890346/68-5-rondeau-dr-st-albert-south-riel
+E4458664,28890343,20705 56A AV NW|Edmonton,Alberta T6M0E7,,658818,,,,Freehold,,,,53.4922296,-113.6789067,https://www.realtor.ca/real-estate/28890343/20705-56a-av-nw-edmonton-the-hamptons
+E4458740,28891495,321 Westbrook WY NW|Edmonton,Alberta T5S1T6,,82500,,,,Leasehold,,,,53.55368633,-113.69518226,https://www.realtor.ca/real-estate/28891495/321-westbrook-wy-nw-edmonton-westview-village
+E4458741,28891496,862 west coast BA NW|Edmonton,Alberta T5S1T6,,120000,,,,Leasehold,,,,53.5558157,-113.6934547,https://www.realtor.ca/real-estate/28891496/862-west-coast-ba-nw-edmonton-westview-village
+E4458767,28891909,12350 82 ST NW|Edmonton,Alberta T5B2X2,,295000,,,,Freehold,,,,53.5797284,-113.4681192,https://www.realtor.ca/real-estate/28891909/12350-82-st-nw-edmonton-eastwood
+E4458790,28892380,13016 186 AV NW|Edmonton,Alberta T6V0N3,,650000,,,,Freehold,,,,53.64906928,-113.54606126,https://www.realtor.ca/real-estate/28892380/13016-186-av-nw-edmonton-goodridge-corners
+E4458788,28892378,11204 & 11206 55 AV NW|Edmonton,Alberta T6H0X1,,1795000,,,,Freehold,,,,53.49738163,-113.51961727,https://www.realtor.ca/real-estate/28892378/11204-11206-55-av-nw-edmonton-lendrum-place
+E4458796,28892415,13020 186 AV NW|Edmonton,Alberta T6V0N3,,650000,,,,Freehold,,,,53.64899297,-113.54661915,https://www.realtor.ca/real-estate/28892415/13020-186-av-nw-edmonton-goodridge-corners
+E4458859,28893662,10819 61 AV NW|Edmonton,Alberta T6H1M9,,649000,,,,Freehold,,,,53.49793906,-113.51049572,https://www.realtor.ca/real-estate/28893662/10819-61-av-nw-edmonton-pleasantview-edmonton
+E4458861,28893680,10823 61 AV NW|Edmonton,Alberta T6H1L9,,649000,,,,Freehold,,,,53.49793209,-113.51076307,https://www.realtor.ca/real-estate/28893680/10823-61-av-nw-edmonton-pleasantview-edmonton
+E4459009,28899412,#101 10126 144 ST NW|Edmonton,Alberta T5N2T7,,259500,,,,Condominium/Strata,,,,53.5421868,-113.5696993,https://www.realtor.ca/real-estate/28899412/101-10126-144-st-nw-edmonton-grovenor
+E4459256,28908425,#301 11930 100 AV NW|Edmonton,Alberta T5K0K5,,2497000,,,,Condominium/Strata,,,,53.54022639,-113.52849952,https://www.realtor.ca/real-estate/28908425/301-11930-100-av-nw-edmonton-wihkwentowin
+E4459331,28910087,67 Ridgeway Dr NW|Edmonton,Alberta T6P1C2,,137500,,,,Leasehold,,,,53.5023749,-113.3580742,https://www.realtor.ca/real-estate/28910087/67-ridgeway-dr-nw-edmonton-maple-ridge-edmonton
+E4459344,28910224,15640 92 AV NW|Edmonton,Alberta T5R5C4,,499999,,,,Freehold,,,,53.526918,-113.5939856,https://www.realtor.ca/real-estate/28910224/15640-92-av-nw-edmonton-meadowlark-park-edmonton
+E4459394,28911545,#3103 10180 103 ST NW|Edmonton,Alberta T5J0L1,,420000,,,,Condominium/Strata,,,,53.5427519,-113.497931,https://www.realtor.ca/real-estate/28911545/3103-10180-103-st-nw-edmonton-downtown-edmonton
+E4459395,28911546,11424 105 ST NW|Edmonton,Alberta T5G2M8,,414900,,,,Freehold,,,,53.56515147,-113.50205218,https://www.realtor.ca/real-estate/28911546/11424-105-st-nw-edmonton-spruce-avenue
+E4459501,28914060,11308 128 ST NW|Edmonton,Alberta T5M0W9,,697400,,,,Freehold,,,,53.562353,-113.5432446,https://www.realtor.ca/real-estate/28914060/11308-128-st-nw-edmonton-inglewood-edmonton
+E4459510,28914356,8809 148 ST NW|Edmonton,Alberta T5R0Z8,,848000,,,,Freehold,,,,53.5209467,-113.576068,https://www.realtor.ca/real-estate/28914356/8809-148-st-nw-edmonton-parkview
+E4459739,28919064,#205 5810 MULLEN PL NW|Edmonton,Alberta T6R0W3,,219800,,,,Condominium/Strata,,,,53.4324859,-113.57311,https://www.realtor.ca/real-estate/28919064/205-5810-mullen-pl-nw-edmonton-mactaggart
+E4459951,28924611,#90 2560 PEGASUS BV NW|Edmonton,Alberta T5E6V4,,259000,,,,Condominium/Strata,,,,53.6039141,-113.5050253,https://www.realtor.ca/real-estate/28924611/90-2560-pegasus-bv-nw-edmonton-griesbach
+E4460205,28934541,4631 43 AV NW|Edmonton,Alberta T6L6L9,,619900,,,,Freehold,,,,53.479264,-113.41274,https://www.realtor.ca/real-estate/28934541/4631-43-av-nw-edmonton-jackson-heights
+E4460380,28940465,#140 16035 132 ST NW|Edmonton,Alberta T6V0B4,,204900,,,,Condominium/Strata,,,,53.6221972,-113.55203949,https://www.realtor.ca/real-estate/28940465/140-16035-132-st-nw-edmonton-oxford
+E4460479,28943194,37 ROSA CR|St. Albert,Alberta T8N8E7,,499500,,,,Freehold,,,,53.62820064,-113.65899658,https://www.realtor.ca/real-estate/28943194/37-rosa-cr-st-albert-riverside-st-albert
+E4460809,28951469,704 ABBOTTSFIELD RD NW|Edmonton,Alberta T5W4R4,,178000,,,,Condominium/Strata,,,,53.5763243,-113.3916463,https://www.realtor.ca/real-estate/28951469/704-abbottsfield-rd-nw-edmonton-abbottsfield
+E4460849,28952026,1440 DARBY GREEN SW|Edmonton,Alberta T6W4N5,,609900,,,,Freehold,,,,53.4006901,-113.5484027,https://www.realtor.ca/real-estate/28952026/1440-darby-green-sw-edmonton-desrochers-area
+E4460888,28952696,#420 12550 140 AV NW|Edmonton,Alberta T5X6J4,,230000,,,,Condominium/Strata,,,,53.6024326,-113.5386516,https://www.realtor.ca/real-estate/28952696/420-12550-140-av-nw-edmonton-baranow
+E4460889,28952697,4835 MACTAGGART CREST CT NW|Edmonton,Alberta T6R3G5,,1898000,,,,Freehold,,,,53.43833344,-113.55661848,https://www.realtor.ca/real-estate/28952697/4835-mactaggart-crest-ct-nw-edmonton-mactaggart
+E4460944,28953661,11421 83 ST NW|Edmonton,Alberta T5B2Y4,,259000,,,,Freehold,,,,53.56500629,-113.4683397,https://www.realtor.ca/real-estate/28953661/11421-83-st-nw-edmonton-parkdale-edmonton
+E4460982,28955252,16023 138 ST NW|Edmonton,Alberta T6V0E2,,608000,,,,Freehold,,,,53.62207047,-113.55908835,https://www.realtor.ca/real-estate/28955252/16023-138-st-nw-edmonton-carlton
+E4460993,28955673,#718 13910 STONY PLAIN RD NW|Edmonton,Alberta T5N3R2,,112000,,,,Condominium/Strata,,,,53.5438465,-113.56245612,https://www.realtor.ca/real-estate/28955673/718-13910-stony-plain-rd-nw-edmonton-glenora
+E4460994,28955741,#319 17415 99 AV NW NW|Edmonton,Alberta T6T0W8,,219900,,,,Condominium/Strata,,,,53.53539963,-113.62167396,https://www.realtor.ca/real-estate/28955741/319-17415-99-av-nw-nw-edmonton-terra-losa
+E4461067,28958641,#8 1530 Tamarack BV NW|Edmonton,Alberta T6T0V7,,349900,,,,Condominium/Strata,,,,53.4566149,-113.3652483,https://www.realtor.ca/real-estate/28958641/8-1530-tamarack-bv-nw-edmonton-tamarack
+E4461087,28959310,5823 7 AV SW|Edmonton,Alberta T6X0G6,,524900,,,,Freehold,,,,53.4263439,-113.4320106,https://www.realtor.ca/real-estate/28959310/5823-7-av-sw-edmonton-charlesworth
+E4461224,28963629,2807 WHEATON DR NW|Edmonton,Alberta T6W2M6,,1750000,,,,Freehold,,,,53.44695247,-113.6151318,https://www.realtor.ca/real-estate/28963629/2807-wheaton-dr-nw-edmonton-windermere
+E4461225,28963808,#301 7204 81 AV NW|Edmonton,Alberta T6B0E2,,124900,,,,Condominium/Strata,,,,53.517265,-113.438373,https://www.realtor.ca/real-estate/28963808/301-7204-81-av-nw-edmonton-king-edward-park
+E4461237,28963978,#1101 10143 Clifton PL NW|Edmonton,Alberta T5H0E7,,9725000,,,,Condominium/Strata,,,,53.5417903,-113.5395483,https://www.realtor.ca/real-estate/28963978/1101-10143-clifton-pl-nw-edmonton-westmount
+E4461238,28963979,#502 10143 Clifton PL NW|Edmonton,Alberta T5H0E7,,4675000,,,,Condominium/Strata,,,,53.54184449,-113.53963681,https://www.realtor.ca/real-estate/28963979/502-10143-clifton-pl-nw-edmonton-westmount
+E4461243,28964142,#404 10021 116 ST NW|Edmonton,Alberta T5R0V7,,99800,,,,Condominium/Strata,,,,53.5395202,-113.5208103,https://www.realtor.ca/real-estate/28964142/404-10021-116-st-nw-edmonton-wihkwentowin
+E4461312,28966371,15831 27 AV SW|Edmonton,Alberta T6W5P6,,599900,,,,Freehold,,,,53.4102336,-113.5988998,https://www.realtor.ca/real-estate/28966371/15831-27-av-sw-edmonton-glenridding-ravine
+E4461348,28967498,#901 10143 Clifton PL NW|Edmonton,Alberta T5H0E7,,2995000,,,,Condominium/Strata,,,,53.5417393,-113.5394571,https://www.realtor.ca/real-estate/28967498/901-10143-clifton-pl-nw-edmonton-westmount
+E4461358,28968255,#101 6220 134 AV NW|Edmonton,Alberta T5A0A8,,155000,,,,Condominium/Strata,,,,53.59558267,-113.43844248,https://www.realtor.ca/real-estate/28968255/101-6220-134-av-nw-edmonton-belvedere
+E4461359,28968256,14807 80 AV NW|Edmonton,Alberta T5R3K8,,2800000,,,,Freehold,,,,53.51458465,-113.57738061,https://www.realtor.ca/real-estate/28968256/14807-80-av-nw-edmonton-laurier-heights
+E4461430,28970639,4118 GINSBURG PL NW|Edmonton,Alberta T5T4V1,,1248800,,,,Freehold,,,,53.5050604,-113.6789905,https://www.realtor.ca/real-estate/28970639/4118-ginsburg-pl-nw-edmonton-granville-edmonton
+E4461549,28974158,#1 11326 95A ST NW|Edmonton,Alberta T5G1P1,,425000,,,,Condominium/Strata,,,,53.5634858,-113.4890471,https://www.realtor.ca/real-estate/28974158/1-11326-95a-st-nw-edmonton-alberta-avenue
+E4461551,28974219,#2 11326 95A ST NW|Edmonton,Alberta T5G1P1,,425000,,,,Condominium/Strata,,,,53.5634858,-113.4890471,https://www.realtor.ca/real-estate/28974219/2-11326-95a-st-nw-edmonton-alberta-avenue
+E4461581,28974725,17124 2 ST NW|Edmonton,Alberta T5Y4G5,,1025000,,,,Freehold,,,,53.63580607,-113.34606618,https://www.realtor.ca/real-estate/28974725/17124-2-st-nw-edmonton-marquis
+E4461603,28975296,11240 94 ST NW|Edmonton,Alberta T5G1G9,,279900,,,,Freehold,,,,53.5622416,-113.4859879,https://www.realtor.ca/real-estate/28975296/11240-94-st-nw-edmonton-alberta-avenue
+E4461732,28978703,6007 5 AV SW|Edmonton,Alberta T6X0E8,,510000,,,,Freehold,,,,53.42806287,-113.43471082,https://www.realtor.ca/real-estate/28978703/6007-5-av-sw-edmonton-charlesworth
+E4461825,28981024,#36 2503 24 ST NW|Edmonton,Alberta T6T0B5,,319900,,,,Condominium/Strata,,,,53.455704,-113.375895,https://www.realtor.ca/real-estate/28981024/36-2503-24-st-nw-edmonton-silver-berry
+E4461907,28982513,#605 10135 SASKATCHEWAN DR NW|Edmonton,Alberta T6E4X1,,218900,,,,Condominium/Strata,,,,53.5240817,-113.4929157,https://www.realtor.ca/real-estate/28982513/605-10135-saskatchewan-dr-nw-edmonton-strathcona
+E4461915,28982758,#228 5350 199 ST NW|Edmonton,Alberta T6M0A4,,169900,,,,Condominium/Strata,,,,53.4895073,-113.6654026,https://www.realtor.ca/real-estate/28982758/228-5350-199-st-nw-edmonton-the-hamptons
+E4461931,28983098,2033 209A ST NW|Edmonton,Alberta T6M3C8,,599900,,,,Freehold,,,,53.4528814,-113.6772978,https://www.realtor.ca/real-estate/28983098/2033-209a-st-nw-edmonton-stillwater
+E4461935,28983248,6449 28 AV SW|Edmonton,Alberta T6X3J7,,779000,,,,Freehold,,,,53.40858182,-113.43916554,https://www.realtor.ca/real-estate/28983248/6449-28-av-sw-edmonton-mattson
+E4461988,28985847,15216 49 ST NW|Edmonton,Alberta T5Y3C1,,569900,,,,Freehold,,,,53.6151497,-113.4163065,https://www.realtor.ca/real-estate/28985847/15216-49-st-nw-edmonton-miller
+E4461990,28985952,12339 89 ST NW NW|Edmonton,Alberta T5B3W8,,699900,,,,Freehold,,,,53.57963827,-113.47763439,https://www.realtor.ca/real-estate/28985952/12339-89-st-nw-nw-edmonton-delton
+E4462028,28987216,TWPR 514 & RR 233|Rural Strathcona County,Alberta T8B1L1,,1549000,,,,,,,,53.42448294,-113.32596788,https://www.realtor.ca/real-estate/28987216/twpr-514-rr-233-rural-strathcona-county-none
+E4462077,28988813,16310 87 AV NW|Edmonton,Alberta T5R4H2,,2125000,,,,Freehold,,,,53.5198010610252,-113.603716274835,https://www.realtor.ca/real-estate/28988813/16310-87-av-nw-edmonton-west-meadowlark-park
+E4462095,28989432,1227 24 ST NW|Edmonton,Alberta T6T2M7,,664900,,,,Freehold,,,,53.44022062,-113.37464972,https://www.realtor.ca/real-estate/28989432/1227-24-st-nw-edmonton-laurel
+E4462120,28990714,19633 26a av NW|Edmonton,Alberta T6M0X3,,539900,,,,Freehold,,,,53.45875053,-113.66070942,https://www.realtor.ca/real-estate/28990714/19633-26a-av-nw-edmonton-the-uplands
+E4462143,28991720,3456 CUTLER CR SW SW|Edmonton,Alberta T6W2B3,,467900,,,,Freehold,,,,53.4043725,-113.567646,https://www.realtor.ca/real-estate/28991720/3456-cutler-cr-sw-sw-edmonton-chappelle-area
+E4462260,28994874,1035 158 ST SW|Edmonton,Alberta T6W2H2,,598000,,,,Freehold,,,,53.423636,-113.5928824,https://www.realtor.ca/real-estate/28994874/1035-158-st-sw-edmonton-glenridding-heights
+E4462355,28998324,#302 10611 117 ST NW|Edmonton,Alberta T5H0G6,,185000,,,,Condominium/Strata,,,,53.54999589,-113.52256904,https://www.realtor.ca/real-estate/28998324/302-10611-117-st-nw-edmonton-queen-mary-park
+E4462379,28998862,1024 DANIELS LOOP SW SW|Edmonton,Alberta T6W4C9,,559900,,,,Freehold,,,,53.39624,-113.54449,https://www.realtor.ca/real-estate/28998862/1024-daniels-loop-sw-sw-edmonton-desrochers-area
+E4462400,28999313,6303 109B AV NW|Edmonton,Alberta T6A1S7,,1187000,,,,Freehold,,,,53.55823432,-113.42526859,https://www.realtor.ca/real-estate/28999313/6303-109b-av-nw-edmonton-capilano
+E4462447,29001056,#346 348 Windermere RD NW|Edmonton,Alberta T6W2P2,,184900,,,,Condominium/Strata,,,,53.4410299,-113.62369158,https://www.realtor.ca/real-estate/29001056/346-348-windermere-rd-nw-edmonton-windermere
+E4462461,29001715,11235 95 ST NW NW|Edmonton,Alberta T5G1K8,,365000,,,,Freehold,,,,53.5621364,-113.4867984,https://www.realtor.ca/real-estate/29001715/11235-95-st-nw-nw-edmonton-alberta-avenue
+E4462468,29001904,#50 11518 76 AV NW|Edmonton,Alberta T6G0K7,,468000,,,,Condominium/Strata,,,,53.5124887,-113.52965817,https://www.realtor.ca/real-estate/29001904/50-11518-76-av-nw-edmonton-belgravia
+E4462582,29004497,10618 96 ST NW NW|Edmonton,Alberta T5H2J2,,269900,,,,Freehold,,,,53.5510883,-113.4859769,https://www.realtor.ca/real-estate/29004497/10618-96-st-nw-nw-edmonton-mccauley
+E4462670,29006253,3510 WATSON PT SW|Edmonton,Alberta T6W0P3,,1975000,,,,Freehold,,,,53.43679514,-113.62970387,https://www.realtor.ca/real-estate/29006253/3510-watson-pt-sw-edmonton-windermere
+E4462729,29007438,15911 108 AV NW|Edmonton,Alberta T5P1A8,,399900,,,,Freehold,,,,53.55261719,-113.5964952,https://www.realtor.ca/real-estate/29007438/15911-108-av-nw-edmonton-mayfield
+E4462767,29008627,#114 5001 Eton BV|Sherwood Park,Alberta T8H0N7,,349900,,,,Condominium/Strata,,,,53.56347196,-113.27652972,https://www.realtor.ca/real-estate/29008627/114-5001-eton-bv-sherwood-park-emerald-hills
+E4462780,29009287,668 LAKEWOOD RD N NW|Edmonton,Alberta T6K3Y1,,208000,,,,Condominium/Strata,,,,53.4622083,-113.4454552,https://www.realtor.ca/real-estate/29009287/668-lakewood-rd-n-nw-edmonton-kameyosek
+E4462791,29009674,1305 ADAMSON DR SW|Edmonton,Alberta T6W2N8,,1349900,,,,Freehold,,,,53.3992074,-113.5167847,https://www.realtor.ca/real-estate/29009674/1305-adamson-dr-sw-edmonton-allard
+E4462830,29011200,183 WINDERMERE DR NW|Edmonton,Alberta T6W0S4,,2999000,,,,Freehold,,,,53.4438732,-113.6230872,https://www.realtor.ca/real-estate/29011200/183-windermere-dr-nw-edmonton-windermere
+E4462846,29011498,13910 101A AV NW|Edmonton,Alberta T5N0L2,,675000,,,,Freehold,,,,53.5423155,-113.5630479,https://www.realtor.ca/real-estate/29011498/13910-101a-av-nw-edmonton-glenora
+E4462847,29011602,#3201 11969 JASPER AV NW|Edmonton,Alberta T5K0P1,,2145000,,,,Condominium/Strata,,,,53.54065392,-113.52866401,https://www.realtor.ca/real-estate/29011602/3201-11969-jasper-av-nw-edmonton-wihkwentowin
+E4462859,29012130,1525 HASWELL CL NW|Edmonton,Alberta T6R3J4,,974900,,,,Freehold,,,,53.4499884,-113.59942582,https://www.realtor.ca/real-estate/29012130/1525-haswell-cl-nw-edmonton-haddow
+E4463010,29017455,#140 6079 MAYNARD WY NW|Edmonton,Alberta T6R0S4,,299900,,,,Condominium/Strata,,,,53.43967888,-113.5648836,https://www.realtor.ca/real-estate/29017455/140-6079-maynard-wy-nw-edmonton-mactaggart
+E4463017,29017559,19103 ELLERSLIE RD SW|Edmonton,Alberta T6W1A5,,5200000,,,,Freehold,,,,53.4246817,-113.6527566,https://www.realtor.ca/real-estate/29017559/19103-ellerslie-rd-sw-edmonton-keswick
+E4463021,29017705,#449 4827 104A ST NW|Edmonton,Alberta T6H0R5,,279000,,,,Condominium/Strata,,,,53.48668937,-113.49857993,https://www.realtor.ca/real-estate/29017705/449-4827-104a-st-nw-edmonton-empire-park
+E4463051,29019310,3280 Chernowski WY SW|Edmonton,Alberta T6W5K6,,799900,,,,Freehold,,,,53.4086549,-113.5912067,https://www.realtor.ca/real-estate/29019310/3280-chernowski-wy-sw-edmonton-chappelle-area
+E4463055,29019603,#224 5125 RIVERBEND RD NW|Edmonton,Alberta T6H5K5,,149900,,,,Condominium/Strata,,,,53.48947593,-113.57690716,https://www.realtor.ca/real-estate/29019603/224-5125-riverbend-rd-nw-edmonton-brander-gardens
+E4463058,29019838,16466 104A AV NW|Edmonton,Alberta T5P0T4,,527000,,,,Freehold,,,,53.547508,-113.6076243,https://www.realtor.ca/real-estate/29019838/16466-104a-av-nw-edmonton-britannia-youngstown
+E4463100,29021296,1325 20 ST NW|Edmonton,Alberta T6T2R8,,699999,,,,Freehold,,,,53.4402158,-113.3726268,https://www.realtor.ca/real-estate/29021296/1325-20-st-nw-edmonton-laurel
+E4463101,29021360,#42 1304 RUTHERFORD RD SW|Edmonton,Alberta T6W0B4,,729000,,,,Condominium/Strata,,,,53.4216246,-113.5369262,https://www.realtor.ca/real-estate/29021360/42-1304-rutherford-rd-sw-edmonton-rutherford-edmonton
+E4463147,29022707,8511 183 AV NW|Edmonton,Alberta T5Z0X5,,699900,,,,Freehold,,,,53.6449392,-113.4716222,https://www.realtor.ca/real-estate/29022707/8511-183-av-nw-edmonton-klarvatten
+E4463205,29024616,7222 119 ST NW|Edmonton,Alberta T6G1V6,,1398000,,,,Freehold,,,,53.50918424,-113.53854518,https://www.realtor.ca/real-estate/29024616/7222-119-st-nw-edmonton-belgravia
+E4463222,29024959,10226 152 ST NW|Edmonton,Alberta T5P1Y2,,394000,,,,Freehold,,,,53.5441515,-113.5836868,https://www.realtor.ca/real-estate/29024959/10226-152-st-nw-edmonton-canora
+E4463243,29025915,17816 59 ST NW|Edmonton,Alberta T5Y0W8,,505000,,,,Freehold,,,,53.6399742,-113.4267314,https://www.realtor.ca/real-estate/29025915/17816-59-st-nw-edmonton-mcconachie-area
+E4463376,29029421,#14 3466 KESWICK BV SW|Edmonton,Alberta T6W3S4,,4580000,,,,Condominium/Strata,,,,53.42290028,-113.65376552,https://www.realtor.ca/real-estate/29029421/14-3466-keswick-bv-sw-edmonton-keswick
+E4463402,29029994,1922 TANNER WD NW|Edmonton,Alberta T6R2S5,,549000,,,,Freehold,,,,53.4513392,-113.5878691,https://www.realtor.ca/real-estate/29029994/1922-tanner-wd-nw-edmonton-terwillegar-towne
+E4463399,29029992,11122 52 ST NW|Edmonton,Alberta T5W3B7,,1100000,,,,Freehold,,,,53.56622826,-113.4219307,https://www.realtor.ca/real-estate/29029992/11122-52-st-nw-edmonton-highlands-edmonton
+E4463449,29031088,5033 Cawsey LI SW SW|Edmonton,Alberta T6W4B5,,639900,,,,Freehold,,,,53.4032943,-113.5911136,https://www.realtor.ca/real-estate/29031088/5033-cawsey-li-sw-sw-edmonton-chappelle-area
+E4463468,29031476,#402 3835 107 ST NW|Edmonton,Alberta T6N2N7,,189000,,,,Condominium/Strata,,,,53.47460284,-113.50927599,https://www.realtor.ca/real-estate/29031476/402-3835-107-st-nw-edmonton-duggan
+E4463530,29032598,#41 2503 24 ST NW|Edmonton,Alberta T6T0B5,,299900,,,,Condominium/Strata,,,,53.45567206,-113.37587891,https://www.realtor.ca/real-estate/29032598/41-2503-24-st-nw-edmonton-silver-berry
+E4463539,29032753,#411 4316 139 AV NW|Edmonton,Alberta T5Y0L1,,174900,,,,Condominium/Strata,,,,53.60200327,-113.4093453,https://www.realtor.ca/real-estate/29032753/411-4316-139-av-nw-edmonton-clareview-town-centre
+E4463589,29034041,9130 77 AV NW|Edmonton,Alberta T6C0M2,,559000,,,,Freehold,,,,53.5134866,-113.46886278,https://www.realtor.ca/real-estate/29034041/9130-77-av-nw-edmonton-king-edward-park
+E4463660,29036856,4216 121 ST NW|Edmonton,Alberta T6J1Y8,,1080000,,,,Freehold,,,,53.4793673,-113.5463282,https://www.realtor.ca/real-estate/29036856/4216-121-st-nw-edmonton-aspen-gardens
+E4463661,29036857,382 CRYSTALLINA NERA DR NW|Edmonton,Alberta T5Z0R9,,534000,,,,Freehold,,,,53.6384752,-113.4578857,https://www.realtor.ca/real-estate/29036857/382-crystallina-nera-dr-nw-edmonton-crystallina-nera-west
+E4463689,29037518,7550 ELLERSLIE RD SW|Edmonton,Alberta T6X1A3,,5000000,,,,Freehold,,,,53.42543649,-113.45156945,https://www.realtor.ca/real-estate/29037518/7550-ellerslie-rd-sw-edmonton-ellerslie
+E4463701,29038180,25 Ridgeway Drive NW|Edmonton,Alberta T6P1G4,,129900,,,,Leasehold,,,,53.50247953,-113.3628066,https://www.realtor.ca/real-estate/29038180/25-ridgeway-drive-nw-edmonton-maple-ridge-edmonton
+E4463706,29038218,11343 69 ST NW|Edmonton,Alberta T5B1R8,,309900,,,,Freehold,,,,53.56616354,-113.44525911,https://www.realtor.ca/real-estate/29038218/11343-69-st-nw-edmonton-bellevue
+E4463823,29041921,8515 183 AV NW|Edmonton,Alberta T5Z0X5,,660500,,,,Freehold,,,,53.6449463,-113.4717851,https://www.realtor.ca/real-estate/29041921/8515-183-av-nw-edmonton-klarvatten
+E4463841,29042286,#124 2560 PEGASUS BV NW|Edmonton,Alberta T5E6V4,,339900,,,,Condominium/Strata,,,,53.60429606,-113.50503603,https://www.realtor.ca/real-estate/29042286/124-2560-pegasus-bv-nw-edmonton-griesbach
+E4463875,29043798,4685 Chegwin WD SW|Edmonton,Alberta T6W4A7,,959999,,,,Freehold,,,,53.4019693,-113.59105288,https://www.realtor.ca/real-estate/29043798/4685-chegwin-wd-sw-edmonton-chappelle-area
+E4463923,29045027,#114 10520 56 AV NW|Edmonton,Alberta T6H0X7,,262000,,,,Condominium/Strata,,,,53.49381164,-113.50071639,https://www.realtor.ca/real-estate/29045027/114-10520-56-av-nw-edmonton-pleasantview-edmonton
+E4463958,29046401,319 157 AV NE|Edmonton,Alberta T5K6K8,,549900,,,,Freehold,,,,53.61689691,-113.34061065,https://www.realtor.ca/real-estate/29046401/319-157-av-ne-edmonton-quarry-ridge
+E4464031,29048759,#206 8930 149 ST NW|Edmonton,Alberta T5R1B8,,89900,,,,Condominium/Strata,,,,53.52235796,-113.57843796,https://www.realtor.ca/real-estate/29048759/206-8930-149-st-nw-edmonton-jasper-park
+E4464086,29050342,20612 43 AV NW|Edmonton,Alberta T6M3E3,,594888,,,,Freehold,,,,53.4792928,-113.6774373,https://www.realtor.ca/real-estate/29050342/20612-43-av-nw-edmonton-edgemont-edmonton
+E4464094,29050448,20616 43 AV NW|Edmonton,Alberta T6M3E3,,564888,,,,Freehold,,,,53.4792899,-113.6775911,https://www.realtor.ca/real-estate/29050448/20616-43-av-nw-edmonton-edgemont-edmonton
+E4464204,29053368,5025 Cawsey LI SW|Edmonton,Alberta T6W4M6,,559900,,,,Freehold,,,,53.40468877,-113.58951232,https://www.realtor.ca/real-estate/29053368/5025-cawsey-li-sw-edmonton-chappelle-area
+E4464236,29053942,5075 Cawsey LI SW|Edmonton,Alberta T6W4M6,,599900,,,,Freehold,,,,53.4046376,-113.58952305,https://www.realtor.ca/real-estate/29053942/5075-cawsey-li-sw-edmonton-chappelle-area
+E4464237,29054000,#404 11446 40 AV NW|Edmonton,Alberta T6J0R5,,139900,,,,Condominium/Strata,,,,53.47656862,-113.52901154,https://www.realtor.ca/real-estate/29054000/404-11446-40-av-nw-edmonton-royal-gardens-edmonton
+E4464245,29054374,Old Fort Trail Lamoureux DR|Rural Sturgeon County,Alberta T8L5C8,,2200000,,,,,,,,53.70076527,-113.26918409,https://www.realtor.ca/real-estate/29054374/old-fort-trail-lamoureux-dr-rural-sturgeon-county-none
+E4464285,29054926,5013 Cawsey LI SW SW|Edmonton,Alberta T6W4B5,,629900,,,,Freehold,,,,53.4043689,-113.5910278,https://www.realtor.ca/real-estate/29054926/5013-cawsey-li-sw-sw-edmonton-chappelle-area
+E4464295,29054953,#208 10118 95 ST NW|Edmonton,Alberta T5H4R6,,169900,,,,Condominium/Strata,,,,53.54373304,-113.47821716,https://www.realtor.ca/real-estate/29054953/208-10118-95-st-nw-edmonton-boyle-street
+E4464328,29056037,#114 2908 116A AV NW|Edmonton,Alberta T5W4R7,,182000,,,,Condominium/Strata,,,,53.5696172,-113.3879642,https://www.realtor.ca/real-estate/29056037/114-2908-116a-av-nw-edmonton-rundle-heights
+E4464468,29058414,#1211 7339 SOUTH TERWILLEGAR DR NW|Edmonton,Alberta T6R0L8,,157000,,,,Condominium/Strata,,,,53.4345237,-113.57690558,https://www.realtor.ca/real-estate/29058414/1211-7339-south-terwillegar-dr-nw-edmonton-south-terwillegar
+E4464527,29060461,3912 31 ST NW|Edmonton,Alberta T6T1J5,,549900,,,,Freehold,,,,53.4746288,-113.3879674,https://www.realtor.ca/real-estate/29060461/3912-31-st-nw-edmonton-larkspur
+E4464535,29060560,#601 11969 JASPER AV NW|Edmonton,Alberta T5K0P1,,489900,,,,Condominium/Strata,,,,53.5407909,-113.5288965,https://www.realtor.ca/real-estate/29060560/601-11969-jasper-av-nw-edmonton-wihkwentowin
+E4464553,29061479,10448 142 ST NW|Edmonton,Alberta T5N2P2,,298888,,,,Freehold,,,,53.54793019,-113.5660408,https://www.realtor.ca/real-estate/29061479/10448-142-st-nw-edmonton-grovenor
+E4464561,29061685,1442 33A Street NW NW|Edmonton,Alberta T6T0V3,,519000,,,,Freehold,,,,53.4411248,-113.3917351,https://www.realtor.ca/real-estate/29061685/1442-33a-street-nw-nw-edmonton-laurel
+E4464656,29065534,6237 KING VISTA VS SW|Edmonton,Alberta T6W3Z8,,999000,,,,Freehold,,,,53.4138526,-113.634762,https://www.realtor.ca/real-estate/29065534/6237-king-vista-vs-sw-edmonton-keswick
+E4464658,29065661,5455 KOOTOOK RD SW|Edmonton,Alberta T6W2Z5,,954000,,,,Freehold,,,,53.415388,-113.6272042,https://www.realtor.ca/real-estate/29065661/5455-kootook-rd-sw-edmonton-keswick
+E4464680,29066414,10735 BEAUMARIS RD NW|Edmonton,Alberta T5X5P1,,470000,,,,Freehold,,,,53.62116637,-113.50754468,https://www.realtor.ca/real-estate/29066414/10735-beaumaris-rd-nw-edmonton-beaumaris
+E4464755,29069567,10446 142 ST NW|Edmonton,Alberta T5N2P2,,1119000,,,,Freehold,,,,53.54787882,-113.56604678,https://www.realtor.ca/real-estate/29069567/10446-142-st-nw-edmonton-grovenor
+E4464798,29071555,#407 12804 140 AV NW|Edmonton,Alberta T6V0M3,,229900,,,,Condominium/Strata,,,,53.60226902,-113.54359059,https://www.realtor.ca/real-estate/29071555/407-12804-140-av-nw-edmonton-pembina
+E4464857,29073481,#607 10024 Jasper AV NW|Edmonton,Alberta T5J1R9,,99900,,,,Condominium/Strata,,,,53.54133259,-113.49140038,https://www.realtor.ca/real-estate/29073481/607-10024-jasper-av-nw-edmonton-downtown-edmonton
+E4464860,29073570,4203 83 ST NW|Edmonton,Alberta T6K1C8,,599900,,,,Freehold,,,,53.4788925,-113.4555343,https://www.realtor.ca/real-estate/29073570/4203-83-st-nw-edmonton-tweddle-place
+E4464874,29073967,10359 149 ST NW|Edmonton,Alberta T5P1L4,,579000,,,,Freehold,,,,53.54568665,-113.57780872,https://www.realtor.ca/real-estate/29073967/10359-149-st-nw-edmonton-grovenor
+E4464875,29074019,10357 149 ST NW|Edmonton,Alberta T5P1L4,,579000,,,,Freehold,,,,53.54562864,-113.57780911,https://www.realtor.ca/real-estate/29074019/10357-149-st-nw-edmonton-grovenor
+E4464904,29075292,#603 9028 Jasper AV NW|Edmonton,Alberta T5H3Y6,,169000,,,,Condominium/Strata,,,,53.5508466,-113.4745156,https://www.realtor.ca/real-estate/29075292/603-9028-jasper-av-nw-edmonton-boyle-street
+E4464909,29075443,18967 28 AV NW|Edmonton,Alberta T6M3C4,,557498,,,,Freehold,,,,53.4595613,-113.6517621,https://www.realtor.ca/real-estate/29075443/18967-28-av-nw-edmonton-the-uplands
+E4464915,29075518,18959 28 AV NW|Edmonton,Alberta T6M3C4,,556497,,,,Freehold,,,,53.4595614,-113.6515135,https://www.realtor.ca/real-estate/29075518/18959-28-av-nw-edmonton-the-uplands
+E4464920,29075779,1537 208 ST NW|Edmonton,Alberta T6W5T6,,559647,,,,Freehold,,,,53.4476971,-113.6769113,https://www.realtor.ca/real-estate/29075779/1537-208-st-nw-edmonton-stillwater
+E4464923,29075938,1535 208 ST NW|Edmonton,Alberta T6W5T6,,559647,,,,Freehold,,,,53.44815943,-113.67249052,https://www.realtor.ca/real-estate/29075938/1535-208-st-nw-edmonton-stillwater
+E4464960,29077141,#209 8604 GATEWAY BV NW|Edmonton,Alberta T6E4B6,,99900,,,,Condominium/Strata,,,,53.5222893,-113.4960492,https://www.realtor.ca/real-estate/29077141/209-8604-gateway-bv-nw-edmonton-strathcona
+E4464977,29077603,8456 183 AV NW|Edmonton,Alberta T5Z0X3,,549999,,,,Freehold,,,,53.6453481,-113.4708294,https://www.realtor.ca/real-estate/29077603/8456-183-av-nw-edmonton-klarvatten
+E4465002,29077997,8448 183 AV NW|Edmonton,Alberta T5Z0X3,,549999,,,,Freehold,,,,53.6452986,-113.4705778,https://www.realtor.ca/real-estate/29077997/8448-183-av-nw-edmonton-klarvatten
+E4465006,29078102,7235 182 AV NW|Edmonton,Alberta T5Z0L5,,655198,,,,Freehold,,,,53.6448697,-113.4527465,https://www.realtor.ca/real-estate/29078102/7235-182-av-nw-edmonton-crystallina-nera-east
+E4465033,29078780,7243 182 AV NW|Edmonton,Alberta T5Y4B7,,640498,,,,Freehold,,,,53.6448671,-113.453063,https://www.realtor.ca/real-estate/29078780/7243-182-av-nw-edmonton-crystallina-nera-east
+E4465036,29078838,11404 88 ST NW|Edmonton,Alberta T5B3R1,,125000,,,,Freehold,,,,53.5644619,-113.47689467,https://www.realtor.ca/real-estate/29078838/11404-88-st-nw-edmonton-parkdale-edmonton
+E4465049,29078974,#603 9707 105 ST NW|Edmonton,Alberta T5K2Y4,,196999,,,,Condominium/Strata,,,,53.5343,-113.5005644,https://www.realtor.ca/real-estate/29078974/603-9707-105-st-nw-edmonton-downtown-edmonton
+E4465054,29079639,112 WESTBROOK DR NW|Edmonton,Alberta T6J2E1,,5495000,,,,Freehold,,,,53.46992719,-113.55804848,https://www.realtor.ca/real-estate/29079639/112-westbrook-dr-nw-edmonton-westbrook-estate
+E4465078,29080340,22932 82 AV NW|Edmonton,Alberta T5T4N5,,556498,,,,Freehold,,,,53.5163185,-113.7119621,https://www.realtor.ca/real-estate/29080340/22932-82-av-nw-edmonton-rosenthal-edmonton
+E4465080,29080341,22940 82 AV NW|Edmonton,Alberta T5T4H5,,682498,,,,Freehold,,,,53.5163362,-113.7122451,https://www.realtor.ca/real-estate/29080341/22940-82-av-nw-edmonton-rosenthal-edmonton
+E4465081,29080342,22944 82 AV NW|Edmonton,Alberta T5T4H5,,682498,,,,Freehold,,,,53.5163478,-113.7124077,https://www.realtor.ca/real-estate/29080342/22944-82-av-nw-edmonton-rosenthal-edmonton
+E4465095,29080909,10707 129 ST NW|Edmonton,Alberta T5N1Y2,,505000,,,,Freehold,,,,53.5512775,-113.5442246,https://www.realtor.ca/real-estate/29080909/10707-129-st-nw-edmonton-westmount
+E4465132,29082119,6520 154 AV NW|Edmonton,Alberta T5Y2N7,,479900,,,,Freehold,,,,53.6165488,-113.44231831,https://www.realtor.ca/real-estate/29082119/6520-154-av-nw-edmonton-matt-berry
+E4465169,29083525,7607 98 AV NW|Edmonton,Alberta T6A0B3,,789000,,,,Freehold,,,,53.53723159,-113.4471048,https://www.realtor.ca/real-estate/29083525/7607-98-av-nw-edmonton-holyrood
+E4465175,29083669,22907 80 AV NW|Edmonton,Alberta T5T4N5,,551248,,,,Freehold,,,,53.5146171,-113.7116096,https://www.realtor.ca/real-estate/29083669/22907-80-av-nw-edmonton-rosenthal-edmonton
+E4465176,29083670,22911 80 AV NW|Edmonton,Alberta T5T4N5,,551248,,,,Freehold,,,,53.5146688,-113.7116918,https://www.realtor.ca/real-estate/29083670/22911-80-av-nw-edmonton-rosenthal-edmonton
+E4465178,29083721,18830 29 AV NW|Edmonton,Alberta T6M3C3,,449680,,,,Freehold,,,,53.4607992,-113.649439,https://www.realtor.ca/real-estate/29083721/18830-29-av-nw-edmonton-the-uplands
+E4465179,29083722,18828 29 AV NW|Edmonton,Alberta T6M3C3,,449680,,,,Freehold,,,,53.4608064,-113.6493343,https://www.realtor.ca/real-estate/29083722/18828-29-av-nw-edmonton-the-uplands
+E4465186,29084043,2012 200 ST NW|Edmonton,Alberta T6M0X7,,585000,,,,Freehold,,,,53.45053396,-113.66534932,https://www.realtor.ca/real-estate/29084043/2012-200-st-nw-edmonton-stillwater
+E4465188,29084089,13140 214 NW|Edmonton,Alberta T5S0X1,,545998,,,,Freehold,,,,53.59026271,-113.68331457,https://www.realtor.ca/real-estate/29084089/13140-214-nw-edmonton-trumpeter-area
+E4465191,29084106,13136 214 ST NW|Edmonton,Alberta T5S0X1,,545998,,,,Freehold,,,,53.4696211,-113.6878362,https://www.realtor.ca/real-estate/29084106/13136-214-st-nw-edmonton-trumpeter-area
+E4465195,29084152,72 ELDRIDGE PT|St. Albert,Alberta T8N8C4,,875000,,,,Freehold,,,,53.6762615,-113.6308878,https://www.realtor.ca/real-estate/29084152/72-eldridge-pt-st-albert-erin-ridge-north
+E4465224,29084844,#216 3315 JAMES MOWATT TR SW|Edmonton,Alberta T6W3L9,,189900,,,,Condominium/Strata,,,,53.40203861,-113.539691,https://www.realtor.ca/real-estate/29084844/216-3315-james-mowatt-tr-sw-edmonton-allard
+E4465225,29084851,#201 5804 MULLEN PL NW|Edmonton,Alberta T6R0W3,,239000,,,,Condominium/Strata,,,,53.43308788,-113.57233092,https://www.realtor.ca/real-estate/29084851/201-5804-mullen-pl-nw-edmonton-mactaggart
+E4465236,29085033,21386 128A AV NW|Edmonton,Alberta T5S0R8,,450238,,,,Freehold,,,,53.5878647,-113.6876183,https://www.realtor.ca/real-estate/29085033/21386-128a-av-nw-edmonton-trumpeter-area
+E4465237,29085034,21390 128A AV NW|Edmonton,Alberta T5S0X1,,450238,,,,Freehold,,,,53.5878643,-113.6877254,https://www.realtor.ca/real-estate/29085034/21390-128a-av-nw-edmonton-trumpeter-area
+E4465238,29085045,13132 214 ST NW|Edmonton,Alberta T5S0R8,,629998,,,,Freehold,,,,53.58909732,-113.68063236,https://www.realtor.ca/real-estate/29085045/13132-214-st-nw-edmonton-trumpeter-area
+E4465250,29085324,#108 10730 112 ST NW|Edmonton,Alberta T5H3H1,,118000,,,,Condominium/Strata,,,,53.5522364,-113.5143403,https://www.realtor.ca/real-estate/29085324/108-10730-112-st-nw-edmonton-queen-mary-park
+E4465265,29085655,18827 29 AV NW|Edmonton,Alberta T6M3C4,,449904,,,,Freehold,,,,53.4603556,-113.6490101,https://www.realtor.ca/real-estate/29085655/18827-29-av-nw-edmonton-the-uplands
+E4465307,29088143,#3307 10360 102 ST NW|Edmonton,Alberta T5J0K6,,374800,,,,Condominium/Strata,,,,53.54595381,-113.4960312,https://www.realtor.ca/real-estate/29088143/3307-10360-102-st-nw-edmonton-downtown-edmonton
+E4465347,29090131,971 SUMMERSIDE LI SW|Edmonton,Alberta T6X0J9,,999999,,,,Freehold,,,,53.41463982,-113.4765516,https://www.realtor.ca/real-estate/29090131/971-summerside-li-sw-edmonton-summerside
+E4465357,29090309,1932 210 ST NW|Edmonton,Alberta T6M1P7,,608998,,,,Freehold,,,,53.4507976,-113.6790805,https://www.realtor.ca/real-estate/29090309/1932-210-st-nw-edmonton-stillwater
+E4465359,29090335,14812 98 AV NW|Edmonton,Alberta T5N0H1,,500000,,,,Condominium/Strata,,,,53.53630911,-113.57760033,https://www.realtor.ca/real-estate/29090335/14812-98-av-nw-edmonton-crestwood
+E4465373,29091283,1928 210 ST NW|Edmonton,Alberta T6M1P7,,608998,,,,Freehold,,,,53.4507164,-113.6790809,https://www.realtor.ca/real-estate/29091283/1928-210-st-nw-edmonton-stillwater
+E4465378,29091313,936 18 AV NW|Edmonton,Alberta T6T2V2,,509248,,,,Freehold,,,,53.45044331,-113.35818922,https://www.realtor.ca/real-estate/29091313/936-18-av-nw-edmonton-aster
+E4465379,29091406,1924 210 ST NW|Edmonton,Alberta T6M3C9,,661498,,,,Freehold,,,,53.4506364,-113.6790744,https://www.realtor.ca/real-estate/29091406/1924-210-st-nw-edmonton-stillwater
+E4465380,29091407,938 18 AV NW|Edmonton,Alberta T6T2V2,,509248,,,,Freehold,,,,53.44809201,-113.36196577,https://www.realtor.ca/real-estate/29091407/938-18-av-nw-edmonton-aster
+E4465446,29094991,16511 8 ST NE|Edmonton,Alberta T5Y4J1,,1300000,,,,Freehold,,,,53.62738747,-113.33231401,https://www.realtor.ca/real-estate/29094991/16511-8-st-ne-edmonton-quarry-ridge
+E4465483,29096139,284 Chappelle Drive SW|Edmonton,Alberta T6W2Z2,,519696,,,,Freehold,,,,53.4056702,-113.55956658,https://www.realtor.ca/real-estate/29096139/284-chappelle-drive-sw-edmonton-chappelle-area
+E4465511,29097017,3443 Craig LD SW SW|Edmonton,Alberta T6W5B3,,609900,,,,Freehold,,,,53.40994927,-113.58629565,https://www.realtor.ca/real-estate/29097017/3443-craig-ld-sw-sw-edmonton-chappelle-area
+E4465533,29097783,#203 8503 108 ST NW|Edmonton,Alberta T6E6J9,,239900,,,,Condominium/Strata,,,,53.5212203,-113.5089589,https://www.realtor.ca/real-estate/29097783/203-8503-108-st-nw-edmonton-garneau
+E4465543,29098177,9738 CARSON PL SW|Edmonton,Alberta T6W5P9,,554923,,,,Freehold,,,,53.3973057,-113.5925549,https://www.realtor.ca/real-estate/29098177/9738-carson-pl-sw-edmonton-chappelle-area
+E4465621,29100552,#83 600 BELLEROSE DR|St. Albert,Alberta T8N7T5,,379900,,,,Condominium/Strata,,,,53.6681311,-113.6066195,https://www.realtor.ca/real-estate/29100552/83-600-bellerose-dr-st-albert-oakmont
+E4465675,29102408,#77 7604 29 AV NW|Edmonton,Alberta T6K3Z2,,204999,,,,Condominium/Strata,,,,53.46095592,-113.44714479,https://www.realtor.ca/real-estate/29102408/77-7604-29-av-nw-edmonton-kameyosek
+E4465679,29102492,#412 2620 MILL WOODS RD E NW|Edmonton,Alberta T6L5K8,,114900,,,,Condominium/Strata,,,,53.4587622,-113.4081389,https://www.realtor.ca/real-estate/29102492/412-2620-mill-woods-rd-e-nw-edmonton-weinlos
+E4465685,29102584,#18 12050 17 AV SW|Edmonton,Alberta T6W1X4,,349000,,,,Condominium/Strata,,,,53.4165607,-113.5303949,https://www.realtor.ca/real-estate/29102584/18-12050-17-av-sw-edmonton-rutherford-edmonton
+E4465690,29102683,20827 16 AV NW|Edmonton,Alberta T5Z0T4,,472498,,,,Freehold,,,,53.45046126,-113.67387426,https://www.realtor.ca/real-estate/29102683/20827-16-av-nw-edmonton-stillwater
+E4465692,29102686,20831 16 AV NW|Edmonton,Alberta T6M1L2,,472498,,,,Freehold,,,,53.4476573,-113.6777064,https://www.realtor.ca/real-estate/29102686/20831-16-av-nw-edmonton-stillwater
+E4465693,29102687,20904 16 AV NW|Edmonton,Alberta T6W5G7,,577498,,,,Freehold,,,,53.4481148,-113.6783507,https://www.realtor.ca/real-estate/29102687/20904-16-av-nw-edmonton-stillwater
+E4465694,29102688,18832 28 AV NW|Edmonton,Alberta T6M3C4,,491820,,,,Freehold,,,,53.4600155,-113.6493358,https://www.realtor.ca/real-estate/29102688/18832-28-av-nw-edmonton-the-uplands
+E4465695,29102689,893 EBBERS CR NW NW|Edmonton,Alberta T5Y3V1,,499999,,,,Freehold,,,,53.6122526,-113.40368359,https://www.realtor.ca/real-estate/29102689/893-ebbers-cr-nw-nw-edmonton-ebbers
+E4465729,29104093,56 Nerine CR|St. Albert,Alberta T5S0R7,,695098,,,,Freehold,,,,53.6604948,-113.6678268,https://www.realtor.ca/real-estate/29104093/56-nerine-cr-st-albert-north-ridge
+E4465736,29104315,#408 1350 WINDERMERE WY SW|Edmonton,Alberta T6W2J3,,709900,,,,Condominium/Strata,,,,53.43339129,-113.6184823,https://www.realtor.ca/real-estate/29104315/408-1350-windermere-wy-sw-edmonton-windermere
+E4465737,29104316,4091 WHISPERING RIVER DR NW|Edmonton,Alberta T6W2E2,,799000,,,,Freehold,,,,53.44816705,-113.60896578,https://www.realtor.ca/real-estate/29104316/4091-whispering-river-dr-nw-edmonton-windermere
+E4465814,29106196,14075 30 ST NW|Edmonton,Alberta T5Y1R5,,248888,,,,Condominium/Strata,,,,53.6045608,-113.3865396,https://www.realtor.ca/real-estate/29106196/14075-30-st-nw-edmonton-hairsine
+E4465836,29106584,58 Nerine CR|St. Albert,Alberta T8N7Z7,,649948,,,,Freehold,,,,53.6604948,-113.6678268,https://www.realtor.ca/real-estate/29106584/58-nerine-cr-st-albert-north-ridge
+E4465845,29106839,#111 5951 165 AV NW|Edmonton,Alberta T5Y0J6,,189900,,,,Condominium/Strata,,,,53.62685023,-113.43052063,https://www.realtor.ca/real-estate/29106839/111-5951-165-av-nw-edmonton-matt-berry
+E4465872,29107499,#234 16221 95 ST NW|Edmonton,Alberta T5Z3V3,,189900,,,,Condominium/Strata,,,,53.62387114,-113.48630618,https://www.realtor.ca/real-estate/29107499/234-16221-95-st-nw-edmonton-eaux-claires
+E4465908,29108123,#64 17832 78 ST NW|Edmonton,Alberta T5Z0P7,,299000,,,,Condominium/Strata,,,,53.6400749,-113.4642638,https://www.realtor.ca/real-estate/29108123/64-17832-78-st-nw-edmonton-crystallina-nera-west
+E4465918,29108440,4168 Kinglet Drive NW|Edmonton,Alberta T5S0W1,,509900,,,,Freehold,,,,53.57977432,-113.6998097,https://www.realtor.ca/real-estate/29108440/4168-kinglet-drive-nw-edmonton-kinglet-gardens
+E4465920,29108449,2382 Muckleplum Way SW|Edmonton,Alberta T6X3K1,,624900,,,,Freehold,,,,53.40336741,-113.45308458,https://www.realtor.ca/real-estate/29108449/2382-muckleplum-way-sw-edmonton-the-orchards-at-ellerslie
+E4465941,29108811,11112 97ST NW|Edmonton,Alberta T5G1W8,,200000,,,,Freehold,,,,53.5593604,-113.492327,https://www.realtor.ca/real-estate/29108811/11112-97st-nw-edmonton-spruce-avenue
+E4465949,29109430,#303 10118 106 AV NW|Edmonton,Alberta T5H0B8,,173900,,,,Condominium/Strata,,,,53.5502114,-113.4950594,https://www.realtor.ca/real-estate/29109430/303-10118-106-av-nw-edmonton-central-mcdougall
+E4465954,29109659,2323 160 ST SW SW|Edmonton,Alberta T6W4E5,,497405,,,,Freehold,,,,53.4127332,-113.6009192,https://www.realtor.ca/real-estate/29109659/2323-160-st-sw-sw-edmonton-glenridding-ravine
+E4465975,29111380,11338 89 ST NW|Edmonton,Alberta T5B3T6,,450000,,,,Freehold,,,,53.56396258,-113.47859792,https://www.realtor.ca/real-estate/29111380/11338-89-st-nw-edmonton-alberta-avenue
+E4465976,29111381,11605 90 ST NW|Edmonton,Alberta T5B3T6,,450000,,,,Freehold,,,,53.56777478,-113.479487,https://www.realtor.ca/real-estate/29111381/11605-90-st-nw-edmonton-alberta-avenue
+E4465990,29111393,6807 DELWOOD RD NW|Edmonton,Alberta T5C3A6,,399900,,,,Freehold,,,,53.59541561,-113.44680408,https://www.realtor.ca/real-estate/29111393/6807-delwood-rd-nw-edmonton-delwood
+E4465993,29111396,#111 10309 107 ST NW|Edmonton,Alberta T5J1K3,,475000,,,,Condominium/Strata,,,,53.5451832,-113.5043885,https://www.realtor.ca/real-estate/29111396/111-10309-107-st-nw-edmonton-downtown-edmonton
+E4466000,29111526,9224 94 ST NW|Edmonton,Alberta T6C3V5,,1099900,,,,Freehold,,,,53.5279317,-113.4718872,https://www.realtor.ca/real-estate/29111526/9224-94-st-nw-edmonton-bonnie-doon
+E4466029,29112466,#307 9710 105 Street ST NW|Edmonton,Alberta T5K1A4,,105000,,,,Condominium/Strata,,,,53.53429989,-113.50150208,https://www.realtor.ca/real-estate/29112466/307-9710-105-street-st-nw-edmonton-downtown-edmonton
+E4466041,29112833,7934 77 AV NW|Edmonton,Alberta T6C0K9,,659900,,,,Freehold,,,,53.5134807,-113.4508471,https://www.realtor.ca/real-estate/29112833/7934-77-av-nw-edmonton-king-edward-park
+E4466050,29112957,#30 6075 SCHONSEE WY NW|Edmonton,Alberta T5Z0H4,,319900,,,,Condominium/Strata,,,,53.6302108,-113.4660938,https://www.realtor.ca/real-estate/29112957/30-6075-schonsee-wy-nw-edmonton-schonsee
+E4466088,29114612,29 Wheatstone CR|St. Albert,Alberta T8N3T9,,549900,,,,Freehold,,,,53.650284,-113.6056124,https://www.realtor.ca/real-estate/29114612/29-wheatstone-cr-st-albert-woodlands-st-albert
+E4466087,29114611,8350 120 ST NW|Edmonton,Alberta T6G1X2,,1500000,,,,Freehold,,,,53.5216465,-113.5379592,https://www.realtor.ca/real-estate/29114611/8350-120-st-nw-edmonton-windsor-park-edmonton
+E4466114,29115207,#59 7604 29 AV NW|Edmonton,Alberta T6K3Z2,,219900,,,,Condominium/Strata,,,,53.46068445,-113.44723062,https://www.realtor.ca/real-estate/29115207/59-7604-29-av-nw-edmonton-kameyosek
+E4466122,29115532,7526 KLAPSTEIN LINK LI SW|Edmonton,Alberta T6W5S7,,489900,,,,Freehold,,,,53.41411198,-113.64156052,https://www.realtor.ca/real-estate/29115532/7526-klapstein-link-li-sw-edmonton-keswick
+E4466176,29117800,#347 4827 104A ST NW|Edmonton,Alberta T6H0K4,,186000,,,,Condominium/Strata,,,,53.48647959,-113.49852897,https://www.realtor.ca/real-estate/29117800/347-4827-104a-st-nw-edmonton-empire-park
+E4466214,29119534,#101 5151 WINDERMERE BV NW|Edmonton,Alberta T6W2K4,,389000,,,,Condominium/Strata,,,,53.43352824,-113.60040537,https://www.realtor.ca/real-estate/29119534/101-5151-windermere-bv-nw-edmonton-ambleside
+E4466221,29119728,28 ELDRIDGE PT|St. Albert,Alberta T8N8C4,,819900,,,,Freehold,,,,53.67689001,-113.63218834,https://www.realtor.ca/real-estate/29119728/28-eldridge-pt-st-albert-erin-ridge-north
+E4466250,29120700,#72 11910 35 AV SW|Edmonton,Alberta T6W4Z8,,399989,,,,Condominium/Strata,,,,53.4013339,-113.5469662,https://www.realtor.ca/real-estate/29120700/72-11910-35-av-sw-edmonton-heritage-valley-town-centre-area
+E4466317,29123480,#57 2215 24 ST NW|Edmonton,Alberta T6T1A6,,345000,,,,Condominium/Strata,,,,53.4531817,-113.3766002,https://www.realtor.ca/real-estate/29123480/57-2215-24-st-nw-edmonton-laurel
+E4466340,29124454,6703 KNOX CT SW|Edmonton,Alberta T6W4Z9,,1282000,,,,Freehold,,,,53.4155107,-113.6382247,https://www.realtor.ca/real-estate/29124454/6703-knox-ct-sw-edmonton-keswick
+E4466342,29124562,#202 11026 106 ST NW|Edmonton,Alberta T5H2Y4,,119900,,,,Condominium/Strata,,,,53.5576328,-113.5034527,https://www.realtor.ca/real-estate/29124562/202-11026-106-st-nw-edmonton-central-mcdougall
+E4466345,29124671,262 CHAPPELLE DR SW|Edmonton,Alberta T6W5R4,,494999,,,,Freehold,,,,53.4061484,-113.5585104,https://www.realtor.ca/real-estate/29124671/262-chappelle-dr-sw-edmonton-chappelle-area
+E4466379,29125512,8 VALLEYVIEW PT NW|Edmonton,Alberta T5R5T4,,4250000,,,,Freehold,,,,53.5217909,-113.555764,https://www.realtor.ca/real-estate/29125512/8-valleyview-pt-nw-edmonton-parkview
+E4466396,29126085,#407 13635 34 ST NW|Edmonton,Alberta T5A3W2,,219500,,,,Condominium/Strata,,,,53.5991399,-113.392033,https://www.realtor.ca/real-estate/29126085/407-13635-34-st-nw-edmonton-belmont
+E4466430,29126871,#67 18120 28 AV SW|Edmonton,Alberta T6W4V2,,369000,,,,Condominium/Strata,,,,53.41139643,-113.63456948,https://www.realtor.ca/real-estate/29126871/67-18120-28-av-sw-edmonton-keswick
+E4466451,29127555,7314 KLAPSTEIN CR SW|Edmonton,Alberta T6W5N5,,499900,,,,Freehold,,,,53.4147921,-113.6403153,https://www.realtor.ca/real-estate/29127555/7314-klapstein-cr-sw-edmonton-keswick
+E4466458,29127981,#410 560 GRIESBACH PARADE PR NW|Edmonton,Alberta T5E6K1,,379999,,,,Condominium/Strata,,,,53.60247028,-113.49547846,https://www.realtor.ca/real-estate/29127981/410-560-griesbach-parade-pr-nw-edmonton-griesbach
+E4466530,29129347,15414 RIO TERRACE DR NW|Edmonton,Alberta T5R5M8,,649900,,,,Freehold,,,,53.505008,-113.587952,https://www.realtor.ca/real-estate/29129347/15414-rio-terrace-dr-nw-edmonton-rio-terrace
+E4466545,29129757,2031 51 ST SW|Edmonton,Alberta T6X1Z8,,619900,,,,Freehold,,,,53.4167146,-113.4188449,https://www.realtor.ca/real-estate/29129757/2031-51-st-sw-edmonton-walker
+E4466553,29129863,2112 210 ST NW|Edmonton,Alberta T6W5G7,,519747,,,,Freehold,,,,53.4532937,-113.6790723,https://www.realtor.ca/real-estate/29129863/2112-210-st-nw-edmonton-stillwater
+E4466556,29129866,17639 46 ST NW|Edmonton,Alberta T5Y4B7,,589573,,,,Freehold,,,,53.6370598,-113.4084382,https://www.realtor.ca/real-estate/29129866/17639-46-st-nw-edmonton-cy-becker
+E4466555,29129865,8901 Carson WY SW|Edmonton,Alberta T6W5H8,,475123,,,,Freehold,,,,53.3967166,-113.5909117,https://www.realtor.ca/real-estate/29129865/8901-carson-wy-sw-edmonton-chappelle-area
+E4466558,29129868,18145 73A ST NW|Edmonton,Alberta T5Z0T4,,450237,,,,Freehold,,,,53.6445322,-113.4544583,https://www.realtor.ca/real-estate/29129868/18145-73a-st-nw-edmonton-crystallina-nera-east
+E4466560,29129870,18136 74 ST NW|Edmonton,Alberta T5Z0T4,,485098,,,,Freehold,,,,53.6443852,-113.4566514,https://www.realtor.ca/real-estate/29129870/18136-74-st-nw-edmonton-crystallina-nera-east
+E4466569,29129962,441 WESTVIEW CL NW NW|Edmonton,Alberta T5S1T6,,63000,,,,Leasehold,,,,53.55392164,-113.6974257,https://www.realtor.ca/real-estate/29129962/441-westview-cl-nw-nw-edmonton-westview-village
+E4466599,29131141,3309 Chernowski WY SW|Edmonton,Alberta T6W5H2,,728900,,,,Freehold,,,,53.40748276,-113.59135853,https://www.realtor.ca/real-estate/29131141/3309-chernowski-wy-sw-edmonton-chappelle-area
+E4466626,29132282,#216 500 PALISADES WY|Sherwood Park,Alberta T8H0H7,,426000,,,,Condominium/Strata,,,,53.5573364,-113.2983763,https://www.realtor.ca/real-estate/29132282/216-500-palisades-wy-sherwood-park-centennial-village
+E4466628,29132666,#315 5125 RIVERBEND RD NW|Edmonton,Alberta T6H5K5,,189000,,,,Condominium/Strata,,,,53.48920613,-113.57728988,https://www.realtor.ca/real-estate/29132666/315-5125-riverbend-rd-nw-edmonton-brander-gardens
+E4466642,29133204,10 LEGACY TC|St. Albert,Alberta T8N7R2,,1460000,,,,Freehold,,,,53.6389535,-113.6630566,https://www.realtor.ca/real-estate/29133204/10-legacy-tc-st-albert-lacombe-park
+E4466652,29133571,#111 4316 139 AV NW|Edmonton,Alberta T5Y0L1,,144900,,,,Condominium/Strata,,,,53.60177408,-113.40960279,https://www.realtor.ca/real-estate/29133571/111-4316-139-av-nw-edmonton-clareview-town-centre
+E4466668,29134057,18007 71 ST NW|Edmonton,Alberta T5Z0V4,,404900,,,,Freehold,,,,53.64379639,-113.44897111,https://www.realtor.ca/real-estate/29134057/18007-71-st-nw-edmonton-crystallina-nera-east
+E4466696,29135625,321 NORTHGATE TC NW|Edmonton,Alberta T5E3E3,,227900,,,,Condominium/Strata,,,,53.6047456,-113.4747599,https://www.realtor.ca/real-estate/29135625/321-northgate-tc-nw-edmonton-northmount-edmonton
+E4466702,29136065,1715 69 ST SW|Edmonton,Alberta T6X0C9,,724000,,,,Freehold,,,,53.4185406,-113.4457308,https://www.realtor.ca/real-estate/29136065/1715-69-st-sw-edmonton-summerside
+E4466705,29136168,6125 Crawford DR SW SW|Edmonton,Alberta T6W4L7,,899999,,,,Freehold,,,,53.3992167,-113.6017026,https://www.realtor.ca/real-estate/29136168/6125-crawford-dr-sw-sw-edmonton-chappelle-area
+E4466715,29136502,121 BULYEA RD NW|Edmonton,Alberta T6R2M9,,352900,,,,Condominium/Strata,,,,53.4667347,-113.5735009,https://www.realtor.ca/real-estate/29136502/121-bulyea-rd-nw-edmonton-ogilvie-ridge
+E4466730,29137166,3245 DIXON WY SW|Edmonton,Alberta T6W5L4,,724998,,,,Freehold,,,,53.4003461,-113.5587063,https://www.realtor.ca/real-estate/29137166/3245-dixon-wy-sw-edmonton-desrochers-area
+E4466749,29137799,11516 133A AV NW|Edmonton,Alberta T5E1G6,,479950,,,,Freehold,,,,53.5942333,-113.5206745,https://www.realtor.ca/real-estate/29137799/11516-133a-av-nw-edmonton-kensington
+E4466763,29138831,1611 14 ST NW|Edmonton,Alberta T6T2S2,,799998,,,,Freehold,,,,53.4513163,-113.3635221,https://www.realtor.ca/real-estate/29138831/1611-14-st-nw-edmonton-aster
+E4466765,29138893,9389 COOPER BEND BN SW|Edmonton,Alberta T5S0P5,,639998,,,,Freehold,,,,53.4011053,-113.5894843,https://www.realtor.ca/real-estate/29138893/9389-cooper-bend-bn-sw-edmonton-chappelle-area
+E4466773,29139262,11136 80 AV NW|Edmonton,Alberta T6G0R5,,700000,,,,Freehold,,,,53.5163873,-113.5197554,https://www.realtor.ca/real-estate/29139262/11136-80-av-nw-edmonton-garneau
+E4466784,29139726,#222 1180 HYNDMAN RD NW|Edmonton,Alberta T5A0P8,,165000,,,,Condominium/Strata,,,,53.5751676,-113.3757124,https://www.realtor.ca/real-estate/29139726/222-1180-hyndman-rd-nw-edmonton-canon-ridge
+E4466788,29139944,7706 174A AV NW|Edmonton,Alberta T5Z0W5,,539000,,,,Freehold,,,,53.63566204,-113.45915156,https://www.realtor.ca/real-estate/29139944/7706-174a-av-nw-edmonton-crystallina-nera-west
+E4466798,29140459,18024 93 AV NW|Edmonton,Alberta T6E5P5,,229900,,,,Condominium/Strata,,,,53.5273055,-113.63539356,https://www.realtor.ca/real-estate/29140459/18024-93-av-nw-edmonton-belmead
+E4466800,29140461,16423 99A AV NW|Edmonton,Alberta T5R1N9,,2099999,,,,Freehold,,,,53.5206469,-113.5854512,https://www.realtor.ca/real-estate/29140461/16423-99a-av-nw-edmonton-jasper-park
+E4466808,29140786,10618 61 AV NW|Edmonton,Alberta T6H1L7,,449900,,,,Freehold,,,,53.49842237,-113.50568333,https://www.realtor.ca/real-estate/29140786/10618-61-av-nw-edmonton-allendale
+E4466810,29140828,7585 174A AV NW|Edmonton,Alberta T5Z0W5,,2350000,,,,Freehold,,,,53.63551626,-113.45871864,https://www.realtor.ca/real-estate/29140828/7585-174a-av-nw-edmonton-crystallina-nera-west
+E4466824,29141339,20429 16A AV NW|Edmonton,Alberta T6M2X6,,675990,,,,Freehold,,,,53.44811964,-113.67479714,https://www.realtor.ca/real-estate/29141339/20429-16a-av-nw-edmonton-stillwater
+E4466829,29141362,11544 140 ST NW|Edmonton,Alberta T5M1S7,,374995,,,,Freehold,,,,53.56751224,-113.56335404,https://www.realtor.ca/real-estate/29141362/11544-140-st-nw-edmonton-woodcroft
+E4466901,29144054,#4501 10360 102 ST NW|Edmonton,Alberta T5J0K6,,1265000,,,,Condominium/Strata,,,,53.54611478,-113.4963477,https://www.realtor.ca/real-estate/29144054/4501-10360-102-st-nw-edmonton-downtown-edmonton
+E4466925,29144803,3323 26 AV NW|Edmonton,Alberta T6T1P9,,499999,,,,Freehold,,,,53.4558625,-113.3911005,https://www.realtor.ca/real-estate/29144803/3323-26-av-nw-edmonton-silver-berry
+E4466931,29144853,#47 10909 106 ST NW|Edmonton,Alberta T5H4M7,,248000,,,,Condominium/Strata,,,,53.5546163,-113.501815,https://www.realtor.ca/real-estate/29144853/47-10909-106-st-nw-edmonton-central-mcdougall
+E4466934,29144888,#417 10717 83 AV NW|Edmonton,Alberta T6E2E5,,300000,,,,Condominium/Strata,,,,53.51882627,-113.50716362,https://www.realtor.ca/real-estate/29144888/417-10717-83-av-nw-edmonton-garneau
+E4466935,29144889,651 176 AV NE|Edmonton,Alberta T5Y4G1,,379561,,,,Freehold,,,,53.63171715,-113.34461829,https://www.realtor.ca/real-estate/29144889/651-176-av-ne-edmonton-marquis
+E4466936,29144893,635 176 AV NE|Edmonton,Alberta T5Y4G1,,379561,,,,Freehold,,,,53.637814,-113.3370297,https://www.realtor.ca/real-estate/29144893/635-176-av-ne-edmonton-marquis
+E4466937,29144894,639 176 AV NE|Edmonton,Alberta T5Y4G1,,379561,,,,Freehold,,,,53.637814,-113.3370297,https://www.realtor.ca/real-estate/29144894/639-176-av-ne-edmonton-marquis
+E4466938,29144895,17514 5A ST NE|Edmonton,Alberta T5Y4E8,,545997,,,,Freehold,,,,53.63832735,-113.33717937,https://www.realtor.ca/real-estate/29144895/17514-5a-st-ne-edmonton-marquis
+E4466946,29145513,#225 226 MACEWAN RD SW|Edmonton,Alberta T6W0C5,,220000,,,,Condominium/Strata,,,,53.429541,-113.5275519,https://www.realtor.ca/real-estate/29145513/225-226-macewan-rd-sw-edmonton-macewan
+E4466969,29146318,1960 ADAMSON TC SW|Edmonton,Alberta T6W1A8,,885000,,,,Freehold,,,,53.3997236,-113.5182718,https://www.realtor.ca/real-estate/29146318/1960-adamson-tc-sw-edmonton-allard
+E4466973,29146436,6079 180 AV NW|Edmonton,Alberta T5Y3X1,,516000,,,,Freehold,,,,53.642121,-113.429345,https://www.realtor.ca/real-estate/29146436/6079-180-av-nw-edmonton-mcconachie-area
+E4466975,29146508,11616 152 AV NW|Edmonton,Alberta T5X1C7,,349900,,,,Freehold,,,,53.61199939,-113.5225024,https://www.realtor.ca/real-estate/29146508/11616-152-av-nw-edmonton-caernarvon
