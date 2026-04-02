@@ -1,9 +1,16 @@
+import sys
 import os
 import sqlite3
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 
 from backend.src.app import app
 from backend.src.config import Settings

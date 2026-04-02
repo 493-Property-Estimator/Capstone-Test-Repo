@@ -5,7 +5,7 @@
 From repo root:
 
 ```bash
-pip install -r backend/requirements.txt
+pip install -r src/backend/requirements.txt
 export DATA_DB_PATH=src/data_sourcing/open_data.db
 uvicorn backend.src.app:app --reload --port 8000
 ```
@@ -21,7 +21,7 @@ export DATA_DB_PATH=/tmp/open_data_sample.db
 From repo root:
 
 ```bash
-cd frontend
+cd src/frontend
 python3 -m http.server 8080
 ```
 
