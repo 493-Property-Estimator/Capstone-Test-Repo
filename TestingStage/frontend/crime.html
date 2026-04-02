@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestingStage Crime</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">TestingStage</p>
+          <h1>Property API Playground</h1>
+          <p>Crime summary lookups by neighbourhood or property/address when a crime provider exists.</p>
+        </div>
+        <nav class="nav">
+          <a data-nav href="/">Map nearest property</a>
+          <a data-nav href="/estimator">Property estimator</a>
+          <a data-nav href="/top-x">Top x nearby POIs</a>
+          <a data-nav href="/distance-points">Distance to points</a>
+          <a data-nav href="/osrm">OSRM</a>
+          <a data-nav href="/transit">Transit</a>
+          <a data-nav href="/crime">Crime</a>
+          <a data-nav href="/neighborhood-results">Neighborhood results</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <p class="eyebrow">Page 6</p>
+          <h2>Crime summary queries</h2>
+          <p>
+            This page is wired to a crime-provider abstraction. If the repository database does not
+            contain crime summary data yet, the API returns a clear TODO instead of fabricated
+            results.
+          </p>
+        </section>
+
+        <section class="layout-grid">
+          <section class="panel stack">
+            <div>
+              <h3>Query inputs</h3>
+              <p>Use either a neighbourhood name or a property/address text match.</p>
+            </div>
+            <label>
+              Neighbourhood
+              <select id="crime-neighbourhood"></select>
+            </label>
+            <label>
+              Property or address
+              <input id="crime-property" type="text" placeholder="10160 103 STREET NW or location id" />
+            </label>
+            <label>
+              Radius in meters for property lookup
+              <input id="crime-radius" type="number" min="1" value="1000" />
+            </label>
+            <div class="button-row">
+              <button id="crime-neighbourhood-button" type="button">Query by neighbourhood</button>
+              <button id="crime-property-button" class="secondary" type="button">Query by property</button>
+            </div>
+            <div id="crime-status" class="status">Waiting for a request.</div>
+          </section>
+
+          <section class="panel stack">
+            <div>
+              <h3>Crime summary</h3>
+              <p>Grouped by crime type when data is available.</p>
+            </div>
+            <div id="crime-result" class="result-card">No crime query yet.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/crime-page.js"></script>
+  </body>
+</html>
