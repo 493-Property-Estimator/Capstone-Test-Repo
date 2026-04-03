@@ -51,7 +51,42 @@ def _build_parser() -> argparse.ArgumentParser:
     show_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
     show_parser.add_argument("--key", required=True)
 
+    db_summary_parser = subparsers.add_parser("db-summary", help="Show DB schema and row counts")
+    db_summary_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
+
+    db_path_parser = subparsers.add_parser("db-path", help="Show the active SQLite DB path")
+    db_path_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
+
     return parser
+
+
+def _format_column(column: dict[str, Any]) -> str:
+    parts = [column["name"]]
+    if column["type"]:
+        parts.append(column["type"])
+    if column["primary_key_position"]:
+        parts.append("PK")
+    if column["not_null"]:
+        parts.append("NOT NULL")
+    return " ".join(parts)
+
+
+def _format_db_summary(summary: dict[str, Any]) -> str:
+    table_count = len(summary["tables"])
+    lines = [
+        f"Database: {summary['db']}",
+        f"Tables: {table_count}",
+        "",
+    ]
+    for table in summary["tables"]:
+        row_label = "row" if table["row_count"] == 1 else "rows"
+        lines.append(f"{table['table']}")
+        lines.append(f"  Rows: {table['row_count']} {row_label}")
+        lines.append("  Columns:")
+        for column in table["columns"]:
+            lines.append(f"    - {_format_column(column)}")
+        lines.append("")
+    return "\n".join(lines).rstrip()
 
 
 def main() -> None:
@@ -75,10 +110,17 @@ def main() -> None:
         out = service.list_sources(pipeline=args.pipeline, enabled_only=args.enabled_only)
     elif args.command == "show-source":
         out = service.get_source(args.key)
+    elif args.command == "db-summary":
+        out = service.database_summary()
+    elif args.command == "db-path":
+        out = service.database_path()
     else:
         raise ValueError(f"unsupported command: {args.command}")
 
-    print(json.dumps(out, indent=2, sort_keys=True))
+    if args.command == "db-summary":
+        print(_format_db_summary(out))
+    else:
+        print(json.dumps(out, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

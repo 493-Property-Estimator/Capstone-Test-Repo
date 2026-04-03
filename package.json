@@ -1,0 +1,8 @@
+{
+  "name": "group-14-capstone-repo",
+  "private": true,
+  "scripts": {
+    "backend": "python3 -m uvicorn backend.src.app:app --reload --port 8000",
+    "frontend": "python3 -m http.server 8080 --directory src/frontend"
+  }
+}

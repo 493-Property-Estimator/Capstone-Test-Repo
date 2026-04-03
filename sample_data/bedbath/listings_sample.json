@@ -1,0 +1,26 @@
+[
+  {
+    "address": "10448 67 Avenue NW",
+    "house_number": "10448",
+    "street_name": "67 Avenue NW",
+    "legal_description": "Plan: 1300TR Block: B Lot: 14A",
+    "lat": 53.5036736506916,
+    "lon": -113.499902961624,
+    "bedrooms": 4,
+    "bathrooms": 3.0,
+    "source_record_id": "listing-json-001",
+    "observed_at": "2026-03-31T13:00:00+00:00"
+  },
+  {
+    "address": "12239 41 Avenue NW",
+    "house_number": "12239",
+    "street_name": "41 Avenue NW",
+    "legal_description": "Plan: 6773MC Block: 10 Lot: 73",
+    "lat": 53.4765627765665,
+    "lon": -113.546207588164,
+    "bedrooms": 6,
+    "bathrooms": 4.0,
+    "source_record_id": "listing-json-002",
+    "observed_at": "2026-03-31T13:05:00+00:00"
+  }
+]
