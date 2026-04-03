@@ -5,9 +5,29 @@ export function createStore() {
     selectedLocation: null,
     latestClickId: null,
     activeLayers: LAYER_DEFINITIONS.reduce((accumulator, layer) => {
-      accumulator[layer.id] = { enabled: false, status: "idle", data: null };
+      accumulator[layer.id] = {
+        enabled: Boolean(layer.alwaysOn && layer.id !== "assessment_properties"),
+        status: layer.alwaysOn && layer.id !== "assessment_properties" ? "loading" : "idle",
+        data: null
+      };
       return accumulator;
     }, {}),
+    propertyLayer: {
+      enabled: true,
+      status: "loading",
+      requestSeq: 0,
+      renderMode: "cluster",
+      clusters: [],
+      properties: [],
+      nextCursor: null,
+      warnings: [],
+      legend: {
+        title: "Assessment Properties",
+        items: [{ label: "Property", color: "#a43434", shape: "circle" }]
+      },
+      viewportKey: null
+    },
+    viewport: null,
     estimate: null,
     warningsCollapsed: false
   };
@@ -38,6 +58,16 @@ export function createStore() {
             ...state.activeLayers[layerId],
             ...patch
           }
+        }
+      };
+      notify();
+    },
+    updatePropertyLayer(patch) {
+      state = {
+        ...state,
+        propertyLayer: {
+          ...state.propertyLayer,
+          ...patch
         }
       };
       notify();

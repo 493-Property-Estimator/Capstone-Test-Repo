@@ -16,6 +16,7 @@ export function createSearchController({
       setText(helperText, "Enter more details.");
       setText(statusElement, "Waiting");
       clearElement(suggestionsRoot);
+      clearElement(candidateResultsRoot);
       return;
     }
 
@@ -23,21 +24,29 @@ export function createSearchController({
 
     try {
       const response = await apiClient.resolveAddress(query.trim());
+      clearElement(suggestionsRoot);
       clearElement(candidateResultsRoot);
 
       if (response.status === "resolved" && response.location) {
         setText(statusElement, "Resolved");
         setText(helperText, "Address resolved.");
+<<<<<<< HEAD:src/frontend/src/features/search/searchController.js
         clearElement(suggestionsRoot);
         clearElement(candidateResultsRoot);
+=======
+>>>>>>> master:frontend/src/features/search/searchController.js
         onLocationResolved(response.location);
         return;
       }
 
       if (response.status === "ambiguous") {
         setText(statusElement, "Ambiguous");
+<<<<<<< HEAD:src/frontend/src/features/search/searchController.js
         setText(helperText, "Multiple address candidates found.");
         clearElement(suggestionsRoot);
+=======
+        setText(helperText, "Multiple candidate addresses found.");
+>>>>>>> master:frontend/src/features/search/searchController.js
         renderCandidates(response.candidates || []);
         return;
       }
@@ -66,6 +75,7 @@ export function createSearchController({
   async function loadSuggestions(query) {
     if (!query || query.trim().length < 3) {
       clearElement(suggestionsRoot);
+      clearElement(candidateResultsRoot);
       return;
     }
 
@@ -153,4 +163,18 @@ export function createSearchController({
   });
 
   submitButton.addEventListener("click", () => resolveQuery(input.value));
+
+  return {
+    resolveQuery,
+    setQuery(value) {
+      input.value = value;
+    },
+    clear() {
+      input.value = "";
+      clearElement(suggestionsRoot);
+      clearElement(candidateResultsRoot);
+      setText(helperText, "Enter at least 3 characters to load suggestions.");
+      setText(statusElement, "Idle");
+    }
+  };
 }

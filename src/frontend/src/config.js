@@ -1,12 +1,13 @@
 export const API_BASE_URL = "http://localhost:8000/api/v1";
+export const USE_MOCK_API = true;
 export const OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 export const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export const EDMONTON_CENTER = [53.5461, -113.4938];
 export const EDMONTON_BOUNDS = [
-  [53.3958, -113.7136],
-  [53.716, -113.2714]
+  [53.3385, -113.7134],
+  [53.7152, -113.2784]
 ];
 
 export const LAYER_DEFINITIONS = [
@@ -18,6 +19,14 @@ export const LAYER_DEFINITIONS = [
   { id: "provincial_districts", label: "Provincial Districts", color: "#7c3aed" },
   { id: "federal_districts", label: "Federal Districts", color: "#0f766e" },
   { id: "census_subdivisions", label: "Census Subdivisions", color: "#475569" }
+  { id: "census_boundaries", label: "Census Boundaries", color: "#a44dc5" },
+  { id: "assessment_zones", label: "Assessment Zones", color: "#c46b15" },
+  {
+    id: "assessment_properties",
+    label: "Assessment Properties",
+    color: "#a43434",
+    alwaysOn: true
+  }
 ];
 
 export const DEFAULT_LOCATION = {

@@ -16,8 +16,10 @@ export function createEstimateController({
   apiClient,
   store,
   submitButton,
+  resetButton,
   statusElement,
   locationSummary,
+  selectionMeta,
   estimatePanel,
   validationMessage,
   formElements
@@ -172,6 +174,19 @@ export function createEstimateController({
   }
 
   submitButton.addEventListener("click", requestEstimate);
+  resetButton.addEventListener("click", () => {
+    clearValidation();
+    formElements.latitudeInput.value = "";
+    formElements.longitudeInput.value = "";
+    formElements.bedroomsInput.value = "";
+    formElements.bathroomsInput.value = "";
+    formElements.floorAreaInput.value = "";
+    store.setState({
+      estimate: null,
+      warningsCollapsed: false
+    });
+    setText(statusElement, "Waiting");
+  });
 
   store.subscribe((state) => {
     const location = state.selectedLocation;
@@ -187,6 +202,12 @@ export function createEstimateController({
       location?.canonical_address
         ? `${location.canonical_address}${location.neighbourhood ? ` · ${location.neighbourhood}` : ""}`
         : "Select a property to request an estimate."
+    );
+    setText(
+      selectionMeta,
+      location?.canonical_address
+        ? `Current selection source: ${location.canonical_location_id ? "resolved location" : "manual coordinates"}`
+        : "Choose a location by search, map click, or manual coordinates."
     );
     renderEstimate(state.estimate);
   });
