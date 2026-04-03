@@ -14,6 +14,35 @@ export function createLayerController({
   let lastRenderedPropertyLayer = null;
   let propertyAbortController = null;
   const propertyResponseCache = new Map();
+  const layerRequestSeqById = new Map();
+
+  function formatStatus(status) {
+    const normalized = String(status || "idle").toLowerCase();
+    if (normalized === "loading") {
+      return "Loading...";
+    }
+    if (normalized === "ready") {
+      return "Ready";
+    }
+    if (normalized === "partial") {
+      return "Partial";
+    }
+    if (normalized === "unavailable") {
+      return "Unavailable";
+    }
+    return "Idle";
+  }
+
+  function layerLabel(layerId) {
+    if (layerId === "assessment_properties") {
+      return "Assessment Properties";
+    }
+    return LAYER_DEFINITIONS.find((layer) => layer.id === layerId)?.label || layerId;
+  }
+
+  function setLayerStatusMessage(text) {
+    setText(statusElement, text);
+  }
 
   function buildViewportKey(viewport = {}) {
     return [
@@ -28,24 +57,64 @@ export function createLayerController({
   function renderControls() {
     clearElement(controlsRoot);
 
+    if (PROPERTY_LAYER_ENABLED) {
+      const propertyLayerState = store.getState().propertyLayer;
+      const row = createElement("div", "layer-item");
+      const name = createElement("div", "layer-name");
+      const title = createElement("strong", null, "Assessment Properties");
+      const subtitle = createElement("span", null, formatStatus(propertyLayerState.status));
+      name.appendChild(title);
+      name.appendChild(subtitle);
+
+      const toggle = document.createElement("input");
+      toggle.type = "checkbox";
+      toggle.checked = Boolean(propertyLayerState.enabled);
+      toggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+          store.updatePropertyLayer({ enabled: true, status: "loading" });
+          setLayerStatusMessage("Loading Assessment Properties...");
+          loadPropertyLayer(mapAdapter.getViewport());
+        } else {
+          if (propertyAbortController) {
+            propertyAbortController.abort();
+          }
+          store.updatePropertyLayer({
+            enabled: false,
+            status: "idle",
+            clusters: [],
+            properties: [],
+            warnings: []
+          });
+          setLayerStatusMessage("Assessment Properties idle.");
+        }
+      });
+
+      row.appendChild(name);
+      row.appendChild(toggle);
+      controlsRoot.appendChild(row);
+    }
+
     LAYER_DEFINITIONS.filter((layer) => !layer.alwaysOn).forEach((layer) => {
       const layerState = store.getState().activeLayers[layer.id];
-      const row = createElement("label", "layer-item");
+      const row = createElement("div", "layer-item");
       const name = createElement("div", "layer-name");
       const title = createElement("strong", null, layer.label);
-      const subtitle = createElement("span", null, layerState.status);
+      const subtitle = createElement("span", null, formatStatus(layerState.status));
       name.appendChild(title);
       name.appendChild(subtitle);
 
       const toggle = document.createElement("input");
       toggle.type = "checkbox";
       toggle.checked = layerState.enabled;
-      toggle.addEventListener("change", () => {
-        if (toggle.checked) {
-          mapAdapter.focusEdmonton();
+      toggle.addEventListener("change", (event) => {
+        if (event.target.checked) {
+          setLayerStatusMessage(`Loading ${layer.label}...`);
           loadLayer(layer.id);
         } else {
+          const currentSeq = Number(layerRequestSeqById.get(layer.id) || 0) + 1;
+          layerRequestSeqById.set(layer.id, currentSeq);
           store.updateLayer(layer.id, { enabled: false, status: "idle", data: null });
+          setLayerStatusMessage(`${layer.label} idle.`);
         }
       });
 
@@ -91,8 +160,12 @@ export function createLayerController({
 
   async function loadLayer(layerId) {
     const viewport = mapAdapter.getViewport();
+    const nextSeq = Number(layerRequestSeqById.get(layerId) || 0) + 1;
+    layerRequestSeqById.set(layerId, nextSeq);
+
+    const layerName = layerLabel(layerId);
     store.updateLayer(layerId, { enabled: true, status: "loading" });
-    setText(statusElement, "Loading");
+    setLayerStatusMessage(`Loading ${layerName}...`);
 
     try {
       const data = await apiClient.getLayerData({
@@ -100,19 +173,42 @@ export function createLayerController({
         ...viewport
       });
 
+      if (layerRequestSeqById.get(layerId) !== nextSeq) {
+        return;
+      }
+
+      if (!store.getState().activeLayers[layerId]?.enabled) {
+        return;
+      }
+
+      const nextStatus = data.coverage_status === "partial" ? "partial" : "ready";
       store.updateLayer(layerId, {
         enabled: true,
-        status: data.coverage_status === "partial" ? "partial" : "ready",
+        status: nextStatus,
         data
       });
-      setText(statusElement, data.coverage_status === "partial" ? "Partial" : "Ready");
+      setLayerStatusMessage(
+        nextStatus === "partial" ? `${layerName} partial.` : `${layerName} ready.`
+      );
     } catch (error) {
-      store.updateLayer(layerId, { enabled: false, status: "unavailable", data: null });
-      setText(statusElement, "Unavailable");
+      if (layerRequestSeqById.get(layerId) !== nextSeq) {
+        return;
+      }
+
+      if (!store.getState().activeLayers[layerId]?.enabled) {
+        return;
+      }
+
+      store.updateLayer(layerId, { enabled: true, status: "unavailable", data: null });
+      setLayerStatusMessage(`${layerName} unavailable.`);
     }
   }
 
   async function loadPropertyLayer(viewport) {
+    if (!store.getState().propertyLayer.enabled) {
+      return;
+    }
+
     const viewportKey = buildViewportKey(viewport);
     const nextRequestSeq = store.getState().propertyLayer.requestSeq + 1;
 
@@ -124,6 +220,11 @@ export function createLayerController({
         requestSeq: nextRequestSeq,
         viewportKey
       });
+      setLayerStatusMessage(
+        cached.coverage_status === "partial"
+          ? "Assessment Properties partial."
+          : "Assessment Properties ready."
+      );
       return;
     }
 
@@ -138,7 +239,7 @@ export function createLayerController({
       requestSeq: nextRequestSeq,
       viewportKey
     });
-    setText(statusElement, "Loading");
+    setLayerStatusMessage("Loading Assessment Properties...");
 
     try {
       const response = await apiClient.getProperties({
@@ -169,7 +270,11 @@ export function createLayerController({
           ? "partial"
           : "ready"
       });
-      setText(statusElement, "Ready");
+      setLayerStatusMessage(
+        response.coverage_status === "partial" || response.status === "partial"
+          ? "Assessment Properties partial."
+          : "Assessment Properties ready."
+      );
     } catch (error) {
       if (error?.name === "AbortError") {
         return;
@@ -188,7 +293,7 @@ export function createLayerController({
           }
         ]
       });
-      setText(statusElement, "Unavailable");
+      setLayerStatusMessage("Assessment Properties unavailable.");
     }
   }
 
@@ -209,7 +314,7 @@ export function createLayerController({
   mapAdapter.setViewportChangeHandler(() => {
     const viewport = mapAdapter.getViewport();
     store.setState({ viewport });
-    if (PROPERTY_LAYER_ENABLED) {
+    if (PROPERTY_LAYER_ENABLED && store.getState().propertyLayer.enabled) {
       refreshPropertyLayer(viewport);
     }
     refreshVisibleLayers();

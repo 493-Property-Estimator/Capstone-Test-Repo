@@ -82,7 +82,11 @@ function shouldFallbackToMock(error) {
   );
 }
 
-async function requestWithFallback(liveFactory, mockFactory, { signal } = {}) {
+async function requestWithFallback(
+  liveFactory,
+  mockFactory,
+  { signal, fallbackOnAnyError = false } = {}
+) {
   if (!PREFER_LIVE_API) {
     return withMockDelay(mockFactory, signal);
   }
@@ -90,6 +94,10 @@ async function requestWithFallback(liveFactory, mockFactory, { signal } = {}) {
   try {
     return await liveFactory();
   } catch (error) {
+    if (fallbackOnAnyError && error?.name !== "AbortError") {
+      return withMockDelay(mockFactory, signal);
+    }
+
     if (!shouldFallbackToMock(error)) {
       throw error;
     }
@@ -152,7 +160,8 @@ export const apiClient = {
     });
     return requestWithFallback(
       () => request(`/layers/${layerId}?${params.toString()}`),
-      () => mockApi.getLayerData({ layerId, west, south, east, north, zoom })
+      () => mockApi.getLayerData({ layerId, west, south, east, north, zoom }),
+      { fallbackOnAnyError: true }
     );
   },
 
@@ -173,7 +182,7 @@ export const apiClient = {
     return requestWithFallback(
       () => request(`/properties?${params.toString()}`, { signal }),
       () => mockApi.getProperties({ west, south, east, north, zoom, limit, cursor, signal }),
-      { signal }
+      { signal, fallbackOnAnyError: true }
     );
   }
 };

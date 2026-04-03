@@ -29,6 +29,8 @@ export function createMapAdapter({
   let pointerDownPoint = null;
   let mapWasDragged = false;
   let suppressNextMapClick = false;
+  const singleClickDelayMs = 220;
+  let pendingMapClickTimeoutId = null;
   let styleLoaded = false;
 
   const renderedLayerIds = new Map();
@@ -211,7 +213,7 @@ export function createMapAdapter({
       renderPropertyCard();
     });
 
-    map.on("click", (event) => {
+    const handleMapClick = (event) => {
       if (suppressNextMapClick) {
         suppressNextMapClick = false;
         return;
@@ -234,6 +236,35 @@ export function createMapAdapter({
         lat: Number(event.lngLat.lat.toFixed(5)),
         lng: Number(event.lngLat.lng.toFixed(5))
       });
+
+      pointerDownPoint = null;
+      mapWasDragged = false;
+    };
+
+    map.on("click", (event) => {
+      if (event.originalEvent?.button !== 0) {
+        return;
+      }
+
+      if (pendingMapClickTimeoutId) {
+        window.clearTimeout(pendingMapClickTimeoutId);
+      }
+
+      pendingMapClickTimeoutId = window.setTimeout(() => {
+        pendingMapClickTimeoutId = null;
+        handleMapClick(event);
+      }, singleClickDelayMs);
+    });
+
+    map.on("dblclick", (event) => {
+      if (event.originalEvent?.button !== 0) {
+        return;
+      }
+
+      if (pendingMapClickTimeoutId) {
+        window.clearTimeout(pendingMapClickTimeoutId);
+        pendingMapClickTimeoutId = null;
+      }
 
       pointerDownPoint = null;
       mapWasDragged = false;
