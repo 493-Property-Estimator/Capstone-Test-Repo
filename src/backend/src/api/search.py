@@ -9,9 +9,11 @@ from backend.src.config import EDMONTON_BOUNDS
 
 router = APIRouter()
 
+ALLOWED_SEARCH_PROVIDERS = {"db", "osrm"}
+
 
 @router.get("/search/suggestions")
-async def search_suggestions(request: Request, q: str, limit: int = 5):
+async def search_suggestions(request: Request, q: str, limit: int = 5, provider: str | None = None):
     request_id = request.state.request_id
     if len(q.strip()) < 3:
         return JSONResponse(
@@ -24,18 +26,28 @@ async def search_suggestions(request: Request, q: str, limit: int = 5):
                 retryable=False,
             ),
         )
-    limit = max(1, min(limit, 10))
     settings = request.app.state.settings
+    provider = (provider or settings.search_provider).strip().lower()
+    if provider not in ALLOWED_SEARCH_PROVIDERS:
+        provider = "db"
+    limit = max(1, min(limit, 10))
+    provider_effective = provider
+    if provider == "osrm":
+        # OSRM address geocoding is not implemented in this backend yet.
+        # Use the canonical DB search path as a stable fallback.
+        provider_effective = "db_fallback"
     suggestions = search_address_suggestions(settings.data_db_path, q, limit)
     return {
         "request_id": request_id,
         "query": q,
+        "provider_requested": provider,
+        "provider_effective": provider_effective,
         "suggestions": suggestions,
     }
 
 
 @router.get("/search/resolve")
-async def resolve_search(request: Request, q: str):
+async def resolve_search(request: Request, q: str, provider: str | None = None):
     request_id = request.state.request_id
     if len(q.strip()) < 3:
         return JSONResponse(
@@ -49,11 +61,21 @@ async def resolve_search(request: Request, q: str):
             ),
         )
     settings = request.app.state.settings
+    provider = (provider or settings.search_provider).strip().lower()
+    if provider not in ALLOWED_SEARCH_PROVIDERS:
+        provider = "db"
+    provider_effective = provider
+    if provider == "osrm":
+        # OSRM address geocoding is not implemented in this backend yet.
+        # Use the canonical DB search path as a stable fallback.
+        provider_effective = "db_fallback"
     matches = resolve_address(settings.data_db_path, q, limit=5)
     if not matches:
         return {
             "request_id": request_id,
             "status": "not_found",
+            "provider_requested": provider,
+            "provider_effective": provider_effective,
             "location": None,
             "candidates": [],
         }
@@ -70,6 +92,8 @@ async def resolve_search(request: Request, q: str):
         return {
             "request_id": request_id,
             "status": "ambiguous",
+            "provider_requested": provider,
+            "provider_effective": provider_effective,
             "location": None,
             "candidates": candidates,
         }
@@ -86,12 +110,16 @@ async def resolve_search(request: Request, q: str):
         return {
             "request_id": request_id,
             "status": "unsupported_region",
+            "provider_requested": provider,
+            "provider_effective": provider_effective,
             "location": location,
             "candidates": [],
         }
     return {
         "request_id": request_id,
         "status": "resolved",
+        "provider_requested": provider,
+        "provider_effective": provider_effective,
         "location": location,
         "candidates": [],
     }

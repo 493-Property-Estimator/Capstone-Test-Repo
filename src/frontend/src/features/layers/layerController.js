@@ -1,4 +1,4 @@
-import { LAYER_DEFINITIONS } from "../../config.js";
+import { LAYER_DEFINITIONS, PROPERTY_LAYER_ENABLED } from "../../config.js";
 import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
 
@@ -209,7 +209,9 @@ export function createLayerController({
   mapAdapter.setViewportChangeHandler(() => {
     const viewport = mapAdapter.getViewport();
     store.setState({ viewport });
-    refreshPropertyLayer(viewport);
+    if (PROPERTY_LAYER_ENABLED) {
+      refreshPropertyLayer(viewport);
+    }
     refreshVisibleLayers();
   });
 
@@ -237,5 +239,9 @@ export function createLayerController({
     loadLayer(layer.id);
   });
 
-  loadPropertyLayer(mapAdapter.getViewport());
+  if (PROPERTY_LAYER_ENABLED) {
+    loadPropertyLayer(mapAdapter.getViewport());
+  } else {
+    mapAdapter.renderPropertyLayer({ enabled: false });
+  }
 }

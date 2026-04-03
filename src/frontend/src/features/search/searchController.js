@@ -30,23 +30,16 @@ export function createSearchController({
       if (response.status === "resolved" && response.location) {
         setText(statusElement, "Resolved");
         setText(helperText, "Address resolved.");
-<<<<<<< HEAD:src/frontend/src/features/search/searchController.js
         clearElement(suggestionsRoot);
         clearElement(candidateResultsRoot);
-=======
->>>>>>> master:frontend/src/features/search/searchController.js
         onLocationResolved(response.location);
         return;
       }
 
       if (response.status === "ambiguous") {
         setText(statusElement, "Ambiguous");
-<<<<<<< HEAD:src/frontend/src/features/search/searchController.js
-        setText(helperText, "Multiple address candidates found.");
-        clearElement(suggestionsRoot);
-=======
         setText(helperText, "Multiple candidate addresses found.");
->>>>>>> master:frontend/src/features/search/searchController.js
+        clearElement(suggestionsRoot);
         renderCandidates(response.candidates || []);
         return;
       }
@@ -80,7 +73,7 @@ export function createSearchController({
     }
 
     try {
-      const response = await apiClient.getAddressSuggestions(query.trim());
+      const response = await apiClient.getAddressSuggestions(query.trim(), 5);
       renderSuggestions(response.suggestions || []);
       setText(helperText, response.suggestions?.length ? "Suggestions" : "No suggestions found.");
     } catch (error) {

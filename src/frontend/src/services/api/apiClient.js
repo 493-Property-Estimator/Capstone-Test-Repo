@@ -1,4 +1,4 @@
-import { API_BASE_URL, USE_MOCK_API } from "../../config.js";
+import { API_BASE_URL, PREFER_LIVE_API, SEARCH_PROVIDER } from "../../config.js";
 import { mockApi } from "./mockData.js";
 
 async function request(path, options = {}) {
@@ -7,16 +7,28 @@ async function request(path, options = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers,
-    ...options
-  });
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers,
+      ...options
+    });
+  } catch (error) {
+    const networkError = new Error("Unable to reach live API");
+    networkError.cause = error;
+    networkError.isNetworkError = true;
+    throw networkError;
+  }
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
     const message = data?.error?.message || "Request failed";
-    throw new Error(message);
+    const requestError = new Error(message);
+    requestError.status = response.status;
+    requestError.response = data;
+    throw requestError;
   }
 
   return data;
@@ -51,49 +63,86 @@ function withMockDelay(factory, signal) {
   });
 }
 
+function shouldFallbackToMock(error) {
+  if (error?.name === "AbortError") {
+    return false;
+  }
+
+  if (!PREFER_LIVE_API) {
+    return true;
+  }
+
+  return Boolean(
+    error?.isNetworkError
+      || (typeof error?.status === "number" && (
+        error.status >= 500
+        || error.status === 404
+        || error.status === 424
+      ))
+  );
+}
+
+async function requestWithFallback(liveFactory, mockFactory, { signal } = {}) {
+  if (!PREFER_LIVE_API) {
+    return withMockDelay(mockFactory, signal);
+  }
+
+  try {
+    return await liveFactory();
+  } catch (error) {
+    if (!shouldFallbackToMock(error)) {
+      throw error;
+    }
+
+    return withMockDelay(mockFactory, signal);
+  }
+}
+
 export const apiClient = {
   getAddressSuggestions(query, limit = 5) {
-    if (USE_MOCK_API) {
-      return withMockDelay(() => mockApi.getAddressSuggestions(query, limit));
-    }
-    const params = new URLSearchParams({ q: query, limit: String(limit) });
-    return request(`/search/suggestions?${params.toString()}`);
+    const params = new URLSearchParams({
+      q: query,
+      limit: String(limit),
+      provider: SEARCH_PROVIDER
+    });
+    return requestWithFallback(
+      () => request(`/search/suggestions?${params.toString()}`),
+      () => mockApi.getAddressSuggestions(query, limit)
+    );
   },
 
   resolveAddress(query) {
-    if (USE_MOCK_API) {
-      return withMockDelay(() => mockApi.resolveAddress(query));
-    }
-    const params = new URLSearchParams({ q: query });
-    return request(`/search/resolve?${params.toString()}`);
+    const params = new URLSearchParams({
+      q: query,
+      provider: SEARCH_PROVIDER
+    });
+    return requestWithFallback(
+      () => request(`/search/resolve?${params.toString()}`),
+      () => mockApi.resolveAddress(query)
+    );
   },
 
   resolveMapClick(payload) {
-    if (USE_MOCK_API) {
-      return withMockDelay(() => mockApi.resolveMapClick(payload));
-    }
-    return request("/locations/resolve-click", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+    return requestWithFallback(
+      () => request("/locations/resolve-click", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }),
+      () => mockApi.resolveMapClick(payload)
+    );
   },
 
   getEstimate(payload) {
-    if (USE_MOCK_API) {
-      return withMockDelay(() => mockApi.getEstimate(payload));
-    }
-    return request("/estimates", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+    return requestWithFallback(
+      () => request("/estimates", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }),
+      () => mockApi.getEstimate(payload)
+    );
   },
 
   getLayerData({ layerId, west, south, east, north, zoom }) {
-    if (USE_MOCK_API) {
-      return withMockDelay(() =>
-        mockApi.getLayerData({ layerId, west, south, east, north, zoom })
-      );
-    }
     const params = new URLSearchParams({
       west: String(west),
       south: String(south),
@@ -101,16 +150,13 @@ export const apiClient = {
       north: String(north),
       zoom: String(zoom)
     });
-    return request(`/layers/${layerId}?${params.toString()}`);
+    return requestWithFallback(
+      () => request(`/layers/${layerId}?${params.toString()}`),
+      () => mockApi.getLayerData({ layerId, west, south, east, north, zoom })
+    );
   },
 
   getProperties({ west, south, east, north, zoom, limit = 5000, cursor = null, signal } = {}) {
-    if (USE_MOCK_API) {
-      return withMockDelay(() =>
-        mockApi.getProperties({ west, south, east, north, zoom, limit, cursor, signal }),
-      signal);
-    }
-
     const params = new URLSearchParams({
       west: String(west),
       south: String(south),
@@ -124,6 +170,10 @@ export const apiClient = {
       params.set("cursor", String(cursor));
     }
 
-    return request(`/properties?${params.toString()}`, { signal });
+    return requestWithFallback(
+      () => request(`/properties?${params.toString()}`, { signal }),
+      () => mockApi.getProperties({ west, south, east, north, zoom, limit, cursor, signal }),
+      { signal }
+    );
   }
 };

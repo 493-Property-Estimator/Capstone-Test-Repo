@@ -6,7 +6,7 @@ import { createMapSelectionController } from "./features/mapSelection/mapSelecti
 import { createLayerController } from "./features/layers/layerController.js";
 import { createEstimateController } from "./features/estimate/estimateController.js";
 import { createWarningController } from "./features/warnings/warningController.js";
-import { DEFAULT_LOCATION, USE_MOCK_API } from "./config.js";
+import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 
 const store = createStore();
 
@@ -17,7 +17,7 @@ const mapAdapter = createMapAdapter({
   messageElement: mapMessageElement,
   onMapClick: () => {},
   onViewportChange: () => {},
-<<<<<<< HEAD:src/frontend/src/app.js
+  propertyCardElement: document.getElementById("property-hover-card"),
   onSelectionCleared() {
     store.setState({
       selectedLocation: null,
@@ -25,9 +25,6 @@ const mapAdapter = createMapAdapter({
       warningsCollapsed: false
     });
   }
-=======
-  propertyCardElement: document.getElementById("property-hover-card")
->>>>>>> master:frontend/src/app.js
 });
 
 const handleMapClick = createMapSelectionController({
@@ -86,12 +83,10 @@ createWarningController({
   warningPanel: document.getElementById("warning-panel"),
   warningIndicator: document.getElementById("warning-indicator")
 });
-<<<<<<< HEAD:src/frontend/src/app.js
-=======
 
-document.getElementById("environment-badge").textContent = USE_MOCK_API
-  ? "Mock API"
-  : "Live API";
+document.getElementById("environment-badge").textContent = PREFER_LIVE_API
+  ? "Auto API"
+  : "Mock API";
 
 document.getElementById("example-address-1").addEventListener("click", () => {
   searchController.setQuery("10234 98 Street NW, Edmonton");
@@ -141,4 +136,3 @@ document.getElementById("reset-selection").addEventListener("click", () => {
   mapAdapter.resetView();
   searchController.clear();
 });
->>>>>>> master:frontend/src/app.js

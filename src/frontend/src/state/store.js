@@ -1,4 +1,4 @@
-import { LAYER_DEFINITIONS } from "../config.js";
+import { LAYER_DEFINITIONS, PROPERTY_LAYER_ENABLED } from "../config.js";
 
 export function createStore() {
   let state = {
@@ -13,8 +13,8 @@ export function createStore() {
       return accumulator;
     }, {}),
     propertyLayer: {
-      enabled: true,
-      status: "loading",
+      enabled: PROPERTY_LAYER_ENABLED,
+      status: PROPERTY_LAYER_ENABLED ? "loading" : "disabled",
       requestSeq: 0,
       renderMode: "cluster",
       clusters: [],

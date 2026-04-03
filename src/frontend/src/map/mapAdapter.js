@@ -13,20 +13,12 @@ export function createMapAdapter({
   onMapClick,
   onViewportChange,
   messageElement,
-<<<<<<< HEAD:src/frontend/src/map/mapAdapter.js
+  propertyCardElement,
   onSelectionCleared
 }) {
   let clickHandler = onMapClick;
   let viewportChangeHandler = onViewportChange;
   let selectionClearedHandler = onSelectionCleared;
-  let marker = null;
-  let layerContainer = null;
-=======
-  propertyCardElement
-}) {
-  let clickHandler = onMapClick;
-  let viewportChangeHandler = onViewportChange;
->>>>>>> master:frontend/src/map/mapAdapter.js
   let map = null;
   let mapCanvas = null;
   let marker = null;
@@ -292,21 +284,8 @@ export function createMapAdapter({
       marker.setLngLat([location.coordinates.lng, location.coordinates.lat]);
     }
 
-<<<<<<< HEAD:src/frontend/src/map/mapAdapter.js
-    marker.bindPopup(location.canonical_address || "Selected property");
-    marker.off("click");
-    marker.on("click", () => marker.openPopup());
-    marker.off("contextmenu");
-    marker.on("contextmenu", () => {
-      clearSelection();
-      if (selectionClearedHandler) {
-        selectionClearedHandler();
-      }
-    });
-=======
     markerPopup.setText(location.canonical_address || "Selected property");
     marker.setPopup(markerPopup);
->>>>>>> master:frontend/src/map/mapAdapter.js
   }
 
   function setView(location, options = {}) {
@@ -322,12 +301,6 @@ export function createMapAdapter({
     } = options;
 
     renderMarker(location);
-<<<<<<< HEAD:src/frontend/src/map/mapAdapter.js
-    map.flyTo([location.coordinates.lat, location.coordinates.lng], 15, {
-      duration: 0.8
-    });
-    marker.openPopup();
-=======
 
     const target = {
       center: [location.coordinates.lng, location.coordinates.lat],
@@ -342,37 +315,42 @@ export function createMapAdapter({
         zoom
       });
     }
-
->>>>>>> master:frontend/src/map/mapAdapter.js
     setText(
       messageElement,
       `Viewing ${location.canonical_address || "selected property"}`
     );
   }
 
-<<<<<<< HEAD:src/frontend/src/map/mapAdapter.js
   function clearSelection() {
-    if (map && marker) {
-      map.removeLayer(marker);
+    if (marker) {
+      marker.remove();
       marker = null;
     }
+
+    if (markerPopup) {
+      markerPopup.remove();
+    }
+
+    renderPropertyCard();
     setText(messageElement, "Selection cleared.");
+
+    if (selectionClearedHandler) {
+      selectionClearedHandler();
+    }
   }
 
   function focusEdmonton() {
     if (!map) {
       return;
     }
+    renderPropertyCard();
     map.fitBounds(EDMONTON_BOUNDS, {
       padding: [24, 24]
     });
     setText(messageElement, "Viewing Edmonton.");
   }
 
-  function renderLayers(activeLayers) {
-=======
   function resetView() {
->>>>>>> master:frontend/src/map/mapAdapter.js
     if (!map) {
       return;
     }
@@ -380,6 +358,10 @@ export function createMapAdapter({
     if (marker) {
       marker.remove();
       marker = null;
+    }
+
+    if (markerPopup) {
+      markerPopup.remove();
     }
 
     renderPropertyCard();
@@ -803,35 +785,9 @@ export function createMapAdapter({
     setViewportChangeHandler(handler) {
       viewportChangeHandler = handler;
     },
-<<<<<<< HEAD:src/frontend/src/map/mapAdapter.js
     setSelectionClearedHandler(handler) {
       selectionClearedHandler = handler;
     },
-    getViewport() {
-      if (!map) {
-        return {
-          west: EDMONTON_BOUNDS[0][1],
-          south: EDMONTON_BOUNDS[0][0],
-          east: EDMONTON_BOUNDS[1][1],
-          north: EDMONTON_BOUNDS[1][0],
-          zoom: 11
-        };
-      }
-
-      const bounds = map.getBounds();
-      return {
-        west: bounds.getWest(),
-        south: bounds.getSouth(),
-        east: bounds.getEast(),
-        north: bounds.getNorth(),
-        zoom: map.getZoom()
-      };
-    }
-=======
-    rerenderPropertyLayer(activeLayers) {
-      renderLayers(activeLayers);
-    },
     getViewport
->>>>>>> master:frontend/src/map/mapAdapter.js
   };
 }

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 from typing import Any, Iterable
 
 from backend.src.db.connection import connect
@@ -28,8 +29,19 @@ def _format_address(row: dict[str, Any]) -> str:
     return row.get("street_name") or ""
 
 
+def _normalize_search_text(query: str) -> str:
+    # Keep only the street-address portion and normalize punctuation/spacing.
+    base = (query or "").split(",", 1)[0].upper()
+    base = re.sub(r"[^A-Z0-9 ]+", " ", base)
+    base = re.sub(r"\s+", " ", base).strip()
+    return base
+
+
 def search_address_suggestions(db_path: Path, query: str, limit: int) -> list[dict[str, Any]]:
-    like = f"%{query.strip().upper()}%"
+    normalized = _normalize_search_text(query)
+    if not normalized:
+        return []
+    like = f"%{normalized}%"
     sql = """
         SELECT canonical_location_id, house_number, street_name, neighbourhood, lat, lon
         FROM property_locations_prod
@@ -54,7 +66,10 @@ def search_address_suggestions(db_path: Path, query: str, limit: int) -> list[di
 
 
 def resolve_address(db_path: Path, query: str, limit: int = 5) -> list[LocationRecord]:
-    like = f"%{query.strip().upper()}%"
+    normalized = _normalize_search_text(query)
+    if not normalized:
+        return []
+    like = f"%{normalized}%"
     sql = """
         SELECT canonical_location_id, house_number, street_name, neighbourhood, ward,
                assessment_value, lat, lon
@@ -201,3 +216,37 @@ def get_latest_dataset_version(db_path: Path) -> str | None:
     if not row:
         return None
     return row["version_id"]
+
+
+def fetch_property_locations_bbox(
+    db_path: Path,
+    west: float,
+    south: float,
+    east: float,
+    north: float,
+    limit: int,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    sql = """
+        SELECT
+            canonical_location_id,
+            house_number,
+            street_name,
+            neighbourhood,
+            ward,
+            assessment_value,
+            tax_class,
+            lat,
+            lon
+        FROM property_locations_prod
+        WHERE lat IS NOT NULL
+          AND lon IS NOT NULL
+          AND lon BETWEEN ? AND ?
+          AND lat BETWEEN ? AND ?
+        ORDER BY canonical_location_id
+        LIMIT ?
+        OFFSET ?
+    """
+    with connect(db_path) as conn:
+        rows = conn.execute(sql, (west, east, south, north, limit, offset)).fetchall()
+    return [dict(row) for row in rows]
