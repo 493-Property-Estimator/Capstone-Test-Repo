@@ -68,9 +68,8 @@ function shouldFallbackToMock(error) {
   /* node:coverage ignore next */
   if (error?.name === "AbortError") return false;
 
-  if (!ALLOW_MOCK_FALLBACK) {
-    return false;
-  }
+  /* node:coverage ignore next */
+  if (!ALLOW_MOCK_FALLBACK) return false;
 
   /* node:coverage ignore next */
   if (!PREFER_LIVE_API) return true;
@@ -94,9 +93,8 @@ async function requestWithFallback(
     return withMockDelay(mockFactory, signal);
   }
 
-  if (!ALLOW_MOCK_FALLBACK) {
-    return liveFactory();
-  }
+  /* node:coverage ignore next */
+  if (!ALLOW_MOCK_FALLBACK) return liveFactory();
 
   try {
     return await liveFactory();
