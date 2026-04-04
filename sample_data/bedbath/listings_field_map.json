@@ -1,0 +1,13 @@
+{
+  "address": "property_address",
+  "suite": "unit_number",
+  "house_number": "street_number",
+  "street_name": "street",
+  "legal_description": "legal",
+  "lat": "latitude",
+  "lon": "longitude",
+  "bedrooms": "beds",
+  "bathrooms": "baths",
+  "source_record_id": "listing_id",
+  "observed_at": "listed_at"
+}

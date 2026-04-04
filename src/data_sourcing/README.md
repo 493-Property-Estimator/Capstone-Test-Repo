@@ -30,6 +30,22 @@ Run scheduled/on-demand workflow wrapper:
 ./ingest run-refresh --trigger on_demand
 ```
 
+Run bedroom/bathroom enrichment:
+
+```bash
+PYTHONPATH=src python3 -m data_sourcing.enrich_bedbath \
+  --db-path src/data_sourcing/open_data.db \
+  --listings-json path/to/listings.json \
+  --permits-json path/to/permits.json
+```
+
+Validate current bedroom/bathroom enrichment output:
+
+```bash
+PYTHONPATH=src python3 -m data_sourcing.validate_bedbath \
+  --db-path src/data_sourcing/open_data.db
+```
+
 ## How It Works
 
 1. Source definitions are loaded from `src/data_sourcing/sources/source_registry.json`.
@@ -40,6 +56,92 @@ Run scheduled/on-demand workflow wrapper:
 6. Run metadata, warnings, errors, and source checks are persisted.
 
 Source check outcomes are written to `source_checks`. Run summaries are written to `run_logs` and `dataset_versions`.
+
+The bedroom/bathroom enrichment workflow writes:
+
+- `property_attributes_staging`
+- `property_attributes_prod`
+- `workflow_runs`, `workflow_steps`, `workflow_summaries`
+- `run_logs`, `alerts`, `dataset_versions`
+
+Promotion preserves provenance and no-downgrade rules:
+
+- exact observed matches outrank fuzzy observed matches
+- observed records outrank permit inferences
+- permit inferences outrank model imputations
+- existing trusted observed values are never replaced by lower-confidence inferred or imputed values
+
+## Bed/Bath File Inputs
+
+The enrichment CLI supports local `CSV` and `JSON` files for listings and permits.
+
+Listings accepted fields:
+
+- `address`
+- `suite`
+- `house_number`
+- `street_name`
+- `legal_description`
+- `lat`
+- `lon`
+- `bedrooms`
+- `bathrooms`
+- `source_record_id`
+- `observed_at`
+
+Permits accepted fields:
+
+- `address`
+- `suite`
+- `house_number`
+- `street_name`
+- `legal_description`
+- `lat`
+- `lon`
+- `permit_description`
+- `source_record_id`
+- `observed_at`
+
+Alternate column names can be mapped with a JSON field map:
+
+```json
+{
+  "address": "property_address",
+  "bedrooms": "beds",
+  "bathrooms": "baths",
+  "source_record_id": "listing_id"
+}
+```
+
+Example files live under:
+
+- `sample_data/bedbath/listings_sample.csv`
+- `sample_data/bedbath/permits_sample.csv`
+- `sample_data/bedbath/listings_sample.json`
+- `sample_data/bedbath/permits_sample.json`
+- `sample_data/bedbath/listings_field_map.json`
+- `sample_data/bedbath/permits_field_map.json`
+
+Run with mapped CSV inputs:
+
+```bash
+PYTHONPATH=src python3 -m data_sourcing.enrich_bedbath \
+  --db-path src/data_sourcing/open_data.db \
+  --listings-csv sample_data/bedbath/listings_sample.csv \
+  --listings-map sample_data/bedbath/listings_field_map.json \
+  --permits-csv sample_data/bedbath/permits_sample.csv \
+  --permits-map sample_data/bedbath/permits_field_map.json \
+  --min-training-rows 100
+```
+
+Run with JSON inputs:
+
+```bash
+PYTHONPATH=src python3 -m data_sourcing.enrich_bedbath \
+  --db-path src/data_sourcing/open_data.db \
+  --listings-json sample_data/bedbath/listings_sample.json \
+  --permits-json sample_data/bedbath/permits_sample.json
+```
 
 ## Shapefile Notes
 

@@ -1,0 +1,12 @@
+{
+  "address": "full_address",
+  "suite": "unit",
+  "house_number": "civic_number",
+  "street_name": "street_address",
+  "legal_description": "legal_desc",
+  "lat": "latitude",
+  "lon": "longitude",
+  "permit_description": "work_description",
+  "source_record_id": "permit_id",
+  "observed_at": "issued_at"
+}

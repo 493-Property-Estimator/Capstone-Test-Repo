@@ -17,8 +17,10 @@ const estimatorResult = document.getElementById("estimator-result");
 
 let clickMarker = null;
 let propertyMarker = null;
+const SINGLE_CLICK_DELAY_MS = 220;
+let pendingClickTimeoutId = null;
 
-map.on("click", async (event) => {
+async function handleMapClick(event) {
   const lat = Number(event.latlng.lat.toFixed(6));
   const lon = Number(event.latlng.lng.toFixed(6));
 
@@ -71,5 +73,31 @@ map.on("click", async (event) => {
     setStatus(mapStatus, "Nearest property loaded.");
   } catch (error) {
     setStatus(mapStatus, error.message);
+  }
+}
+
+map.on("click", (event) => {
+  if (event.originalEvent?.button !== 0) {
+    return;
+  }
+
+  if (pendingClickTimeoutId) {
+    window.clearTimeout(pendingClickTimeoutId);
+  }
+
+  pendingClickTimeoutId = window.setTimeout(() => {
+    pendingClickTimeoutId = null;
+    handleMapClick(event);
+  }, SINGLE_CLICK_DELAY_MS);
+});
+
+map.on("dblclick", (event) => {
+  if (event.originalEvent?.button !== 0) {
+    return;
+  }
+
+  if (pendingClickTimeoutId) {
+    window.clearTimeout(pendingClickTimeoutId);
+    pendingClickTimeoutId = null;
   }
 });
