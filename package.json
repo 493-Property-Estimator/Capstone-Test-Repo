@@ -1,8 +1,11 @@
 {
   "name": "group-14-capstone-repo",
   "private": true,
+  "type": "module",
   "scripts": {
     "backend": "python3 -m uvicorn backend.src.app:app --reload --port 8000",
-    "frontend": "python3 -m http.server 8080 --directory src/frontend"
+    "frontend": "python3 -m http.server 8080 --directory src/frontend",
+    "test:frontend": "node --test src/frontend/tests/*.test.js",
+    "test:frontend:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/frontend/src/**/*.js --test-coverage-exclude=src/frontend/src/services/api/mockData.js src/frontend/tests/*.test.js"
   }
 }

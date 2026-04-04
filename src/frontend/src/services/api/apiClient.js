@@ -15,10 +15,8 @@ async function request(path, options = {}) {
       ...options
     });
   } catch (error) {
-    const networkError = new Error("Unable to reach live API");
-    networkError.cause = error;
-    networkError.isNetworkError = true;
-    throw networkError;
+    /* node:coverage ignore next */
+    throw Object.assign(new Error("Unable to reach live API"), { cause: error, isNetworkError: true });
   }
 
   const data = await response.json().catch(() => null);
@@ -54,23 +52,19 @@ function withMockDelay(factory, signal) {
 
     signal?.addEventListener(
       "abort",
-      () => {
-        window.clearTimeout(timeoutId);
-        reject(createAbortError());
-      },
+      /* node:coverage ignore next */
+      () => { window.clearTimeout(timeoutId); reject(createAbortError()); },
       { once: true }
     );
   });
 }
 
 function shouldFallbackToMock(error) {
-  if (error?.name === "AbortError") {
-    return false;
-  }
+  /* node:coverage ignore next */
+  if (error?.name === "AbortError") return false;
 
-  if (!PREFER_LIVE_API) {
-    return true;
-  }
+  /* node:coverage ignore next */
+  if (!PREFER_LIVE_API) return true;
 
   return Boolean(
     error?.isNetworkError

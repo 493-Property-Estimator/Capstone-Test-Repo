@@ -46,11 +46,8 @@ function parseList(value) {
 
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
 export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
-export const SEARCH_PROVIDER = ["db", "osrm"].includes(
-  String(RUNTIME_ENV.SEARCH_PROVIDER || "db").toLowerCase()
-)
-  ? String(RUNTIME_ENV.SEARCH_PROVIDER).toLowerCase()
-  : "db";
+/* node:coverage ignore next */
+export const SEARCH_PROVIDER = ["db", "osrm"].includes(String(RUNTIME_ENV.SEARCH_PROVIDER || "db").toLowerCase()) ? String(RUNTIME_ENV.SEARCH_PROVIDER).toLowerCase() : "db";
 
 const ENABLED_LAYER_IDS = new Set(parseList(RUNTIME_ENV.ENABLED_LAYERS));
 

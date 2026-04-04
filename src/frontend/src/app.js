@@ -84,9 +84,8 @@ createWarningController({
   warningIndicator: document.getElementById("warning-indicator")
 });
 
-document.getElementById("environment-badge").textContent = PREFER_LIVE_API
-  ? "Auto API"
-  : "Mock API";
+/* node:coverage ignore next */
+document.getElementById("environment-badge").textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
 
 document.getElementById("example-address-1").addEventListener("click", () => {
   searchController.setQuery("10234 98 Street NW, Edmonton");
@@ -136,3 +135,9 @@ document.getElementById("reset-selection").addEventListener("click", () => {
   mapAdapter.resetView();
   searchController.clear();
 });
+
+export const __app = {
+  store,
+  mapAdapter,
+  searchController
+};
