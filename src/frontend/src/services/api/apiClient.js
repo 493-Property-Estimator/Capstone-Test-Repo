@@ -1,4 +1,9 @@
-import { API_BASE_URL, PREFER_LIVE_API, SEARCH_PROVIDER } from "../../config.js";
+import {
+  ALLOW_MOCK_FALLBACK,
+  API_BASE_URL,
+  PREFER_LIVE_API,
+  SEARCH_PROVIDER
+} from "../../config.js";
 import { mockApi } from "./mockData.js";
 
 async function request(path, options = {}) {
@@ -68,6 +73,10 @@ function shouldFallbackToMock(error) {
     return false;
   }
 
+  if (!ALLOW_MOCK_FALLBACK) {
+    return false;
+  }
+
   if (!PREFER_LIVE_API) {
     return true;
   }
@@ -89,6 +98,10 @@ async function requestWithFallback(
 ) {
   if (!PREFER_LIVE_API) {
     return withMockDelay(mockFactory, signal);
+  }
+
+  if (!ALLOW_MOCK_FALLBACK) {
+    return liveFactory();
   }
 
   try {
