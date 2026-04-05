@@ -9,14 +9,18 @@ from backend.src.services.errors import error_response
 router = APIRouter()
 
 LAYER_LEGENDS = {
-    "schools": {"title": "Schools", "items": [{"label": "School", "color": "#1f6feb", "shape": "circle"}]},
-    "parks": {"title": "Parks", "items": [{"label": "Park", "color": "#2ea043", "shape": "circle"}]},
-    "playgrounds": {"title": "Playgrounds", "items": [{"label": "Playground", "color": "#f0883e", "shape": "circle"}]},
+    "schools": {"title": "Schools", "items": [{"label": "School", "color": "#1d4ed8", "shape": "circle"}]},
+    "parks": {"title": "Parks", "items": [{"label": "Park", "color": "#15803d", "shape": "circle"}]},
+    "playgrounds": {"title": "Playgrounds", "items": [{"label": "Playground", "color": "#ea580c", "shape": "circle"}]},
     "police_stations": {"title": "Police Stations", "items": [{"label": "Police Station", "color": "#f85149", "shape": "square"}]},
-    "municipal_wards": {"title": "Municipal Wards", "items": [{"label": "Ward Boundary", "color": "#b45309", "shape": "polygon"}]},
+    "businesses": {"title": "Businesses", "items": [{"label": "Commerce", "color": "#9333ea", "shape": "circle"}]},
+    "green_space": {"title": "Green Space", "items": [{"label": "Green Space", "color": "#0f766e", "shape": "circle"}]},
+    "transit_stops": {"title": "Transit Stops", "items": [{"label": "ETS Stop", "color": "#0891b2", "shape": "circle"}]},
+    "roads": {"title": "Roads", "items": [{"label": "Road Segment", "color": "#4b5563", "shape": "line"}]},
+    "municipal_wards": {"title": "Municipal Wards", "items": [{"label": "Ward Boundary", "color": "#d97706", "shape": "polygon"}]},
     "provincial_districts": {"title": "Provincial Districts", "items": [{"label": "Provincial District", "color": "#7c3aed", "shape": "polygon"}]},
-    "federal_districts": {"title": "Federal Districts", "items": [{"label": "Federal District", "color": "#0f766e", "shape": "polygon"}]},
-    "census_subdivisions": {"title": "Census Subdivisions", "items": [{"label": "Census Subdivision", "color": "#475569", "shape": "polygon"}]},
+    "federal_districts": {"title": "Federal Districts", "items": [{"label": "Federal District", "color": "#be123c", "shape": "polygon"}]},
+    "census_subdivisions": {"title": "Census Subdivisions", "items": [{"label": "Census Subdivision", "color": "#334155", "shape": "polygon"}]},
 }
 
 
@@ -56,7 +60,7 @@ async def get_layer(request: Request, layer_id: str, west: float, south: float, 
                 "name": row["name"],
                 "category": row["raw_category"],
                 "source_id": row["source_id"],
-                "address": None,
+                "address": row.get("address"),
             },
         }
         for row in rows

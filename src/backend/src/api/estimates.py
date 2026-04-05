@@ -21,7 +21,7 @@ async def create_estimate(request: Request, payload: dict):
         body, status_code = validation_error_response(request_id, issues, status)
         return JSONResponse(status_code=status_code, content=body)
 
-    location = payload.get("location") or {}
+    location = payload.get("location") if isinstance(payload.get("location"), dict) else {}
     property_details = payload.get("property_details") or {}
     settings = request.app.state.settings
 
@@ -32,7 +32,7 @@ async def create_estimate(request: Request, payload: dict):
         matches = resolve_address(settings.data_db_path, location["address"], limit=1)
         canonical = matches[0] if matches else None
 
-    coords = location.get("coordinates")
+    coords = location.get("coordinates") if isinstance(location.get("coordinates"), dict) else None
     if coords is None and canonical and canonical.lat is not None and canonical.lon is not None:
         coords = {"lat": canonical.lat, "lng": canonical.lon}
 

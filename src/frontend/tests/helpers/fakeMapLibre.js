@@ -189,6 +189,29 @@ export class FakeMap {
   getZoom() {
     return this.zoom;
   }
+
+  queryRenderedFeatures(_geometry, options = {}) {
+    const targetLayers = new Set(options.layers || []);
+    const features = [];
+
+    targetLayers.forEach((layerId) => {
+      const layer = this.layers.get(layerId);
+      const source = layer?.source ? this.sources.get(layer.source) : null;
+      const sourceFeatures = source?.data?.features || [];
+      sourceFeatures.forEach((feature) => {
+        if (layerId.includes("assessment_properties-points")) {
+          if (!feature?.properties?.point_count) {
+            features.push(feature);
+          }
+          return;
+        }
+
+        features.push(feature);
+      });
+    });
+
+    return features;
+  }
 }
 
 FakeMap.instances = [];

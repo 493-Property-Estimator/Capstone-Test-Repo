@@ -194,9 +194,11 @@ export function createEstimateController({
 
   store.subscribe((state) => {
     const location = state.selectedLocation;
-    if (location?.coordinates) {
-      formElements.latitudeInput.value = String(location.coordinates.lat);
-      formElements.longitudeInput.value = String(location.coordinates.lng);
+    const lat = Number(location?.coordinates?.lat);
+    const lng = Number(location?.coordinates?.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      formElements.latitudeInput.value = String(lat);
+      formElements.longitudeInput.value = String(lng);
     } else {
       formElements.latitudeInput.value = "";
       formElements.longitudeInput.value = "";

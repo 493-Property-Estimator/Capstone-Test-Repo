@@ -14,8 +14,16 @@ class ValidationIssue:
     severity: int = 1
 
 
-def validate_coordinates(coords: dict[str, Any]) -> list[ValidationIssue]:
+def validate_coordinates(coords: dict[str, Any] | Any) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    if coords is None:
+        issues.append(ValidationIssue("coordinates", "missing", "Provide both lat and lng."))
+        return issues
+    if not isinstance(coords, dict):
+        issues.append(
+            ValidationIssue("coordinates", "invalid_type", "Coordinates must be an object with lat and lng.")
+        )
+        return issues
     lat = coords.get("lat") if coords else None
     lng = coords.get("lng") if coords else None
     if lat is None or lng is None:
@@ -68,6 +76,14 @@ def validate_location_payload(payload: dict[str, Any]) -> list[ValidationIssue]:
     location = payload.get("location") if payload else None
     if not location:
         return [ValidationIssue("location", "missing", "Provide a location selector.")]
+    if not isinstance(location, dict):
+        return [
+            ValidationIssue(
+                "location",
+                "invalid_type",
+                "Location must be an object containing address, coordinates, or canonical_location_id.",
+            )
+        ]
     if location.get("coordinates"):
         issues.extend(validate_coordinates(location.get("coordinates")))
     if location.get("address"):

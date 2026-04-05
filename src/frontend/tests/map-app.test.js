@@ -33,11 +33,11 @@ function baseIds() {
     { id: "warning-panel" },
     { id: "warning-indicator", tagName: "button" },
     { id: "environment-badge" },
-    { id: "example-address-1", tagName: "button" },
-    { id: "example-address-2", tagName: "button" },
-    { id: "example-property-abbottsfield", tagName: "button" },
-    { id: "search-ambiguous", tagName: "button" },
-    { id: "search-unsupported", tagName: "button" }
+    { id: "property-detail-panel" },
+    { id: "property-detail-title" },
+    { id: "property-detail-subtitle" },
+    { id: "property-detail-body" },
+    { id: "property-detail-close", tagName: "button" }
   ];
 }
 
@@ -224,7 +224,8 @@ test("map adapter handles missing MapLibre and default viewport fallback", async
     ids: [
       { id: "map-root", rect: { left: 0, top: 0, width: 600, height: 400 } },
       { id: "map-message" },
-      { id: "property-hover-card", rect: { left: 0, top: 0, width: 220, height: 120 } }
+      { id: "property-hover-card", rect: { left: 0, top: 0, width: 220, height: 120 } },
+      { id: "property-detail-panel" }
     ]
   });
   globalThis.fetch = async () => createMockResponse("");
@@ -237,6 +238,7 @@ test("map adapter handles missing MapLibre and default viewport fallback", async
     onViewportChange() {},
     messageElement: document.getElementById("map-message"),
     propertyCardElement: document.getElementById("property-hover-card"),
+    propertyDetailPanelElement: document.getElementById("property-detail-panel"),
     onSelectionCleared() {}
   });
 
@@ -266,24 +268,159 @@ test("app bootstrap wires the integrated frontend flows", async () => {
 
   assert.match(getById("environment-badge").textContent, /Auto API|Mock API/);
 
-  getById("example-address-1").click();
+  getById("address-input").value = "10234 98 Street NW, Edmonton";
+  getById("search-submit").click();
   await wait(240);
   assert.match(getById("location-summary").textContent, /10234 98 Street/);
 
-  getById("example-address-2").click();
-  await wait(240);
-  assert.match(getById("location-summary").textContent, /5432 111 Avenue/);
+  appModule.__app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-1",
+        canonical_address: "123 TEST AVENUE NW, Edmonton, AB",
+        coordinates: { lat: 53.55, lng: -113.49 },
+        details: {
+          neighbourhood: "Downtown",
+          assessment_value: 450000,
+          ward: "O-day'min",
+          tax_class: "Residential"
+        }
+      }
+    ],
+    clusters: []
+  });
+  await wait(10);
 
-  getById("search-ambiguous").click();
-  await wait(240);
-  assert.match(getById("search-status").textContent, /Ambiguous/);
+  const map = latestMapInstance();
+  map.emit(
+    "click",
+    {
+      features: [
+        {
+          geometry: { coordinates: [-113.49, 53.55] },
+          properties: {
+            canonical_location_id: "loc-1",
+            canonical_address: "123 TEST AVENUE NW, Edmonton, AB",
+            coordinates: { lat: 53.55, lng: -113.49 },
+            details: {
+              neighbourhood: "Downtown",
+              assessment_value: 450000,
+              ward: "O-day'min",
+              tax_class: "Residential"
+            }
+          }
+        }
+      ],
+      originalEvent: { button: 0 }
+    },
+    "assessment_properties-points"
+  );
+  assert.equal(appModule.__app.store.getState().selectedPropertyDetails.canonical_location_id, "loc-1");
 
-  getById("search-unsupported").click();
-  await wait(240);
-  assert.match(getById("search-helper").textContent, /supported|candidate|found/i);
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-1",
+      canonical_address: "123 TEST AVENUE NW, Edmonton, AB",
+      coordinates: { lat: 53.55, lng: -113.49 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(10);
+  assert.equal(appModule.__app.store.getState().selectedPropertyDetails.canonical_location_id, "loc-1");
 
-  getById("example-property-abbottsfield").click();
-  assert.match(getById("latitude-input").value, /53\.5763/);
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-1",
+      canonical_address: "123 TEST AVENUE NW, Edmonton, AB",
+      coordinates: { lat: 53.55, lng: -113.49 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: true
+  });
+  await wait(10);
+  assert.equal(appModule.__app.store.getState().selectedPropertyDetails, null);
+
+  appModule.__app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-2",
+        canonical_address: "No coord property",
+        coordinates: { lat: 53.56, lng: -113.48 }
+      }
+    ],
+    clusters: []
+  });
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: null,
+      canonical_address: "Unmatched selection",
+      coordinates: null
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(10);
+  assert.equal(appModule.__app.store.getState().selectedPropertyDetails, null);
+
+  appModule.__app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-4",
+        canonical_address: "Mismatch property",
+        coordinates: { lat: 53.59, lng: -113.45 }
+      }
+    ],
+    clusters: []
+  });
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: null,
+      canonical_address: "Coordinate mismatch",
+      coordinates: { lat: 53.55, lng: -113.49 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(10);
+  assert.equal(appModule.__app.store.getState().selectedPropertyDetails, null);
+
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-1",
+      canonical_address: "123 TEST AVENUE NW, Edmonton, AB",
+      coordinates: { lat: 53.55, lng: -113.49 }
+    },
+    selectedPropertyDetails: appModule.__app.store.getState().propertyLayer.properties[0],
+    propertyDetailsDismissed: false
+  });
+  await wait(10);
+
+  map.emit(
+    "click",
+    {
+      features: [
+        {
+          geometry: { coordinates: [-113.48, 53.56] },
+          properties: {
+            canonical_location_id: "loc-3",
+            canonical_address: "456 OTHER ROAD NW, Edmonton, AB",
+            coordinates: { lat: 53.56, lng: -113.48 },
+            neighbourhood: "Oliver"
+          }
+        }
+      ],
+      originalEvent: { button: 0 }
+    },
+    "assessment_properties-points"
+  );
+  assert.equal(appModule.__app.store.getState().selectedLocation.neighbourhood, "Oliver");
 
   getById("estimate-submit").click();
   await wait(240);

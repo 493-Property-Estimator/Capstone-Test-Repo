@@ -33,11 +33,11 @@ function ids() {
     { id: "warning-panel" },
     { id: "warning-indicator", tagName: "button" },
     { id: "environment-badge" },
-    { id: "example-address-1", tagName: "button" },
-    { id: "example-address-2", tagName: "button" },
-    { id: "example-property-abbottsfield", tagName: "button" },
-    { id: "search-ambiguous", tagName: "button" },
-    { id: "search-unsupported", tagName: "button" }
+    { id: "property-detail-panel" },
+    { id: "property-detail-title" },
+    { id: "property-detail-subtitle" },
+    { id: "property-detail-body" },
+    { id: "property-detail-close", tagName: "button" }
   ];
 }
 
