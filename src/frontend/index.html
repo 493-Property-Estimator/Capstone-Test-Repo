@@ -94,6 +94,67 @@
               <input id="floor-area-input" class="text-input" type="number" min="0" step="1" />
             </div>
           </div>
+          <section class="criteria-panel" aria-labelledby="criteria-heading">
+            <div class="panel-heading criteria-heading">
+              <h3 id="criteria-heading">Estimate Criteria</h3>
+            </div>
+            <div class="criteria-grid">
+              <label class="criteria-toggle">
+                <input id="include-breakdown-input" type="checkbox" checked />
+                <span>Include factor breakdown</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="include-top-factors-input" type="checkbox" checked />
+                <span>Include top positive/negative factors</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="include-warnings-input" type="checkbox" checked />
+                <span>Include warnings</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="include-layers-context-input" type="checkbox" checked />
+                <span>Include layers context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-crime-input" type="checkbox" checked />
+                <span>Request crime signal context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-schools-input" type="checkbox" checked />
+                <span>Request school signal context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-green-space-input" type="checkbox" checked />
+                <span>Request green-space context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-commute-input" type="checkbox" checked />
+                <span>Request commute context</span>
+              </label>
+            </div>
+            <div class="slider-grid">
+              <label class="slider-field" for="weight-crime-input">
+                <span>Safety priority</span>
+                <input id="weight-crime-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-crime-output">50</strong>
+              </label>
+              <label class="slider-field" for="weight-schools-input">
+                <span>School priority</span>
+                <input id="weight-schools-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-schools-output">50</strong>
+              </label>
+              <label class="slider-field" for="weight-green-space-input">
+                <span>Green-space priority</span>
+                <input id="weight-green-space-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-green-space-output">50</strong>
+              </label>
+              <label class="slider-field" for="weight-commute-input">
+                <span>Commute priority</span>
+                <input id="weight-commute-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-commute-output">50</strong>
+              </label>
+            </div>
+          </section>
           <div class="quick-actions">
             <button id="estimate-submit" class="button button-primary" type="button">
               Get Estimate

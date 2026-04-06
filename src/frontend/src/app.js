@@ -122,7 +122,23 @@ createEstimateController({
     longitudeInput: document.getElementById("longitude-input"),
     bedroomsInput: document.getElementById("bedrooms-input"),
     bathroomsInput: document.getElementById("bathrooms-input"),
-    floorAreaInput: document.getElementById("floor-area-input")
+    floorAreaInput: document.getElementById("floor-area-input"),
+    includeBreakdownInput: document.getElementById("include-breakdown-input"),
+    includeTopFactorsInput: document.getElementById("include-top-factors-input"),
+    includeWarningsInput: document.getElementById("include-warnings-input"),
+    includeLayersContextInput: document.getElementById("include-layers-context-input"),
+    factorCrimeInput: document.getElementById("factor-crime-input"),
+    factorSchoolsInput: document.getElementById("factor-schools-input"),
+    factorGreenSpaceInput: document.getElementById("factor-green-space-input"),
+    factorCommuteInput: document.getElementById("factor-commute-input"),
+    weightCrimeInput: document.getElementById("weight-crime-input"),
+    weightSchoolsInput: document.getElementById("weight-schools-input"),
+    weightGreenSpaceInput: document.getElementById("weight-green-space-input"),
+    weightCommuteInput: document.getElementById("weight-commute-input"),
+    weightCrimeOutput: document.getElementById("weight-crime-output"),
+    weightSchoolsOutput: document.getElementById("weight-schools-output"),
+    weightGreenSpaceOutput: document.getElementById("weight-green-space-output"),
+    weightCommuteOutput: document.getElementById("weight-commute-output")
   }
 });
 

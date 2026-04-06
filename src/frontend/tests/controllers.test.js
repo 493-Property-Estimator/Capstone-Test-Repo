@@ -312,8 +312,44 @@ test("estimate controller validates inputs, renders estimates, and resets state"
     longitudeInput: document.createElement("input"),
     bedroomsInput: document.createElement("input"),
     bathroomsInput: document.createElement("input"),
-    floorAreaInput: document.createElement("input")
+    floorAreaInput: document.createElement("input"),
+    includeBreakdownInput: document.createElement("input"),
+    includeTopFactorsInput: document.createElement("input"),
+    includeWarningsInput: document.createElement("input"),
+    includeLayersContextInput: document.createElement("input"),
+    factorCrimeInput: document.createElement("input"),
+    factorSchoolsInput: document.createElement("input"),
+    factorGreenSpaceInput: document.createElement("input"),
+    factorCommuteInput: document.createElement("input"),
+    weightCrimeInput: document.createElement("input"),
+    weightSchoolsInput: document.createElement("input"),
+    weightGreenSpaceInput: document.createElement("input"),
+    weightCommuteInput: document.createElement("input"),
+    weightCrimeOutput: document.createElement("strong"),
+    weightSchoolsOutput: document.createElement("strong"),
+    weightGreenSpaceOutput: document.createElement("strong"),
+    weightCommuteOutput: document.createElement("strong")
   };
+  [
+    formElements.includeBreakdownInput,
+    formElements.includeTopFactorsInput,
+    formElements.includeWarningsInput,
+    formElements.includeLayersContextInput,
+    formElements.factorCrimeInput,
+    formElements.factorSchoolsInput,
+    formElements.factorGreenSpaceInput,
+    formElements.factorCommuteInput
+  ].forEach((input) => {
+    input.type = "checkbox";
+  });
+  [
+    formElements.weightCrimeInput,
+    formElements.weightSchoolsInput,
+    formElements.weightGreenSpaceInput,
+    formElements.weightCommuteInput
+  ].forEach((input) => {
+    input.type = "range";
+  });
 
   const estimateResponse = {
     status: "partial",
@@ -369,9 +405,22 @@ test("estimate controller validates inputs, renders estimates, and resets state"
   assert.equal(statusElement.textContent, "Partial");
   assert.equal(apiPayloads.length, 1);
   assert.equal(apiPayloads[0].property_details.floor_area_sqft, 1500);
+  assert.equal(apiPayloads[0].options.include_top_factors, true);
+  assert.deepEqual(apiPayloads[0].options.desired_factor_outputs, [
+    "crime_statistics",
+    "school_access",
+    "green_space",
+    "commute_access"
+  ]);
+  assert.equal(apiPayloads[0].options.weights.school_access, 50);
   assert.match(estimatePanel.textContent, /Top Factors/);
-  assert.equal(estimatePanel.children[1].tagName, "DETAILS");
-  assert.equal(estimatePanel.children[1].open, false);
+  assert.match(estimatePanel.textContent, /Top Positive \/ Negative Factors/);
+  assert.match(estimatePanel.textContent, /Baseline Metadata/);
+  const topFactorsSection = estimatePanel.children.find(
+    (child) => child.tagName === "DETAILS" && /Top Factors/.test(child.textContent)
+  );
+  assert.ok(topFactorsSection);
+  assert.equal(topFactorsSection.open, false);
 
   formElements.latitudeInput.value = "0";
   formElements.longitudeInput.value = "0";
@@ -430,6 +479,8 @@ test("estimate controller validates inputs, renders estimates, and resets state"
 
   resetButton.click();
   assert.equal(formElements.latitudeInput.value, "");
+  assert.equal(formElements.factorCrimeInput.checked, true);
+  assert.equal(formElements.weightCrimeOutput.textContent, "50");
   assert.equal(store.getState().estimate, null);
   assert.equal(statusElement.textContent, "Waiting");
 });

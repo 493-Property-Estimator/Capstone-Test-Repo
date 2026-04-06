@@ -132,6 +132,54 @@ p {
   margin-top: 12px;
 }
 
+.criteria-panel {
+  margin: 14px 0 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.criteria-heading {
+  margin-bottom: 10px;
+}
+
+.criteria-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.criteria-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.slider-field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.slider-field strong {
+  color: var(--accent-strong);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

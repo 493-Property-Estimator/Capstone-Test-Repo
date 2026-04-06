@@ -22,4 +22,6 @@ test("config ignores blank env keys while parsing valid entries", () => {
   assert.equal(config.__configInternals.normalizeSearchProvider("OSRM"), "osrm");
   assert.equal(config.__configInternals.normalizeSearchProvider("weird"), "db");
   assert.equal(config.__configInternals.normalizeSearchProvider(undefined), "db");
+  assert.equal(config.__configInternals.parseBooleanFlag("0", true), false);
+  assert.equal(config.__configInternals.parseWeight("180", 50), 100);
 });

@@ -1,5 +1,10 @@
 /* node:coverage disable */
 import { clearElement, createElement, setText } from "../../utils/dom.js";
+import {
+  ESTIMATE_OPTIONS_DEFAULTS,
+  ESTIMATE_REQUESTED_FACTORS,
+  ESTIMATE_WEIGHT_DEFAULTS
+} from "../../config.js";
 
 function formatCurrency(value) {
   if (typeof value !== "number") {
@@ -78,6 +83,12 @@ export function createEstimateController({
     const bedrooms = normalizeNumber(formElements.bedroomsInput.value);
     const bathrooms = normalizeNumber(formElements.bathroomsInput.value);
     const floorArea = normalizeNumber(formElements.floorAreaInput.value);
+    const desiredFactorOutputs = [
+      formElements.factorCrimeInput.checked ? "crime_statistics" : null,
+      formElements.factorSchoolsInput.checked ? "school_access" : null,
+      formElements.factorGreenSpaceInput.checked ? "green_space" : null,
+      formElements.factorCommuteInput.checked ? "commute_access" : null
+    ].filter(Boolean);
 
     const coordinates =
       latitude !== undefined && longitude !== undefined
@@ -113,9 +124,17 @@ export function createEstimateController({
         ...(floorArea !== undefined ? { floor_area_sqft: floorArea } : {})
       },
       options: {
-        include_breakdown: true,
-        include_warnings: true,
-        include_layers_context: true
+        include_breakdown: formElements.includeBreakdownInput.checked,
+        include_top_factors: formElements.includeTopFactorsInput.checked,
+        include_warnings: formElements.includeWarningsInput.checked,
+        include_layers_context: formElements.includeLayersContextInput.checked,
+        desired_factor_outputs: desiredFactorOutputs,
+        weights: {
+          crime_statistics: normalizeNumber(formElements.weightCrimeInput.value) ?? ESTIMATE_WEIGHT_DEFAULTS.crime,
+          school_access: normalizeNumber(formElements.weightSchoolsInput.value) ?? ESTIMATE_WEIGHT_DEFAULTS.schools,
+          green_space: normalizeNumber(formElements.weightGreenSpaceInput.value) ?? ESTIMATE_WEIGHT_DEFAULTS.greenSpace,
+          commute_access: normalizeNumber(formElements.weightCommuteInput.value) ?? ESTIMATE_WEIGHT_DEFAULTS.commute
+        }
       }
     };
   }
@@ -142,6 +161,44 @@ export function createEstimateController({
       metrics.appendChild(metric);
     });
     estimatePanel.appendChild(metrics);
+
+    const summaryGrid = createElement("div", "estimate-grid");
+    [
+      ["Estimated At", estimate.estimated_at ? new Date(estimate.estimated_at).toLocaleString("en-CA") : "--"],
+      ["Confidence", estimate.confidence?.percentage != null ? `${estimate.confidence.percentage}%` : "--"],
+      ["Completeness", estimate.confidence?.completeness || "--"],
+      ["Cache", estimate.cache?.status || "--"]
+    ].forEach(([label, value]) => {
+      const metric = createElement("article", "estimate-metric");
+      metric.appendChild(createElement("span", "estimate-label", label));
+      metric.appendChild(createElement("div", "estimate-value", value));
+      summaryGrid.appendChild(metric);
+    });
+    estimatePanel.appendChild(summaryGrid);
+
+    const baselineSection = createElement("details", "collapsible-section");
+    baselineSection.open = false;
+    const baselineSummary = createElement("summary", "collapsible-summary");
+    baselineSummary.appendChild(createElement("h3", null, "Baseline Metadata"));
+    baselineSection.appendChild(baselineSummary);
+    const baselineBody = createElement("div", "collapsible-body");
+    const baselineGrid = createElement("div", "detail-grid");
+    [
+      ["Baseline Type", estimate.baseline?.type || "--"],
+      ["Baseline Source", estimate.baseline?.source || "--"],
+      ["Assessment Year", estimate.baseline?.assessment_year ?? "--"],
+      ["Distance To Query", estimate.baseline?.distance_to_query_m != null ? `${Math.round(Number(estimate.baseline.distance_to_query_m))} m` : "--"],
+      ["Attribute Use", estimate.property_details_incorporation?.mode || "--"],
+      ["Accepted Fields", estimate.property_details_incorporation?.accepted_fields?.join(", ") || "--"]
+    ].forEach(([label, value]) => {
+      const item = createElement("article", "detail-metric");
+      item.appendChild(createElement("span", "detail-metric-label", label));
+      item.appendChild(createElement("strong", "detail-metric-value", String(value)));
+      baselineGrid.appendChild(item);
+    });
+    baselineBody.appendChild(baselineGrid);
+    baselineSection.appendChild(baselineBody);
+    estimatePanel.appendChild(baselineSection);
 
     const factorsSection = createElement("details", "collapsible-section");
     factorsSection.open = false;
@@ -177,8 +234,80 @@ export function createEstimateController({
 
     factorsSection.appendChild(factorsBody);
     estimatePanel.appendChild(factorsSection);
+
+    const topFactorsSection = createElement("details", "collapsible-section");
+    topFactorsSection.open = false;
+    const topFactorsSummary = createElement("summary", "collapsible-summary");
+    topFactorsSummary.appendChild(createElement("h3", null, "Top Positive / Negative Factors"));
+    topFactorsSection.appendChild(topFactorsSummary);
+    const topFactorsBody = createElement("div", "collapsible-body");
+    [
+      ["Top Positive Factors", estimate.top_positive_factors || []],
+      ["Top Negative Factors", estimate.top_negative_factors || []]
+    ].forEach(([heading, factors]) => {
+      topFactorsBody.appendChild(createElement("h4", null, heading));
+      if (!factors.length) {
+        topFactorsBody.appendChild(createElement("p", "empty-state", "No factors returned."));
+      } else {
+        factors.forEach((factor) => {
+          const item = createElement("article", "factor-item");
+          item.appendChild(createElement("div", "suggestion-title", `${factor.label} · ${formatCurrency(factor.value)}`));
+          item.appendChild(createElement("div", "factor-meta", `Status: ${factor.status}`));
+          item.appendChild(createElement("p", "factor-summary", factor.summary || "No summary provided."));
+          topFactorsBody.appendChild(item);
+        });
+      }
+    });
+    topFactorsSection.appendChild(topFactorsBody);
+    estimatePanel.appendChild(topFactorsSection);
+
+    const diagnosticsSection = createElement("details", "collapsible-section");
+    diagnosticsSection.open = false;
+    const diagnosticsSummary = createElement("summary", "collapsible-summary");
+    diagnosticsSummary.appendChild(createElement("h3", null, "Diagnostics"));
+    diagnosticsSection.appendChild(diagnosticsSummary);
+    const diagnosticsBody = createElement("div", "collapsible-body");
+    diagnosticsBody.appendChild(
+      createElement(
+        "p",
+        "factor-summary",
+        `Missing factors: ${(estimate.missing_factors || []).join(", ") || "None"}`
+      )
+    );
+    diagnosticsBody.appendChild(
+      createElement(
+        "p",
+        "factor-summary",
+        `Approximations: ${(estimate.approximations || []).join(", ") || "None"}`
+      )
+    );
+    diagnosticsSection.appendChild(diagnosticsBody);
+    estimatePanel.appendChild(diagnosticsSection);
   }
   /* node:coverage enable */
+
+  function syncSliderOutputs() {
+    formElements.weightCrimeOutput.textContent = formElements.weightCrimeInput.value;
+    formElements.weightSchoolsOutput.textContent = formElements.weightSchoolsInput.value;
+    formElements.weightGreenSpaceOutput.textContent = formElements.weightGreenSpaceInput.value;
+    formElements.weightCommuteOutput.textContent = formElements.weightCommuteInput.value;
+  }
+
+  function applyEstimateDefaults() {
+    formElements.includeBreakdownInput.checked = ESTIMATE_OPTIONS_DEFAULTS.includeBreakdown;
+    formElements.includeTopFactorsInput.checked = ESTIMATE_OPTIONS_DEFAULTS.includeTopFactors;
+    formElements.includeWarningsInput.checked = ESTIMATE_OPTIONS_DEFAULTS.includeWarnings;
+    formElements.includeLayersContextInput.checked = ESTIMATE_OPTIONS_DEFAULTS.includeLayersContext;
+    formElements.factorCrimeInput.checked = ESTIMATE_REQUESTED_FACTORS.includes("crime_statistics");
+    formElements.factorSchoolsInput.checked = ESTIMATE_REQUESTED_FACTORS.includes("school_access");
+    formElements.factorGreenSpaceInput.checked = ESTIMATE_REQUESTED_FACTORS.includes("green_space");
+    formElements.factorCommuteInput.checked = ESTIMATE_REQUESTED_FACTORS.includes("commute_access");
+    formElements.weightCrimeInput.value = String(ESTIMATE_WEIGHT_DEFAULTS.crime);
+    formElements.weightSchoolsInput.value = String(ESTIMATE_WEIGHT_DEFAULTS.schools);
+    formElements.weightGreenSpaceInput.value = String(ESTIMATE_WEIGHT_DEFAULTS.greenSpace);
+    formElements.weightCommuteInput.value = String(ESTIMATE_WEIGHT_DEFAULTS.commute);
+    syncSliderOutputs();
+  }
 
   async function requestEstimate() {
     clearValidation();
@@ -220,6 +349,7 @@ export function createEstimateController({
     formElements.bedroomsInput.value = "";
     formElements.bathroomsInput.value = "";
     formElements.floorAreaInput.value = "";
+    applyEstimateDefaults();
     store.setState({
       selectedLocation: null,
       estimate: null,
@@ -258,4 +388,11 @@ export function createEstimateController({
   });
 
   renderEstimate(null);
+  applyEstimateDefaults();
+  [
+    formElements.weightCrimeInput,
+    formElements.weightSchoolsInput,
+    formElements.weightGreenSpaceInput,
+    formElements.weightCommuteInput
+  ].forEach((input) => input.addEventListener("input", syncSliderOutputs));
 }

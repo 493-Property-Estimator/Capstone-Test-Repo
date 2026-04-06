@@ -5,6 +5,15 @@ const DEFAULT_ENV = {
   ALLOW_MOCK_FALLBACK: "1",
   SEARCH_PROVIDER: "db",
   ESTIMATE_API_TOKEN: "dev-local-token",
+  ESTIMATE_REQUESTED_FACTORS: "crime_statistics,school_access,green_space,commute_access",
+  ESTIMATE_INCLUDE_BREAKDOWN: "1",
+  ESTIMATE_INCLUDE_TOP_FACTORS: "1",
+  ESTIMATE_INCLUDE_WARNINGS: "1",
+  ESTIMATE_INCLUDE_LAYERS_CONTEXT: "1",
+  ESTIMATE_WEIGHT_CRIME: "50",
+  ESTIMATE_WEIGHT_SCHOOLS: "50",
+  ESTIMATE_WEIGHT_GREEN_SPACE: "50",
+  ESTIMATE_WEIGHT_COMMUTE: "50",
   ENABLED_LAYERS:
     "schools,parks,playgrounds,police_stations,transit_stops,assessment_properties"
 };
@@ -65,11 +74,39 @@ function normalizeSearchProvider(value) {
   return "db";
 }
 
+function parseBooleanFlag(value, fallback = true) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+  return String(value) !== "0";
+}
+
+function parseWeight(value, fallback = 50) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(100, Math.max(0, parsed));
+}
+
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
 export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
 export const ALLOW_MOCK_FALLBACK = String(RUNTIME_ENV.ALLOW_MOCK_FALLBACK) !== "0";
 export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN ?? "");
 export const SEARCH_PROVIDER = normalizeSearchProvider(RUNTIME_ENV.SEARCH_PROVIDER);
+export const ESTIMATE_REQUESTED_FACTORS = parseList(RUNTIME_ENV.ESTIMATE_REQUESTED_FACTORS);
+export const ESTIMATE_OPTIONS_DEFAULTS = {
+  includeBreakdown: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_BREAKDOWN, true),
+  includeTopFactors: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_TOP_FACTORS, true),
+  includeWarnings: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_WARNINGS, true),
+  includeLayersContext: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_LAYERS_CONTEXT, true)
+};
+export const ESTIMATE_WEIGHT_DEFAULTS = {
+  crime: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_CRIME, 50),
+  schools: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_SCHOOLS, 50),
+  greenSpace: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_GREEN_SPACE, 50),
+  commute: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_COMMUTE, 50)
+};
 
 const ENABLED_LAYER_IDS = new Set(parseList(RUNTIME_ENV.ENABLED_LAYERS));
 
@@ -114,6 +151,8 @@ export const DEFAULT_LOCATION = {
 export const __configInternals = {
   loadEnvFile,
   parseList,
-  normalizeSearchProvider
+  normalizeSearchProvider,
+  parseBooleanFlag,
+  parseWeight
 };
 /* node:coverage enable */
