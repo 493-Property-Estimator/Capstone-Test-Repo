@@ -4,6 +4,16 @@ const DEFAULT_ENV = {
   ALLOW_MOCK_FALLBACK: "1",
   SEARCH_PROVIDER: "db",
   ESTIMATE_API_TOKEN: "dev-local-token",
+  SEARCH_QUERY_MIN_CHARS: "3",
+  SEARCH_SUGGESTIONS_DEFAULT_LIMIT: "5",
+  PROPERTY_CACHE_TTL_MS: "30000",
+  PROPERTY_LIMIT_DEFAULT: "5000",
+  PROPERTY_LIMIT_HIGH_ZOOM: "4000",
+  PROPERTY_HIGH_ZOOM_THRESHOLD: "17",
+  PROPERTY_PREFETCH_VIEWPORTS: "2",
+  LAYERS_REFRESH_DEBOUNCE_MS: "300",
+  PROPERTY_REFRESH_DEBOUNCE_MS: "180",
+  SEARCH_INPUT_DEBOUNCE_MS: "300",
   ENABLED_LAYERS:
     "schools,parks,playgrounds,police_stations,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries,assessment_zones,assessment_properties"
 };
@@ -46,12 +56,36 @@ function parseList(value) {
     .filter(Boolean);
 }
 
+function parseNumber(value, fallback, { min = null, max = null } = {}) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  if (min !== null && parsed < min) {
+    return min;
+  }
+  if (max !== null && parsed > max) {
+    return max;
+  }
+  return parsed;
+}
+
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
 export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
 export const ALLOW_MOCK_FALLBACK = String(RUNTIME_ENV.ALLOW_MOCK_FALLBACK) !== "0";
 export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN || "");
 /* node:coverage ignore next */
 export const SEARCH_PROVIDER = ["db", "osrm"].includes(String(RUNTIME_ENV.SEARCH_PROVIDER || "db").toLowerCase()) ? String(RUNTIME_ENV.SEARCH_PROVIDER).toLowerCase() : "db";
+export const SEARCH_QUERY_MIN_CHARS = parseNumber(RUNTIME_ENV.SEARCH_QUERY_MIN_CHARS, 3, { min: 1 });
+export const SEARCH_SUGGESTIONS_DEFAULT_LIMIT = parseNumber(RUNTIME_ENV.SEARCH_SUGGESTIONS_DEFAULT_LIMIT, 5, { min: 1 });
+export const PROPERTY_CACHE_TTL_MS = parseNumber(RUNTIME_ENV.PROPERTY_CACHE_TTL_MS, 30000, { min: 1 });
+export const PROPERTY_LIMIT_DEFAULT = parseNumber(RUNTIME_ENV.PROPERTY_LIMIT_DEFAULT, 5000, { min: 1 });
+export const PROPERTY_LIMIT_HIGH_ZOOM = parseNumber(RUNTIME_ENV.PROPERTY_LIMIT_HIGH_ZOOM, 4000, { min: 1 });
+export const PROPERTY_HIGH_ZOOM_THRESHOLD = parseNumber(RUNTIME_ENV.PROPERTY_HIGH_ZOOM_THRESHOLD, 17, { min: 0 });
+export const PROPERTY_PREFETCH_VIEWPORTS = parseNumber(RUNTIME_ENV.PROPERTY_PREFETCH_VIEWPORTS, 2, { min: 0 });
+export const LAYERS_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.LAYERS_REFRESH_DEBOUNCE_MS, 300, { min: 1 });
+export const PROPERTY_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.PROPERTY_REFRESH_DEBOUNCE_MS, 180, { min: 1 });
+export const SEARCH_INPUT_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.SEARCH_INPUT_DEBOUNCE_MS, 300, { min: 1 });
 
 const ENABLED_LAYER_IDS = new Set(parseList(RUNTIME_ENV.ENABLED_LAYERS));
 

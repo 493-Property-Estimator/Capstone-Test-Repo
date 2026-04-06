@@ -141,4 +141,6 @@ async def _refresh_scheduler_loop() -> None:
             app.state.last_refresh_run = {"status": "failed", "error": str(exc)}
         finally:
             app.state.refresh_scheduler_active = False
-        await asyncio.sleep(max(app.state.settings.refresh_schedule_seconds, 30))
+        await asyncio.sleep(
+            max(app.state.settings.refresh_schedule_seconds, app.state.settings.refresh_schedule_min_seconds)
+        )

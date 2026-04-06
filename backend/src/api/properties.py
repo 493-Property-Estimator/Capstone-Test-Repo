@@ -21,10 +21,12 @@ async def get_properties(
     east: float,
     north: float,
     zoom: float,
-    limit: int = 5000,
+    limit: int | None = None,
     cursor: str | None = None,
 ):
     request_id = request.state.request_id
+
+    settings = request.app.state.settings
 
     if west >= east or south >= north:
         return JSONResponse(
@@ -38,7 +40,7 @@ async def get_properties(
             ),
         )
 
-    if zoom < 0 or zoom > 25:
+    if zoom < settings.properties_zoom_min or zoom > settings.properties_zoom_max:
         return JSONResponse(
             status_code=400,
             content=error_response(
@@ -50,8 +52,12 @@ async def get_properties(
             ),
         )
 
-    settings = request.app.state.settings
     cache = request.app.state.cache
+    default_limit = max(1, int(settings.properties_default_limit))
+    min_limit = max(1, int(settings.properties_limit_min))
+    max_limit = max(min_limit, int(settings.properties_limit_max))
+    requested_limit = default_limit if limit is None else limit
+    bounded_limit = max(min_limit, min(requested_limit, max_limit))
     dataset_version = get_latest_dataset_version(settings.data_db_path)
     cache_key = build_property_cache_key(
         west=west,
@@ -59,7 +65,7 @@ async def get_properties(
         east=east,
         north=north,
         zoom=zoom,
-        limit=max(100, min(limit, 10000)),
+        limit=bounded_limit,
         cursor=cursor,
     )
     cached, _ = cache.get(cache_key, dataset_version)
@@ -76,7 +82,7 @@ async def get_properties(
         east=east,
         north=north,
         zoom=zoom,
-        limit=max(100, min(limit, 10000)),
+        limit=bounded_limit,
         cursor=cursor,
     )
     cache.set(cache_key, payload, dataset_version)

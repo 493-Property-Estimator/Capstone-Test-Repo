@@ -16,7 +16,9 @@ from src.data_sourcing.database import connect, init_db
 
 
 class PropertyEstimatorTests(unittest.TestCase):
-    def build_service(self, *, include_roads: bool = True, include_library: bool = True) -> DataService:
+    def build_service(
+        self, *, include_roads: bool = True, include_library: bool = True, include_census: bool = False
+    ) -> DataService:
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         db_path = Path(temp_dir.name) / "open_data.db"
@@ -24,22 +26,22 @@ class PropertyEstimatorTests(unittest.TestCase):
         init_db(connection)
 
         properties = [
-            ("loc-1", 2026, 450000.0, "100", "MAIN ST NW", "DOWNTOWN", "Ward 1", "DC1", 350.0, "180.0", 2005, "Residential", "Y", "RESIDENTIAL", 53.5460, -113.4930),
-            ("loc-2", 2026, 470000.0, "102", "MAIN ST NW", "DOWNTOWN", "Ward 1", "DC1", 360.0, "182.0", 2006, "Residential", "Y", "RESIDENTIAL", 53.5460, -113.4940),
-            ("loc-3", 2026, 430000.0, "104", "MAIN ST NW", "DOWNTOWN", "Ward 1", "DC1", 340.0, "176.0", 2002, "Residential", "N", "RESIDENTIAL", 53.5460, -113.4920),
-            ("loc-4", 2026, 520000.0, "200", "RIVER RD NW", "OLIVER", "Ward 2", "RF3", 420.0, "210.0", 2010, "Residential", "Y", "RESIDENTIAL", 53.5470, -113.4910),
-            ("loc-5", 2026, 410000.0, "300", "VALLEY RD NW", "STRATHCONA", "Ward 3", "RF1", 300.0, "160.0", 1998, "Residential", "N", "RESIDENTIAL", 53.5450, -113.4950),
-            ("loc-6", 2026, 560000.0, "400", "PARK RD NW", "GLENORA", "Ward 4", "RF4", 480.0, "230.0", 2012, "Residential", "Y", "RESIDENTIAL", 53.5480, -113.4940),
-            ("loc-7", 2026, 390000.0, "500", "WEST RD NW", "WESTMOUNT", "Ward 5", "RF2", 290.0, "150.0", 1995, "Residential", "N", "RESIDENTIAL", 53.5440, -113.4940),
+            ("loc-1", 2026, 450000.0, "100", "MAIN ST NW", "DOWNTOWN", "1090", "Ward 1", "DC1", 350.0, "180.0", 2005, "Residential", "Y", "RESIDENTIAL", 53.5460, -113.4930),
+            ("loc-2", 2026, 470000.0, "102", "MAIN ST NW", "DOWNTOWN", "1090", "Ward 1", "DC1", 360.0, "182.0", 2006, "Residential", "Y", "RESIDENTIAL", 53.5460, -113.4940),
+            ("loc-3", 2026, 430000.0, "104", "MAIN ST NW", "DOWNTOWN", "1090", "Ward 1", "DC1", 340.0, "176.0", 2002, "Residential", "N", "RESIDENTIAL", 53.5460, -113.4920),
+            ("loc-4", 2026, 520000.0, "200", "RIVER RD NW", "OLIVER", "1020", "Ward 2", "RF3", 420.0, "210.0", 2010, "Residential", "Y", "RESIDENTIAL", 53.5470, -113.4910),
+            ("loc-5", 2026, 410000.0, "300", "VALLEY RD NW", "STRATHCONA", "5480", "Ward 3", "RF1", 300.0, "160.0", 1998, "Residential", "N", "RESIDENTIAL", 53.5450, -113.4950),
+            ("loc-6", 2026, 560000.0, "400", "PARK RD NW", "GLENORA", "1180", "Ward 4", "RF4", 480.0, "230.0", 2012, "Residential", "Y", "RESIDENTIAL", 53.5480, -113.4940),
+            ("loc-7", 2026, 390000.0, "500", "WEST RD NW", "WESTMOUNT", "3440", "Ward 5", "RF2", 290.0, "150.0", 1995, "Residential", "N", "RESIDENTIAL", 53.5440, -113.4940),
         ]
         for row in properties:
             connection.execute(
                 """
                 INSERT INTO property_locations_prod (
                     canonical_location_id, assessment_year, assessment_value, house_number, street_name,
-                    neighbourhood, ward, zoning, lot_size, total_gross_area, year_built, tax_class,
+                    neighbourhood, neighbourhood_id, ward, zoning, lot_size, total_gross_area, year_built, tax_class,
                     garage, assessment_class_1, lat, lon, source_ids_json, record_ids_json, link_method, confidence
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]', '[]', 'test', 1.0)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]', '[]', 'test', 1.0)
                 """,
                 row,
             )
@@ -162,6 +164,30 @@ class PropertyEstimatorTests(unittest.TestCase):
                 ),
             )
 
+        if include_census:
+            census_rows = [
+                ("N1090", "neighbourhood", 25000, 11000, 2.0, 12500.0, 0),
+                ("N2000", "neighbourhood", 5000, 2800, 3.0, 1666.67, 0),
+            ]
+            for area_id, geography_level, population, households, area_sq_km, population_density, limited_accuracy in census_rows:
+                connection.execute(
+                    """
+                    INSERT INTO census_prod (
+                        area_id, geography_level, population, households, median_income,
+                        area_sq_km, population_density, limited_accuracy
+                    ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?)
+                    """,
+                    (
+                        area_id,
+                        geography_level,
+                        population,
+                        households,
+                        area_sq_km,
+                        population_density,
+                        limited_accuracy,
+                    ),
+                )
+
         connection.commit()
         connection.close()
         return DataService(db_path)
@@ -201,6 +227,15 @@ class PropertyEstimatorTests(unittest.TestCase):
         service = self.build_service()
         payload = service.get_property_estimate(53.5460, -113.4930)
         self.assertIn("census_unavailable", {item["code"] for item in payload["warnings"]})
+
+    def test_census_data_adds_valuation_adjustment(self) -> None:
+        service = self.build_service(include_census=True)
+        payload = service.get_property_estimate(53.5460, -113.4930)
+
+        warning_codes = {item["code"] for item in payload["warnings"]}
+        self.assertNotIn("census_unavailable", warning_codes)
+        adjustment_codes = {item["code"] for item in payload["feature_breakdown"]["valuation_adjustments"]}
+        self.assertIn("census_indicators", adjustment_codes)
 
     def test_straight_line_fallback_sets_flag(self) -> None:
         service = self.build_service(include_roads=False)

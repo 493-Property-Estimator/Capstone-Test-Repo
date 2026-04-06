@@ -11,22 +11,27 @@ router = APIRouter()
 
 
 @router.get("/search/suggestions")
-async def search_suggestions(request: Request, q: str, limit: int = 5):
+async def search_suggestions(request: Request, q: str, limit: int | None = None):
     request_id = request.state.request_id
-    if len(q.strip()) < 3:
+    settings = request.app.state.settings
+    min_chars = max(1, int(settings.search_query_min_chars))
+    if len(q.strip()) < min_chars:
         return JSONResponse(
             status_code=400,
             content=error_response(
                 request_id,
                 code="INVALID_QUERY",
-                message="Search query must contain at least 3 characters.",
+                message=f"Search query must contain at least {min_chars} characters.",
                 details={"field": "q", "reason": "too_short"},
                 retryable=False,
             ),
         )
-    limit = max(1, min(limit, 10))
-    settings = request.app.state.settings
-    suggestions = search_address_suggestions(settings.data_db_path, q, limit)
+    default_limit = max(1, int(settings.search_suggestions_default_limit))
+    min_limit = max(1, int(settings.search_suggestions_limit_min))
+    max_limit = max(min_limit, int(settings.search_suggestions_limit_max))
+    requested_limit = default_limit if limit is None else limit
+    bounded_limit = max(min_limit, min(requested_limit, max_limit))
+    suggestions = search_address_suggestions(settings.data_db_path, q, bounded_limit)
     return {
         "request_id": request_id,
         "query": q,
@@ -37,19 +42,21 @@ async def search_suggestions(request: Request, q: str, limit: int = 5):
 @router.get("/search/resolve")
 async def resolve_search(request: Request, q: str):
     request_id = request.state.request_id
-    if len(q.strip()) < 3:
+    settings = request.app.state.settings
+    min_chars = max(1, int(settings.search_query_min_chars))
+    if len(q.strip()) < min_chars:
         return JSONResponse(
             status_code=400,
             content=error_response(
                 request_id,
                 code="INVALID_QUERY",
-                message="Search query must contain at least 3 characters.",
+                message=f"Search query must contain at least {min_chars} characters.",
                 details={"field": "q", "reason": "too_short"},
                 retryable=False,
             ),
         )
-    settings = request.app.state.settings
-    matches = resolve_address(settings.data_db_path, q, limit=5)
+    match_limit = max(1, int(settings.search_resolve_match_limit))
+    matches = resolve_address(settings.data_db_path, q, limit=match_limit)
     if not matches:
         return {
             "request_id": request_id,

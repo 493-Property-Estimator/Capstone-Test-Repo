@@ -103,7 +103,7 @@ async def get_properties(
     east: float,
     north: float,
     zoom: float,
-    limit: int = 5000,
+    limit: int | None = None,
     cursor: str | None = None,
 ):
     request_id = request.state.request_id
@@ -131,7 +131,11 @@ async def get_properties(
             ),
         )
 
-    bounded_limit = max(1, min(limit, 5000))
+    default_limit = max(1, int(settings.properties_default_limit))
+    min_limit = max(1, int(settings.properties_limit_min))
+    max_limit = max(min_limit, int(settings.properties_limit_max))
+    requested_limit = default_limit if limit is None else limit
+    bounded_limit = max(min_limit, min(requested_limit, max_limit))
     offset = _parse_cursor(cursor)
 
     rows = fetch_property_locations_bbox(
@@ -170,7 +174,7 @@ async def get_properties(
             }
         )
 
-    render_mode = "cluster" if zoom < 17 else "property"
+    render_mode = "cluster" if zoom < settings.properties_cluster_zoom_threshold else "property"
     clusters = _cluster_properties(properties, zoom) if render_mode == "cluster" else []
     response_properties = properties if render_mode == "property" else []
 
