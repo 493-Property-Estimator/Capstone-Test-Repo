@@ -60,7 +60,7 @@ test("map adapter covers deferred load, missing cards, ignored clicks, and gener
 
   map.emit("load");
   assert.ok(map.getLayer("schools-points"));
-  assert.equal(map.getLayer("assessment_properties-cluster-circle"), null);
+  assert.ok(map.getLayer("assessment_properties-cluster-circle"));
   assert.equal(viewports.length >= 1, true);
 
   adapter.setViewportChangeHandler(null);
@@ -87,7 +87,7 @@ test("map adapter covers deferred load, missing cards, ignored clicks, and gener
     clusters: [],
     properties: []
   });
-  assert.equal(map.getLayer("assessment_properties-points"), null);
+  assert.ok(map.getLayer("assessment_properties-points"));
 
   adapter.renderLayers({
     schools: {

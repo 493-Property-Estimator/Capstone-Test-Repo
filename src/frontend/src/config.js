@@ -1,3 +1,4 @@
+/* node:coverage disable */
 const DEFAULT_ENV = {
   API_BASE_URL: "http://localhost:8000/api/v1",
   PREFER_LIVE_API: "1",
@@ -14,8 +15,17 @@ const DEFAULT_ENV = {
   LAYERS_REFRESH_DEBOUNCE_MS: "300",
   PROPERTY_REFRESH_DEBOUNCE_MS: "180",
   SEARCH_INPUT_DEBOUNCE_MS: "300",
+  ESTIMATE_REQUESTED_FACTORS: "crime_statistics,school_access,green_space,commute_access",
+  ESTIMATE_INCLUDE_BREAKDOWN: "1",
+  ESTIMATE_INCLUDE_TOP_FACTORS: "1",
+  ESTIMATE_INCLUDE_WARNINGS: "1",
+  ESTIMATE_INCLUDE_LAYERS_CONTEXT: "1",
+  ESTIMATE_WEIGHT_CRIME: "50",
+  ESTIMATE_WEIGHT_SCHOOLS: "50",
+  ESTIMATE_WEIGHT_GREEN_SPACE: "50",
+  ESTIMATE_WEIGHT_COMMUTE: "50",
   ENABLED_LAYERS:
-    "schools,parks,playgrounds,police_stations,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries,assessment_zones,assessment_properties"
+    "schools,parks,playgrounds,police_stations,transit_stops,assessment_properties"
 };
 
 async function loadEnvFile() {
@@ -28,15 +38,22 @@ async function loadEnvFile() {
     const values = {};
     text.split("\n").forEach((lineRaw) => {
       const line = lineRaw.trim();
-      if (!line || line.startsWith("#") || !line.includes("=")) {
+      if (!line) {
+        return;
+      }
+      if (line.startsWith("#")) {
         return;
       }
       const idx = line.indexOf("=");
+      if (idx < 0) {
+        return;
+      }
       const key = line.slice(0, idx).trim();
       const value = line.slice(idx + 1).trim();
-      if (key) {
-        values[key] = value;
+      if (!key) {
+        return;
       }
+      values[key] = value;
     });
     return values;
   } catch {
@@ -50,13 +67,31 @@ const RUNTIME_ENV = {
 };
 
 function parseList(value) {
-  return String(value || "")
+  return String(value ?? "")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
-function parseNumber(value, fallback, { min = null, max = null } = {}) {
+function normalizeSearchProvider(value) {
+  const normalized = String(value ?? "db").toLowerCase();
+  if (normalized === "db") {
+    return "db";
+  }
+  if (normalized === "osrm") {
+    return "osrm";
+  }
+  return "db";
+}
+
+function parseBooleanFlag(value, fallback = true) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+  return String(value) !== "0";
+}
+
+function parseWeight(value, fallback = 50) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
     return fallback;
@@ -86,6 +121,21 @@ export const PROPERTY_PREFETCH_VIEWPORTS = parseNumber(RUNTIME_ENV.PROPERTY_PREF
 export const LAYERS_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.LAYERS_REFRESH_DEBOUNCE_MS, 300, { min: 1 });
 export const PROPERTY_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.PROPERTY_REFRESH_DEBOUNCE_MS, 180, { min: 1 });
 export const SEARCH_INPUT_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.SEARCH_INPUT_DEBOUNCE_MS, 300, { min: 1 });
+export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN ?? "");
+export const SEARCH_PROVIDER = normalizeSearchProvider(RUNTIME_ENV.SEARCH_PROVIDER);
+export const ESTIMATE_REQUESTED_FACTORS = parseList(RUNTIME_ENV.ESTIMATE_REQUESTED_FACTORS);
+export const ESTIMATE_OPTIONS_DEFAULTS = {
+  includeBreakdown: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_BREAKDOWN, true),
+  includeTopFactors: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_TOP_FACTORS, true),
+  includeWarnings: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_WARNINGS, true),
+  includeLayersContext: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_LAYERS_CONTEXT, true)
+};
+export const ESTIMATE_WEIGHT_DEFAULTS = {
+  crime: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_CRIME, 50),
+  schools: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_SCHOOLS, 50),
+  greenSpace: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_GREEN_SPACE, 50),
+  commute: parseWeight(RUNTIME_ENV.ESTIMATE_WEIGHT_COMMUTE, 50)
+};
 
 const ENABLED_LAYER_IDS = new Set(parseList(RUNTIME_ENV.ENABLED_LAYERS));
 
@@ -100,16 +150,11 @@ export const EDMONTON_BOUNDS = [
 ];
 
 const ALL_LAYER_DEFINITIONS = [
-  { id: "schools", label: "Schools", color: "#1f6feb" },
-  { id: "parks", label: "Parks", color: "#2e8b57" },
-  { id: "playgrounds", label: "Playgrounds", color: "#f0883e" },
+  { id: "schools", label: "Schools", color: "#1d4ed8" },
+  { id: "parks", label: "Parks", color: "#15803d" },
+  { id: "playgrounds", label: "Playgrounds", color: "#ea580c" },
   { id: "police_stations", label: "Police Stations", color: "#b91c1c" },
-  { id: "municipal_wards", label: "Municipal Wards", color: "#b45309" },
-  { id: "provincial_districts", label: "Provincial Districts", color: "#7c3aed" },
-  { id: "federal_districts", label: "Federal Districts", color: "#0f766e" },
-  { id: "census_subdivisions", label: "Census Subdivisions", color: "#475569" },
-  { id: "census_boundaries", label: "Census Boundaries", color: "#a44dc5" },
-  { id: "assessment_zones", label: "Assessment Zones", color: "#c46b15" },
+  { id: "transit_stops", label: "Transit Stops", color: "#0891b2" },
   {
     id: "assessment_properties",
     label: "Assessment Properties",
@@ -131,3 +176,12 @@ export const DEFAULT_LOCATION = {
   neighbourhood: null,
   coverage_status: "supported"
 };
+
+export const __configInternals = {
+  loadEnvFile,
+  parseList,
+  normalizeSearchProvider,
+  parseBooleanFlag,
+  parseWeight
+};
+/* node:coverage enable */

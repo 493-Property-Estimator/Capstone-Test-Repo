@@ -86,7 +86,7 @@ def load_settings() -> Settings:
                 env,
                 shared,
                 "ENABLED_LAYERS",
-                "schools,parks,playgrounds,police_stations,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries,assessment_zones,assessment_properties",
+                "schools,parks,playgrounds,police_stations,transit_stops,assessment_properties",
             )
         )
     )

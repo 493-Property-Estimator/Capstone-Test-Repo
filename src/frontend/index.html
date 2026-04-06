@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Property Value Estimator</title>
+    <link rel="icon" href="data:," />
     <link
       rel="stylesheet"
       href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
@@ -23,17 +24,6 @@
             Search an address, click the map, and inspect estimate context
             from open-data layers.
           </p>
-          <div class="quick-actions">
-            <button id="example-address-1" class="button button-secondary" type="button">
-              Load Downtown Example
-            </button>
-            <button id="example-address-2" class="button button-secondary" type="button">
-              Load Highlands Example
-            </button>
-            <button id="example-property-abbottsfield" class="button button-secondary" type="button">
-              Go To Abbotsfield Sample
-            </button>
-          </div>
         </header>
 
         <section class="panel" aria-labelledby="search-heading">
@@ -57,14 +47,6 @@
           <p id="search-helper" class="helper-text">
             Enter at least 3 characters to load suggestions.
           </p>
-          <div class="quick-actions">
-            <button id="search-ambiguous" class="button button-secondary" type="button">
-              Test Ambiguous
-            </button>
-            <button id="search-unsupported" class="button button-secondary" type="button">
-              Test Unsupported
-            </button>
-          </div>
           <div id="suggestions" class="suggestions" aria-live="polite"></div>
           <div id="candidate-results" class="candidate-results"></div>
         </section>
@@ -112,6 +94,67 @@
               <input id="floor-area-input" class="text-input" type="number" min="0" step="1" />
             </div>
           </div>
+          <section class="criteria-panel" aria-labelledby="criteria-heading">
+            <div class="panel-heading criteria-heading">
+              <h3 id="criteria-heading">Estimate Criteria</h3>
+            </div>
+            <div class="criteria-grid">
+              <label class="criteria-toggle">
+                <input id="include-breakdown-input" type="checkbox" checked />
+                <span>Include factor breakdown</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="include-top-factors-input" type="checkbox" checked />
+                <span>Include top positive/negative factors</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="include-warnings-input" type="checkbox" checked />
+                <span>Include warnings</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="include-layers-context-input" type="checkbox" checked />
+                <span>Include layers context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-crime-input" type="checkbox" checked />
+                <span>Request crime signal context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-schools-input" type="checkbox" checked />
+                <span>Request school signal context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-green-space-input" type="checkbox" checked />
+                <span>Request green-space context</span>
+              </label>
+              <label class="criteria-toggle">
+                <input id="factor-commute-input" type="checkbox" checked />
+                <span>Request commute context</span>
+              </label>
+            </div>
+            <div class="slider-grid">
+              <label class="slider-field" for="weight-crime-input">
+                <span>Safety priority</span>
+                <input id="weight-crime-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-crime-output">50</strong>
+              </label>
+              <label class="slider-field" for="weight-schools-input">
+                <span>School priority</span>
+                <input id="weight-schools-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-schools-output">50</strong>
+              </label>
+              <label class="slider-field" for="weight-green-space-input">
+                <span>Green-space priority</span>
+                <input id="weight-green-space-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-green-space-output">50</strong>
+              </label>
+              <label class="slider-field" for="weight-commute-input">
+                <span>Commute priority</span>
+                <input id="weight-commute-input" type="range" min="0" max="100" step="5" value="50" />
+                <strong id="weight-commute-output">50</strong>
+              </label>
+            </div>
+          </section>
           <div class="quick-actions">
             <button id="estimate-submit" class="button button-primary" type="button">
               Get Estimate
@@ -141,6 +184,23 @@
         </div>
         <div id="map-root" class="map-root" aria-label="Property map">
           <aside id="property-hover-card" class="property-hover-card is-hidden"></aside>
+          <aside id="property-detail-panel" class="property-detail-panel is-hidden">
+            <div class="detail-panel-header">
+              <div>
+                <p class="eyebrow">Property Details</p>
+                <h3 id="property-detail-title">No property selected</h3>
+              </div>
+              <button id="property-detail-close" class="button button-secondary detail-close" type="button">
+                Close
+              </button>
+            </div>
+            <p id="property-detail-subtitle" class="property-detail-subtitle">
+              Click an individual property point to inspect the full record.
+            </p>
+            <div id="property-detail-body" class="property-detail-body">
+              <p class="empty-state">Property details will appear here.</p>
+            </div>
+          </aside>
         </div>
       </main>
     </div>

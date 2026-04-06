@@ -6,11 +6,36 @@ import { createMapSelectionController } from "./features/mapSelection/mapSelecti
 import { createLayerController } from "./features/layers/layerController.js";
 import { createEstimateController } from "./features/estimate/estimateController.js";
 import { createWarningController } from "./features/warnings/warningController.js";
+import { createPropertyDetailController } from "./features/propertyDetails/propertyDetailController.js";
 import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 
 const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
+
+function findMatchingProperty(propertyLayer, location) {
+  if (!location) {
+    return null;
+  }
+
+  const selectedId = location.canonical_location_id;
+  const selectedCoordinates = location.coordinates;
+
+  return (propertyLayer?.properties || []).find((property) => {
+    if (selectedId && property.canonical_location_id === selectedId) {
+      return true;
+    }
+
+    if (!selectedCoordinates || !property.coordinates) {
+      return false;
+    }
+
+    return (
+      Math.abs(Number(property.coordinates.lat) - Number(selectedCoordinates.lat)) < 0.00001
+      && Math.abs(Number(property.coordinates.lng) - Number(selectedCoordinates.lng)) < 0.00001
+    );
+  }) || null;
+}
 
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
@@ -18,9 +43,27 @@ const mapAdapter = createMapAdapter({
   onMapClick: () => {},
   onViewportChange: () => {},
   propertyCardElement: document.getElementById("property-hover-card"),
+  propertyDetailPanelElement: document.getElementById("property-detail-panel"),
+  onPropertySelect: (property) => {
+    const location = {
+      canonical_location_id: property.canonical_location_id,
+      canonical_address: property.canonical_address,
+      coordinates: property.coordinates,
+      region: "Edmonton",
+      neighbourhood: property.details?.neighbourhood || property.neighbourhood || null,
+      coverage_status: "supported"
+    };
+    store.setState({
+      selectedLocation: location,
+      selectedPropertyDetails: property,
+      propertyDetailsDismissed: false
+    });
+  },
   onSelectionCleared() {
     store.setState({
       selectedLocation: null,
+      selectedPropertyDetails: null,
+      propertyDetailsDismissed: false,
       estimate: null,
       warningsCollapsed: false
     });
@@ -45,8 +88,13 @@ const searchController = createSearchController({
   helperText: document.getElementById("search-helper"),
   statusElement: document.getElementById("search-status"),
   onLocationResolved(location) {
-    store.setState({ selectedLocation: location });
-    mapAdapter.setView(location);
+    const matchedProperty = findMatchingProperty(store.getState().propertyLayer, location);
+    store.setState({
+      selectedLocation: location,
+      selectedPropertyDetails: matchedProperty,
+      propertyDetailsDismissed: false
+    });
+    mapAdapter.setView(location, { zoom: 17 });
   }
 });
 
@@ -74,7 +122,23 @@ createEstimateController({
     longitudeInput: document.getElementById("longitude-input"),
     bedroomsInput: document.getElementById("bedrooms-input"),
     bathroomsInput: document.getElementById("bathrooms-input"),
-    floorAreaInput: document.getElementById("floor-area-input")
+    floorAreaInput: document.getElementById("floor-area-input"),
+    includeBreakdownInput: document.getElementById("include-breakdown-input"),
+    includeTopFactorsInput: document.getElementById("include-top-factors-input"),
+    includeWarningsInput: document.getElementById("include-warnings-input"),
+    includeLayersContextInput: document.getElementById("include-layers-context-input"),
+    factorCrimeInput: document.getElementById("factor-crime-input"),
+    factorSchoolsInput: document.getElementById("factor-schools-input"),
+    factorGreenSpaceInput: document.getElementById("factor-green-space-input"),
+    factorCommuteInput: document.getElementById("factor-commute-input"),
+    weightCrimeInput: document.getElementById("weight-crime-input"),
+    weightSchoolsInput: document.getElementById("weight-schools-input"),
+    weightGreenSpaceInput: document.getElementById("weight-green-space-input"),
+    weightCommuteInput: document.getElementById("weight-commute-input"),
+    weightCrimeOutput: document.getElementById("weight-crime-output"),
+    weightSchoolsOutput: document.getElementById("weight-schools-output"),
+    weightGreenSpaceOutput: document.getElementById("weight-green-space-output"),
+    weightCommuteOutput: document.getElementById("weight-commute-output")
   }
 });
 
@@ -84,51 +148,37 @@ createWarningController({
   warningIndicator: document.getElementById("warning-indicator")
 });
 
+createPropertyDetailController({
+  store,
+  panel: document.getElementById("property-detail-panel"),
+  titleElement: document.getElementById("property-detail-title"),
+  subtitleElement: document.getElementById("property-detail-subtitle"),
+  bodyElement: document.getElementById("property-detail-body"),
+  closeButton: document.getElementById("property-detail-close")
+});
+
+/* node:coverage disable */
+store.subscribe((state) => {
+  if (state.selectedPropertyDetails || state.propertyDetailsDismissed || !state.selectedLocation) {
+    return;
+  }
+
+  const match = findMatchingProperty(state.propertyLayer, state.selectedLocation);
+
+  if (match) {
+    store.setState({ selectedPropertyDetails: match });
+  }
+});
+/* node:coverage enable */
+
 /* node:coverage ignore next */
 document.getElementById("environment-badge").textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
-
-document.getElementById("example-address-1").addEventListener("click", () => {
-  searchController.setQuery("10234 98 Street NW, Edmonton");
-  searchController.resolveQuery("10234 98 Street NW, Edmonton");
-});
-
-document.getElementById("example-address-2").addEventListener("click", () => {
-  searchController.setQuery("5432 111 Avenue NW, Edmonton");
-  searchController.resolveQuery("5432 111 Avenue NW, Edmonton");
-});
-
-document.getElementById("example-property-abbottsfield").addEventListener("click", () => {
-  const location = {
-    canonical_location_id: "loc-d1c3fbc1d0aa7f62",
-    canonical_address: "870 ABBOTTSFIELD ROAD NW, Edmonton, AB",
-    coordinates: {
-      lat: 53.57632901357068,
-      lng: -113.39230350026378
-    },
-    region: "Edmonton",
-    neighbourhood: "ABBOTTSFIELD",
-    coverage_status: "supported"
-  };
-
-  store.setState({ selectedLocation: location });
-  mapAdapter.setView(location);
-  document.getElementById("latitude-input").value = String(location.coordinates.lat);
-  document.getElementById("longitude-input").value = String(location.coordinates.lng);
-});
-
-document.getElementById("search-ambiguous").addEventListener("click", () => {
-  searchController.setQuery("123 Main Street");
-  searchController.resolveQuery("123 Main Street");
-});
-
-document.getElementById("search-unsupported").addEventListener("click", () => {
-  searchController.setQuery("123 Main Street, Calgary, AB");
-  searchController.resolveQuery("123 Main Street, Calgary, AB");
-});
 
 document.getElementById("reset-selection").addEventListener("click", () => {
   store.setState({
     selectedLocation: DEFAULT_LOCATION,
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false,
     estimate: null,
     warningsCollapsed: false
   });
@@ -139,5 +189,6 @@ document.getElementById("reset-selection").addEventListener("click", () => {
 export const __app = {
   store,
   mapAdapter,
-  searchController
+  searchController,
+  findMatchingProperty
 };

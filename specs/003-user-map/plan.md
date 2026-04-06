@@ -70,7 +70,7 @@ backend/
     ├── integration/
     └── unit/
 
-frontend/
+src/frontend/
 ├── src/
 │   ├── components/
 │   │   ├── map-view.js
@@ -87,7 +87,7 @@ frontend/
     └── unit/
 ```
 
-**Structure Decision**: Web application split into `backend/` (Python services and API endpoint) and `frontend/` (vanilla JS map UI) to keep UI/API contracts explicit and testable.
+**Structure Decision**: Web application split into `backend/` (Python services and API endpoint) and `src/frontend/` (vanilla JS map UI) to keep UI/API contracts explicit and testable.
 
 ## Complexity Tracking
 

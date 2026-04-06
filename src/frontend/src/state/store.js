@@ -30,6 +30,8 @@ export function createStore() {
       viewportKey: null
     },
     viewport: null,
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false,
     estimate: null,
     warningsCollapsed: true
   };

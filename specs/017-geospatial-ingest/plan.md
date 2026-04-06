@@ -66,7 +66,7 @@ backend/
     ├── integration/
     └── unit/
 
-frontend/
+src/frontend/
 ├── src/
 │   ├── components/
 │   │   └── geospatial_ingest.js

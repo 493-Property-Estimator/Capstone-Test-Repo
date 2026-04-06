@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { installDomGlobals, createMockResponse, wait } from "./helpers/fakeDom.js";
+import { installDomGlobals, createMockResponse } from "./helpers/fakeDom.js";
 import { installMapLibre } from "./helpers/fakeMapLibre.js";
 
 function ids() {
@@ -61,14 +61,62 @@ installDomGlobals({ ids: ids() });
 installMapLibre(window);
 globalThis.fetch = async (url) => {
   if (String(url).endsWith("/app.env")) {
-    return createMockResponse("", { status: 404 });
+    return createMockResponse("PREFER_LIVE_API=0\n");
+  }
+  if (String(url).includes("./mock-data/assessment-properties-tiles/index.json")) {
+    return createMockResponse({ tiles: [] });
+  }
+  if (String(url).includes("./mock-data/assessment-properties.geojson")) {
+    return createMockResponse({ type: "FeatureCollection", features: [] });
   }
   return createMockResponse({});
 };
 
-await import("../src/app.js");
-await wait(5);
+const { __app } = await import("../src/app.js");
 
-test("app shows Auto API badge when live mode is preferred", () => {
-  assert.equal(document.getElementById("environment-badge").textContent, "Auto API");
+test("app helper matches properties by id, by coordinates, and handles missing inputs", () => {
+  const propertyLayer = {
+    properties: [
+      {
+        canonical_location_id: "loc-1",
+        coordinates: { lat: 53.5, lng: -113.4 }
+      },
+      {
+        canonical_location_id: "loc-2",
+        coordinates: { lat: 53.6, lng: -113.5 }
+      },
+      {
+        canonical_location_id: "loc-3"
+      }
+    ]
+  };
+
+  assert.equal(__app.findMatchingProperty(propertyLayer, null), null);
+  assert.equal(
+    __app.findMatchingProperty(undefined, { canonical_location_id: "loc-1" }),
+    null
+  );
+  assert.equal(
+    __app.findMatchingProperty(propertyLayer, { canonical_location_id: "loc-2" })?.canonical_location_id,
+    "loc-2"
+  );
+  assert.equal(
+    __app.findMatchingProperty(propertyLayer, {
+      canonical_location_id: null,
+      coordinates: null
+    }),
+    null
+  );
+  assert.equal(
+    __app.findMatchingProperty(propertyLayer, {
+      coordinates: { lat: 53.5, lng: -113.4 }
+    })?.canonical_location_id,
+    "loc-1"
+  );
+  assert.equal(
+    __app.findMatchingProperty(propertyLayer, {
+      coordinates: { lat: 0, lng: 0 }
+    }),
+    null
+  );
 });

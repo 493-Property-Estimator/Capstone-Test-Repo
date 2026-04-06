@@ -39,6 +39,44 @@ def _format_property_description(row: dict) -> str:
     )
 
 
+def _property_details(row: dict) -> dict:
+    return {
+        "assessment_year": row.get("assessment_year"),
+        "assessment_value": row.get("assessment_value"),
+        "suite": row.get("suite"),
+        "house_number": row.get("house_number"),
+        "street_name": row.get("street_name"),
+        "legal_description": row.get("legal_description"),
+        "zoning": row.get("zoning"),
+        "lot_size": row.get("lot_size"),
+        "total_gross_area": row.get("total_gross_area"),
+        "year_built": row.get("year_built"),
+        "neighbourhood_id": row.get("neighbourhood_id"),
+        "neighbourhood": row.get("neighbourhood"),
+        "ward": row.get("ward"),
+        "tax_class": row.get("tax_class"),
+        "garage": row.get("garage"),
+        "assessment_class_1": row.get("assessment_class_1"),
+        "assessment_class_2": row.get("assessment_class_2"),
+        "assessment_class_3": row.get("assessment_class_3"),
+        "assessment_class_pct_1": row.get("assessment_class_pct_1"),
+        "assessment_class_pct_2": row.get("assessment_class_pct_2"),
+        "assessment_class_pct_3": row.get("assessment_class_pct_3"),
+        "bedrooms": row.get("bedrooms"),
+        "bathrooms": row.get("bathrooms"),
+        "bedrooms_estimated": row.get("bedrooms_estimated"),
+        "bathrooms_estimated": row.get("bathrooms_estimated"),
+        "attribute_source_type": row.get("attribute_source_type"),
+        "attribute_source_name": row.get("attribute_source_name"),
+        "attribute_confidence": row.get("attribute_confidence"),
+        "location_confidence": row.get("location_confidence"),
+        "point_location": row.get("point_location"),
+        "source_ids_json": row.get("source_ids_json"),
+        "record_ids_json": row.get("record_ids_json"),
+        "link_method": row.get("link_method"),
+    }
+
+
 def _cluster_properties(properties: list[dict], zoom: float) -> list[dict]:
     bucket_size = (
         0.03
@@ -171,6 +209,7 @@ async def get_properties(
                 "tax_class": row.get("tax_class"),
                 "name": canonical_address,
                 "description": _format_property_description(row),
+                "details": _property_details(row),
             }
         )
 

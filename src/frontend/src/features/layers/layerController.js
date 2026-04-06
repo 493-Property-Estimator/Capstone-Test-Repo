@@ -82,7 +82,10 @@ export function createLayerController({
     }
 
     /* node:coverage ignore next */
-    if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) return propertyResponseCache.delete(viewportKey), null;
+    if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) {
+      propertyResponseCache.delete(viewportKey);
+      return null;
+    }
 
     return entry.data;
   }
@@ -252,8 +255,8 @@ export function createLayerController({
     const viewportKey = buildViewportKey(normalizedViewport);
     const nextRequestSeq = store.getState().propertyLayer.requestSeq + 1;
 
-    if (propertyResponseCache.has(viewportKey)) {
-      const cached = propertyResponseCache.get(viewportKey);
+    const cached = getCachedPropertyResponse(viewportKey);
+    if (cached) {
       store.updatePropertyLayer({
         ...cached,
         status: cached.coverage_status === "partial" ? "partial" : "ready",
@@ -303,7 +306,7 @@ export function createLayerController({
         viewportKey
       };
 
-      propertyResponseCache.set(viewportKey, patch);
+      cachePropertyResponse(viewportKey, patch);
       store.updatePropertyLayer({
         ...patch,
         status: response.coverage_status === "partial" || response.status === "partial"

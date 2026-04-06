@@ -38,7 +38,7 @@ pip install -r src/backend/requirements.txt
 pip install -r src/backend/requirements-dev.txt
 ```
 
-If you want the database-backed app running locally, initialize the SQLite database first:
+If you want the live database-backed app running locally, initialize the SQLite database first:
 
 ```bash
 ./ingest init-db
@@ -135,6 +135,8 @@ If you want to ingest recognized local files from `src/data_sourcing/data`, use:
 python3 scripts/init_and_ingest_open_data.py
 ```
 
+The root property assessment CSV is treated as an ingestion/bootstrap source when needed. The running app does not read that CSV directly. In live mode, the frontend requests property and layer data from the backend, and the backend serves those responses from the SQLite feature store.
+
 ### TestingStage Test Page
 
 This repo also includes a simple combined frontend/backend playground that serves a test page against the sample SQLite database.
@@ -156,9 +158,9 @@ http://127.0.0.1:8010
 - The frontend expects the backend API at `http://localhost:8000/api/v1`.
 - That value is configured in `src/frontend/src/config.js`.
 - The backend defaults to `src/data_sourcing/open_data.db` unless `DATA_DB_PATH` is set.
+- In live mode, assessment properties are served from the SQLite database through backend endpoints such as `/api/v1/properties`; the frontend does not read the root assessment CSV directly.
 - The browser needs internet access for:
-  - Leaflet CDN assets
-  - OpenStreetMap tile loading
+  - MapLibre/OpenStreetMap tile loading
 - Map clicks send coordinate payloads to the backend through the map-click resolution endpoint.
 - A guard is in place so hold-and-drag map movement does not send click payloads.
 

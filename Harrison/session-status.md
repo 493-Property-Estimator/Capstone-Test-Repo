@@ -21,7 +21,7 @@ Frontend implementation was treated as:
 
 ## Current Architecture
 
-- Frontend is vanilla HTML/CSS/JavaScript under [`frontend/`](/root/Speckit-Constitution-To-Tasks/frontend)
+- Frontend is vanilla HTML/CSS/JavaScript under [`src/frontend/`](/root/Speckit-Constitution-To-Tasks/src/frontend)
 - Map stack is now MapLibre with an OpenStreetMap raster basemap
 - Frontend is configured to use the live backend API, not mock mode
 - Assessment properties are loaded through a dedicated backend viewport endpoint:
@@ -31,14 +31,14 @@ Frontend implementation was treated as:
 
 ## Completed Work
 
-- Built a modular frontend scaffold under [`frontend/`](/root/Speckit-Constitution-To-Tasks/frontend)
+- Built a modular frontend scaffold under [`src/frontend/`](/root/Speckit-Constitution-To-Tasks/src/frontend)
 - Added address search UI and resolution flow
 - Added map click selection flow with click-vs-drag guard
 - Added estimate form, estimate panel, warnings, and confidence UI
 - Added a shared API contract in [`frontend_api_contract.md`](/root/Speckit-Constitution-To-Tasks/frontend_api_contract.md)
 - Added shared City of Edmonton data-fetching rules in [`specs/shared-data-fetching.md`](/root/Speckit-Constitution-To-Tasks/specs/shared-data-fetching.md)
 - Migrated the map from Leaflet to MapLibre
-- Exported the root assessment CSV into frontend property GeoJSON tiles for mock/testing
+- Used the root assessment CSV earlier as an ingestion/bootstrap source and for temporary mock/testing exports during development
 - Added a dedicated frontend property viewport path with:
   - abortable requests
   - stale-response protection
@@ -57,17 +57,17 @@ Frontend implementation was treated as:
 
 ## Important Files
 
-- [`frontend/index.html`](/root/Speckit-Constitution-To-Tasks/frontend/index.html)
-- [`frontend/styles/app.css`](/root/Speckit-Constitution-To-Tasks/frontend/styles/app.css)
-- [`frontend/src/app.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/app.js)
-- [`frontend/src/config.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/config.js)
-- [`frontend/src/map/mapAdapter.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/map/mapAdapter.js)
-- [`frontend/src/features/search/searchController.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/features/search/searchController.js)
-- [`frontend/src/features/layers/layerController.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/features/layers/layerController.js)
-- [`frontend/src/features/estimate/estimateController.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/features/estimate/estimateController.js)
-- [`frontend/src/services/api/apiClient.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/services/api/apiClient.js)
-- [`frontend/src/services/api/mockData.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/services/api/mockData.js)
-- [`frontend/src/state/store.js`](/root/Speckit-Constitution-To-Tasks/frontend/src/state/store.js)
+- [`src/frontend/index.html`](/root/Speckit-Constitution-To-Tasks/src/frontend/index.html)
+- [`src/frontend/styles/app.css`](/root/Speckit-Constitution-To-Tasks/src/frontend/styles/app.css)
+- [`src/frontend/src/app.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/app.js)
+- [`src/frontend/src/config.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/config.js)
+- [`src/frontend/src/map/mapAdapter.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/map/mapAdapter.js)
+- [`src/frontend/src/features/search/searchController.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/features/search/searchController.js)
+- [`src/frontend/src/features/layers/layerController.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/features/layers/layerController.js)
+- [`src/frontend/src/features/estimate/estimateController.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/features/estimate/estimateController.js)
+- [`src/frontend/src/services/api/apiClient.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/services/api/apiClient.js)
+- [`src/frontend/src/services/api/mockData.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/services/api/mockData.js)
+- [`src/frontend/src/state/store.js`](/root/Speckit-Constitution-To-Tasks/src/frontend/src/state/store.js)
 - [`backend/src/app.py`](/root/Speckit-Constitution-To-Tasks/backend/src/app.py)
 - [`backend/src/api/properties.py`](/root/Speckit-Constitution-To-Tasks/backend/src/api/properties.py)
 - [`backend/src/services/property_viewport.py`](/root/Speckit-Constitution-To-Tasks/backend/src/services/property_viewport.py)
@@ -90,8 +90,8 @@ cd /root/Speckit-Constitution-To-Tasks
 2. Start the frontend in another terminal:
 
 ```bash
-cd /root/Speckit-Constitution-To-Tasks/frontend
-python3 -m http.server 8080
+cd /root/Speckit-Constitution-To-Tasks
+python3 -m http.server 8080 --directory src/frontend
 ```
 
 3. Open:
@@ -103,6 +103,7 @@ http://localhost:8080
 ## Current Known Direction
 
 - Fastest panning/property loading path is now backend-owned viewport clustering plus frontend viewport caching
+- Current live app path is database-backed: the frontend calls the backend, and the backend serves assessment properties from `src/data_sourcing/open_data.db`
 - Long-term best scale path would still be backend-served vector/property tiles if the citywide dataset grows further
 
 ## Immediate Next Steps

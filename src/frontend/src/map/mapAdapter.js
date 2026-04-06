@@ -15,10 +15,13 @@ export function createMapAdapter({
   onViewportChange,
   messageElement,
   propertyCardElement,
+  propertyDetailPanelElement,
+  onPropertySelect,
   onSelectionCleared
 }) {
   let clickHandler = onMapClick;
   let viewportChangeHandler = onViewportChange;
+  let propertySelectHandler = onPropertySelect;
   let selectionClearedHandler = onSelectionCleared;
   let map = null;
   let mapCanvas = null;
@@ -26,14 +29,15 @@ export function createMapAdapter({
   let markerPopup = null;
   let layerContainer = null;
   let lastActiveLayers = null;
+  let lastPropertyLayerState = null;
   let propertyCardAnimationFrame = null;
   let pointerDownPoint = null;
   let mapWasDragged = false;
   let suppressNextMapClick = false;
-  const singleClickDelayMs = 220;
   let pendingMapClickTimeoutId = null;
   let styleLoaded = false;
 
+  const singleClickDelayMs = 220;
   const renderedLayerIds = new Map();
   const interactionRegistry = new Set();
 
@@ -52,17 +56,9 @@ export function createMapAdapter({
     const offset = 18;
     const maxLeft = Math.max(12, rootRect.width - cardRect.width - 12);
     const maxTop = Math.max(12, rootRect.height - cardRect.height - 12);
-    const nextLeft = Math.min(
-      maxLeft,
-      Math.max(12, clientX - rootRect.left + offset)
-    );
-    const nextTop = Math.min(
-      maxTop,
-      Math.max(12, clientY - rootRect.top + offset)
-    );
 
-    propertyCardElement.style.left = `${nextLeft}px`;
-    propertyCardElement.style.top = `${nextTop}px`;
+    propertyCardElement.style.left = `${Math.min(maxLeft, Math.max(12, clientX - rootRect.left + offset))}px`;
+    propertyCardElement.style.top = `${Math.min(maxTop, Math.max(12, clientY - rootRect.top + offset))}px`;
   }
 
   function updatePropertyCardPosition(event) {
@@ -70,7 +66,6 @@ export function createMapAdapter({
 
     /* node:coverage ignore next */
     if (!propertyCardElement || !originalEvent) return;
-
     /* node:coverage ignore next */
     if (propertyCardAnimationFrame) window.cancelAnimationFrame(propertyCardAnimationFrame);
 
@@ -90,31 +85,11 @@ export function createMapAdapter({
       return;
     }
 
-    const description = properties.description || "";
-    const parts = description.split(" | ");
-
     propertyCardElement.innerHTML = `
       <p class="eyebrow">Property Card</p>
       <h3>${properties.name || "Selected property"}</h3>
       <p class="property-card-copy">${properties.address || "Edmonton property"}</p>
-      <div class="property-card-metric">
-        <div class="property-card-chip">
-          <span>Assessment</span>
-          <strong>${parts[0]?.replace("Assessment: ", "") || "--"}</strong>
-        </div>
-        <div class="property-card-chip">
-          <span>Neighbourhood</span>
-          <strong>${parts[1]?.replace("Neighbourhood: ", "") || "--"}</strong>
-        </div>
-        <div class="property-card-chip">
-          <span>Ward</span>
-          <strong>${parts[2]?.replace("Ward: ", "") || "--"}</strong>
-        </div>
-        <div class="property-card-chip">
-          <span>Tax Class</span>
-          <strong>${parts[3]?.replace("Tax class: ", "") || "--"}</strong>
-        </div>
-      </div>
+      <p class="property-card-copy">${properties.assessment_text || "--"} · ${properties.neighbourhood || "--"}</p>
     `;
 
     propertyCardElement.classList.remove("is-hidden");
@@ -163,6 +138,10 @@ export function createMapAdapter({
       root.appendChild(propertyCardElement);
     }
 
+    if (propertyDetailPanelElement) {
+      root.appendChild(propertyDetailPanelElement);
+    }
+
     layerContainer = createElement("div", "map-layer-container");
     root.appendChild(layerContainer);
 
@@ -184,15 +163,20 @@ export function createMapAdapter({
       ]
     });
 
-      map.addControl(new window.maplibregl.NavigationControl(), "top-right");
+    map.addControl(new window.maplibregl.NavigationControl(), "top-right");
 
     map.on("load", () => {
       styleLoaded = true;
-
       if (lastActiveLayers) {
         renderLayers(lastActiveLayers);
       }
-
+      if (lastPropertyLayerState?.enabled) {
+        renderAssessmentLayer(
+          "assessment_properties",
+          lastPropertyLayerState,
+          LAYER_DEFINITIONS.find((layer) => layer.id === "assessment_properties")
+        );
+      }
       if (viewportChangeHandler) {
         viewportChangeHandler(getViewport());
       }
@@ -214,6 +198,15 @@ export function createMapAdapter({
     const handleMapClick = (event) => {
       if (suppressNextMapClick) {
         suppressNextMapClick = false;
+        return;
+      }
+
+      const nearbyProperty = findNearbyPropertyFeature(event.point);
+      if (nearbyProperty) {
+        suppressNextMapClick = true;
+        selectPropertyFeature(nearbyProperty);
+        pointerDownPoint = null;
+        mapWasDragged = false;
         return;
       }
 
@@ -312,6 +305,65 @@ export function createMapAdapter({
     marker.setPopup(markerPopup);
   }
 
+  function normalizePropertyFeature(featureRecord) {
+    const feature = featureRecord?.properties;
+
+    if (!feature) {
+      return null;
+    }
+
+    let details = feature.details;
+    if (typeof details === "string") {
+      try {
+        details = JSON.parse(details);
+      } catch {
+        details = {};
+      }
+    }
+
+    return {
+      ...feature,
+      details: details || {},
+      canonical_address: feature.canonical_address || feature.address || "Edmonton property",
+      coordinates: feature.coordinates || (
+        featureRecord?.geometry?.coordinates
+          ? {
+              lng: Number(featureRecord.geometry.coordinates[0]),
+              lat: Number(featureRecord.geometry.coordinates[1])
+            }
+          : null
+      )
+    };
+  }
+
+  function selectPropertyFeature(featureRecord) {
+    const normalized = normalizePropertyFeature(featureRecord);
+
+    if (!normalized || !propertySelectHandler) {
+      return false;
+    }
+
+    propertySelectHandler(normalized);
+    return true;
+  }
+
+  function findNearbyPropertyFeature(point) {
+    if (!map || !point || !map.getLayer("assessment_properties-points")) {
+      return null;
+    }
+
+    const hitRadius = 12;
+    const features = map.queryRenderedFeatures(
+      [
+        [point.x - hitRadius, point.y - hitRadius],
+        [point.x + hitRadius, point.y + hitRadius]
+      ],
+      { layers: ["assessment_properties-points"] }
+    );
+
+    return features?.[0] || null;
+  }
+
   function setView(location, options = {}) {
     /* node:coverage ignore next */
     if (!map) return;
@@ -338,10 +390,8 @@ export function createMapAdapter({
         zoom
       });
     }
-    setText(
-      messageElement,
-      `Viewing ${location.canonical_address || "selected property"}`
-    );
+
+    setText(messageElement, `Viewing ${location.canonical_address || "selected property"}`);
   }
 
   function clearSelection() {
@@ -363,6 +413,7 @@ export function createMapAdapter({
   function focusEdmonton() {
     /* node:coverage ignore next */
     if (!map) return;
+
     renderPropertyCard();
     map.fitBounds(EDMONTON_BOUNDS, {
       padding: [24, 24]
@@ -434,7 +485,6 @@ export function createMapAdapter({
     const clusterLayerId = `${layerId}-cluster-circle`;
     const clusterCountLayerId = `${layerId}-cluster-count`;
     const pointLayerId = `${layerId}-points`;
-    const sourceId = `source-${layerId}`;
 
     if (!interactionRegistry.has(clusterLayerId)) {
       interactionRegistry.add(clusterLayerId);
@@ -473,6 +523,17 @@ export function createMapAdapter({
         renderPropertyCard(event.features?.[0]?.properties || null, event);
       });
 
+      map.on("click", pointLayerId, (event) => {
+        suppressNextMapClick = true;
+        const featureRecord = event.features?.[0];
+
+        if (!featureRecord) {
+          return;
+        }
+
+        selectPropertyFeature(featureRecord);
+      });
+
       map.on("mouseleave", pointLayerId, () => {
         map.getCanvas().style.cursor = "";
         renderPropertyCard();
@@ -484,7 +545,9 @@ export function createMapAdapter({
     const sourceId = `source-${layerId}`;
     const features =
       data.renderMode === "property"
-        ? (data.properties || []).map((property) => ({
+        ? (data.properties || [])
+          .filter((property) => property?.coordinates?.lat != null && property?.coordinates?.lng != null)
+          .map((property) => ({
             type: "Feature",
             geometry: {
               type: "Point",
@@ -494,6 +557,15 @@ export function createMapAdapter({
               canonical_location_id: property.canonical_location_id,
               name: property.name || property.canonical_address,
               address: property.canonical_address,
+              coordinates: property.coordinates,
+              neighbourhood: property.neighbourhood || property.details?.neighbourhood || "--",
+              ward: property.ward || property.details?.ward || "--",
+              tax_class: property.tax_class || property.details?.tax_class || "--",
+              assessment_value: property.assessment_value ?? property.details?.assessment_value ?? null,
+              assessment_text: property.assessment_value != null
+                ? `$${Number(property.assessment_value).toLocaleString()}`
+                : "--",
+              details: property.details || {},
               description:
                 property.description ||
                 `Assessment: $${Number(property.assessment_value || 0).toLocaleString()} | Neighbourhood: ${property.neighbourhood || "--"} | Ward: ${property.ward || "--"} | Tax class: ${property.tax_class || "--"}`
@@ -632,6 +704,30 @@ export function createMapAdapter({
     const lineLayerId = `${layerId}-line`;
     const pointLayerId = `${layerId}-points`;
     const rendered = [];
+    const pointRadiusByLayer = {
+      schools: 6.5,
+      parks: 7,
+      playgrounds: 6,
+      police_stations: 7.5,
+      businesses: 5.5,
+      green_space: 6.5,
+      transit_stops: 4.5
+    };
+    const lineWidthByLayer = {
+      roads: 1.4,
+      municipal_wards: 2.2,
+      provincial_districts: 2.4,
+      federal_districts: 2.6,
+      census_subdivisions: 2,
+      census_boundaries: 2
+    };
+    const fillOpacityByLayer = {
+      municipal_wards: 0.09,
+      provincial_districts: 0.08,
+      federal_districts: 0.07,
+      census_subdivisions: 0.1,
+      census_boundaries: 0.08
+    };
 
     if (!map.getLayer(fillLayerId)) {
       map.addLayer({
@@ -645,7 +741,7 @@ export function createMapAdapter({
         ],
         paint: {
           "fill-color": definition?.color || "#666666",
-          "fill-opacity": 0.18
+          "fill-opacity": fillOpacityByLayer[layerId] || 0.16
         }
       });
     }
@@ -665,7 +761,7 @@ export function createMapAdapter({
         ],
         paint: {
           "line-color": definition?.color || "#666666",
-          "line-width": 2
+          "line-width": lineWidthByLayer[layerId] || 2
         }
       });
     }
@@ -679,9 +775,10 @@ export function createMapAdapter({
         filter: ["==", ["geometry-type"], "Point"],
         paint: {
           "circle-color": definition?.color || "#666666",
-          "circle-radius": 6,
+          "circle-radius": pointRadiusByLayer[layerId] || 6,
           "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.5
+          "circle-stroke-width": 1.6,
+          "circle-opacity": layerId === "businesses" ? 0.9 : 0.96
         }
       });
     }
@@ -758,49 +855,42 @@ export function createMapAdapter({
     setView,
     resetView,
     renderLayers,
-    renderPropertyLayer(propertyLayer) {
+    renderPropertyLayer(propertyLayerState) {
+      lastPropertyLayerState = propertyLayerState;
+
+      if (!propertyLayerState?.enabled) {
+        removeRenderedLayer("assessment_properties");
+        setText(messageElement, "Assessment properties hidden.");
+        return;
+      }
+
       if (!map || !styleLoaded) {
         return;
       }
 
-      const definition = LAYER_DEFINITIONS.find((layer) => layer.id === "assessment_properties");
+      renderAssessmentLayer("assessment_properties", propertyLayerState, LAYER_DEFINITIONS.find((layer) => layer.id === "assessment_properties"));
 
-      if (!propertyLayer?.enabled) {
-        removeRenderedLayer("assessment_properties");
-        return;
-      }
+      const itemCount = propertyLayerState.renderMode === "cluster"
+        ? propertyLayerState.clusters?.reduce((sum, cluster) => sum + Number(cluster.count || 0), 0)
+        : propertyLayerState.properties?.length;
 
-      const totalVisible =
-        propertyLayer.renderMode === "property"
-          ? (propertyLayer.properties || []).length
-          : (propertyLayer.clusters || []).reduce(
-              (sum, cluster) => sum + Number(cluster.count || 0),
-              0
-            );
-
-      if (
-        !(propertyLayer.clusters || []).length &&
-        !(propertyLayer.properties || []).length
-      ) {
-        removeRenderedLayer("assessment_properties");
-        return;
-      }
-
-      renderAssessmentLayer("assessment_properties", propertyLayer, definition);
       setText(
         messageElement,
-        `Assessment properties visible: ${totalVisible.toLocaleString()} in current view.`
+        `Assessment properties visible: ${itemCount || 0} in current view.`
       );
     },
+    getViewport,
     setClickHandler(handler) {
       clickHandler = handler;
     },
     setViewportChangeHandler(handler) {
       viewportChangeHandler = handler;
     },
+    setPropertySelectHandler(handler) {
+      propertySelectHandler = handler;
+    },
     setSelectionClearedHandler(handler) {
       selectionClearedHandler = handler;
-    },
-    getViewport
+    }
   };
 }

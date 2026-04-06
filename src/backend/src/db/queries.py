@@ -154,6 +154,89 @@ def fetch_geospatial_features(
     east: float,
     north: float,
 ) -> list[dict[str, Any]]:
+    if layer_id.lower() == "businesses":
+        sql = """
+            SELECT
+                'canonical_entities' AS dataset_type,
+                canonical_id AS entity_id,
+                'canonical_entities_prod' AS source_id,
+                name,
+                canonical_category AS raw_category,
+                'Point' AS canonical_geom_type,
+                lon,
+                lat,
+                NULL AS geometry_json
+            FROM canonical_entities_prod
+            WHERE canonical_category = 'Commerce'
+              AND lon BETWEEN ? AND ?
+              AND lat BETWEEN ? AND ?
+        """
+        params = (west, east, south, north)
+        with connect(db_path) as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
+    if layer_id.lower() == "green_space":
+        sql = """
+            SELECT
+                'canonical_entities' AS dataset_type,
+                canonical_id AS entity_id,
+                'canonical_entities_prod' AS source_id,
+                name,
+                canonical_category AS raw_category,
+                'Point' AS canonical_geom_type,
+                lon,
+                lat,
+                NULL AS geometry_json
+            FROM canonical_entities_prod
+            WHERE canonical_category = 'Green Space'
+              AND lon BETWEEN ? AND ?
+              AND lat BETWEEN ? AND ?
+        """
+        params = (west, east, south, north)
+        with connect(db_path) as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
+    if layer_id.lower() == "transit_stops":
+        sql = """
+            SELECT
+                transit_type AS dataset_type,
+                entity_id,
+                source_id,
+                COALESCE(stop_name, name, entity_id) AS name,
+                transit_type AS raw_category,
+                'Point' AS canonical_geom_type,
+                stop_lon AS lon,
+                stop_lat AS lat,
+                NULL AS geometry_json
+            FROM transit_prod
+            WHERE transit_type = 'stops'
+              AND stop_lon BETWEEN ? AND ?
+              AND stop_lat BETWEEN ? AND ?
+        """
+        params = (west, east, south, north)
+        with connect(db_path) as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
+    if layer_id.lower() == "roads":
+        sql = """
+            SELECT
+                'road_segments' AS dataset_type,
+                segment_id AS entity_id,
+                source_id,
+                COALESCE(official_road_name, segment_name, road_id) AS name,
+                COALESCE(roadway_category, segment_type, 'road') AS raw_category,
+                'LineString' AS canonical_geom_type,
+                center_lon AS lon,
+                center_lat AS lat,
+                geometry_json
+            FROM road_segments_prod
+            WHERE center_lon BETWEEN ? AND ?
+              AND center_lat BETWEEN ? AND ?
+        """
+        params = (west, east, south, north)
+        with connect(db_path) as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
     boundary_layers = {
         "municipal_wards",
         "provincial_districts",
@@ -258,21 +341,60 @@ def fetch_property_locations_bbox(
 ) -> list[dict[str, Any]]:
     sql = """
         SELECT
-            canonical_location_id,
-            house_number,
-            street_name,
-            neighbourhood,
-            ward,
-            assessment_value,
-            tax_class,
-            lat,
-            lon
-        FROM property_locations_prod
-        WHERE lat IS NOT NULL
-          AND lon IS NOT NULL
-          AND lon BETWEEN ? AND ?
-          AND lat BETWEEN ? AND ?
-        ORDER BY canonical_location_id
+            p.canonical_location_id,
+            p.assessment_year,
+            p.assessment_value,
+            p.suite,
+            p.house_number,
+            p.street_name,
+            p.legal_description,
+            p.zoning,
+            p.lot_size,
+            p.total_gross_area,
+            p.year_built,
+            p.neighbourhood_id,
+            p.neighbourhood,
+            p.ward,
+            p.tax_class,
+            p.garage,
+            p.assessment_class_1,
+            p.assessment_class_2,
+            p.assessment_class_3,
+            p.assessment_class_pct_1,
+            p.assessment_class_pct_2,
+            p.assessment_class_pct_3,
+            p.lat,
+            p.lon,
+            p.point_location,
+            p.source_ids_json,
+            p.record_ids_json,
+            p.link_method,
+            p.confidence AS location_confidence,
+            a.bedrooms,
+            a.bathrooms,
+            a.bedrooms_estimated,
+            a.bathrooms_estimated,
+            a.source_type AS attribute_source_type,
+            a.source_name AS attribute_source_name,
+            a.confidence AS attribute_confidence
+        FROM property_locations_prod p
+        LEFT JOIN (
+            SELECT pa1.*
+            FROM property_attributes_prod pa1
+            INNER JOIN (
+                SELECT canonical_location_id, MAX(confidence) AS max_confidence
+                FROM property_attributes_prod
+                GROUP BY canonical_location_id
+            ) best
+              ON best.canonical_location_id = pa1.canonical_location_id
+             AND best.max_confidence = pa1.confidence
+        ) a
+          ON a.canonical_location_id = p.canonical_location_id
+        WHERE p.lat IS NOT NULL
+          AND p.lon IS NOT NULL
+          AND p.lon BETWEEN ? AND ?
+          AND p.lat BETWEEN ? AND ?
+        ORDER BY p.canonical_location_id
         LIMIT ?
         OFFSET ?
     """
