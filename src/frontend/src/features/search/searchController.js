@@ -122,8 +122,17 @@ export function createSearchController({
         : "Outside supported coverage"));
 
       item.addEventListener("click", () => {
+        const canonicalLocationId = candidate.canonical_location_id
+          || candidate.location_id
+          || (
+            typeof candidate.candidate_id === "string" && candidate.candidate_id.startsWith("cand_")
+              ? candidate.candidate_id.slice(5)
+              : candidate.candidate_id
+          )
+          || null;
+
         onLocationResolved({
-          canonical_location_id: candidate.candidate_id || null,
+          canonical_location_id: canonicalLocationId,
           canonical_address: candidate.display_text,
           coordinates: candidate.coordinates,
           region: "Edmonton",

@@ -287,13 +287,30 @@ test("app bootstrap wires the integrated frontend flows", async () => {
           ward: "O-day'min",
           tax_class: "Residential"
         }
+      },
+      {
+        canonical_location_id: "loc_10234_98_st_nw",
+        canonical_address: "10234 98 Street NW, Edmonton, AB T5H 2P9",
+        coordinates: { lat: 53.5461, lng: -113.4938 },
+        details: {
+          neighbourhood: "Downtown",
+          assessment_value: 450000,
+          ward: "O-day'min",
+          tax_class: "Residential"
+        }
       }
     ],
     clusters: []
   });
   await wait(10);
 
+  assert.equal(
+    appModule.__app.store.getState().selectedPropertyDetails?.canonical_location_id,
+    "loc_10234_98_st_nw"
+  );
+
   const map = latestMapInstance();
+  assert.equal(map.lastFlyTo?.zoom, 17);
   map.emit(
     "click",
     {

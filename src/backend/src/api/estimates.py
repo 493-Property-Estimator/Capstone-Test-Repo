@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from fastapi.concurrency import run_in_threadpool
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -61,11 +62,12 @@ async def create_estimate(request: Request, payload: dict):
         )
 
     try:
-        estimate = estimate_property_value(
+        estimate = await run_in_threadpool(
+            estimate_property_value,
             settings.data_db_path,
-            lat=float(coords["lat"]),
-            lon=float(coords["lng"]),
-            property_attributes=property_details,
+            float(coords["lat"]),
+            float(coords["lng"]),
+            property_details,
         )
     except ValueError as exc:
         return JSONResponse(

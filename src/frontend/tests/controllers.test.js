@@ -65,7 +65,7 @@ test("search controller covers suggestions, resolved, ambiguous, unsupported, an
           status: "ambiguous",
           candidates: [
             {
-              candidate_id: "cand-1",
+              candidate_id: "cand_loc-1",
               display_text: "123 Main St NW, Edmonton, AB",
               coordinates: { lat: 53.5, lng: -113.4 },
               coverage_status: "supported"
@@ -140,7 +140,7 @@ test("search controller covers suggestions, resolved, ambiguous, unsupported, an
   assert.match(candidateResultsRoot.children[1].textContent, /Outside supported coverage/);
   candidateResultsRoot.children[0].click();
   assert.equal(resolved.length, 2);
-  assert.equal(resolved[1].canonical_location_id, "cand-1");
+  assert.equal(resolved[1].canonical_location_id, "loc-1");
 
   await controller.resolveQuery("Calgary");
   assert.equal(statusElement.textContent, "Unsupported");

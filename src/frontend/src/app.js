@@ -13,6 +13,30 @@ const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
 
+function findMatchingProperty(propertyLayer, location) {
+  if (!location) {
+    return null;
+  }
+
+  const selectedId = location.canonical_location_id;
+  const selectedCoordinates = location.coordinates;
+
+  return (propertyLayer?.properties || []).find((property) => {
+    if (selectedId && property.canonical_location_id === selectedId) {
+      return true;
+    }
+
+    if (!selectedCoordinates || !property.coordinates) {
+      return false;
+    }
+
+    return (
+      Math.abs(Number(property.coordinates.lat) - Number(selectedCoordinates.lat)) < 0.00001
+      && Math.abs(Number(property.coordinates.lng) - Number(selectedCoordinates.lng)) < 0.00001
+    );
+  }) || null;
+}
+
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
@@ -64,8 +88,13 @@ const searchController = createSearchController({
   helperText: document.getElementById("search-helper"),
   statusElement: document.getElementById("search-status"),
   onLocationResolved(location) {
-    store.setState({ selectedLocation: location });
-    mapAdapter.setView(location);
+    const matchedProperty = findMatchingProperty(store.getState().propertyLayer, location);
+    store.setState({
+      selectedLocation: location,
+      selectedPropertyDetails: matchedProperty,
+      propertyDetailsDismissed: false
+    });
+    mapAdapter.setView(location, { zoom: 17 });
   }
 });
 
@@ -118,22 +147,7 @@ store.subscribe((state) => {
     return;
   }
 
-  const selectedId = state.selectedLocation.canonical_location_id;
-  const selectedCoordinates = state.selectedLocation.coordinates;
-  const match = (state.propertyLayer.properties || []).find((property) => {
-    if (selectedId && property.canonical_location_id === selectedId) {
-      return true;
-    }
-
-    if (!selectedCoordinates || !property.coordinates) {
-      return false;
-    }
-
-    return (
-      Math.abs(Number(property.coordinates.lat) - Number(selectedCoordinates.lat)) < 0.00001
-      && Math.abs(Number(property.coordinates.lng) - Number(selectedCoordinates.lng)) < 0.00001
-    );
-  });
+  const match = findMatchingProperty(state.propertyLayer, state.selectedLocation);
 
   if (match) {
     store.setState({ selectedPropertyDetails: match });

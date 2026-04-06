@@ -38,7 +38,7 @@ Frontend implementation was treated as:
 - Added a shared API contract in [`frontend_api_contract.md`](/root/Speckit-Constitution-To-Tasks/frontend_api_contract.md)
 - Added shared City of Edmonton data-fetching rules in [`specs/shared-data-fetching.md`](/root/Speckit-Constitution-To-Tasks/specs/shared-data-fetching.md)
 - Migrated the map from Leaflet to MapLibre
-- Exported the root assessment CSV into frontend property GeoJSON tiles for mock/testing
+- Used the root assessment CSV earlier as an ingestion/bootstrap source and for temporary mock/testing exports during development
 - Added a dedicated frontend property viewport path with:
   - abortable requests
   - stale-response protection
@@ -103,6 +103,7 @@ http://localhost:8080
 ## Current Known Direction
 
 - Fastest panning/property loading path is now backend-owned viewport clustering plus frontend viewport caching
+- Current live app path is database-backed: the frontend calls the backend, and the backend serves assessment properties from `src/data_sourcing/open_data.db`
 - Long-term best scale path would still be backend-served vector/property tiles if the citywide dataset grows further
 
 ## Immediate Next Steps
