@@ -242,9 +242,9 @@ export function createLayerController({
     const normalizedViewport = normalizeViewport(viewport);
     const viewportKey = buildViewportKey(normalizedViewport);
     const nextRequestSeq = store.getState().propertyLayer.requestSeq + 1;
-    const cached = getCachedPropertyResponse(viewportKey);
 
-    if (cached) {
+    if (propertyResponseCache.has(viewportKey)) {
+      const cached = propertyResponseCache.get(viewportKey);
       store.updatePropertyLayer({
         ...cached,
         status: cached.coverage_status === "partial" ? "partial" : "ready",
@@ -274,8 +274,8 @@ export function createLayerController({
 
     try {
       const response = await apiClient.getProperties({
-        ...normalizedViewport,
-        limit: normalizedViewport.zoom >= 17 ? 4000 : 5000,
+        ...viewport,
+        limit: viewport.zoom >= 17 ? 4000 : 5000,
         signal: propertyAbortController.signal
       });
 
@@ -294,7 +294,7 @@ export function createLayerController({
         viewportKey
       };
 
-      cachePropertyResponse(viewportKey, patch);
+      propertyResponseCache.set(viewportKey, patch);
       store.updatePropertyLayer({
         ...patch,
         status: response.coverage_status === "partial" || response.status === "partial"
