@@ -283,6 +283,8 @@ def _infer_local_ingestion_technique(source_path: Path, configured_technique: st
         return "local_geojson"
     if suffix in {".zip", ".shp"}:
         return "local_shapefile"
+    if suffix in {".ivt"}:
+        return "local_ivt"
     return configured_technique
 
 
@@ -533,40 +535,49 @@ def _normalize_shapefile(path: Path, field_map: dict[str, str] | None, spec: dic
         else:
             shp_path = shp_candidates[0]
 
-    reader = shapefile.Reader(str(shp_path))
-    field_names = [field[0] for field in reader.fields[1:]]
+    reader = shapefile.Reader(str(shp_path), encoding="utf-8")
     transformer = _build_coordinate_transformer(shp_path)
 
     bbox_raw = spec.get("spatial_filter", {}).get("bbox")
     target_bbox = tuple(bbox_raw) if isinstance(bbox_raw, list) and len(bbox_raw) == 4 else None
     attr_filters = spec.get("attribute_filters")
 
-    records: list[dict[str, Any]] = []
-    dropped = 0
-    for sr in reader.iterShapeRecords():
-        attrs = dict(zip(field_names, sr.record))
-        geometry = _shape_to_geojson(sr.shape)
-        if geometry and transformer is not None:
-            geometry = _transform_geometry(geometry, transformer)
-        if geometry:
-            attrs["geometry_payload"] = geometry
-            flattened = _flatten_geometry_points(geometry)
-            if flattened:
-                attrs.setdefault("lon", flattened[0][0])
-                attrs.setdefault("lat", flattened[0][1])
-                attrs.setdefault("geometry_points", flattened)
+    def _read_records(active_reader):
+        active_field_names = [field[0] for field in active_reader.fields[1:]]
+        rows: list[dict[str, Any]] = []
+        dropped_rows = 0
+        for sr in active_reader.iterShapeRecords():
+            attrs = dict(zip(active_field_names, sr.record))
+            geometry = _shape_to_geojson(sr.shape)
+            if geometry and transformer is not None:
+                geometry = _transform_geometry(geometry, transformer)
+            if geometry:
+                attrs["geometry_payload"] = geometry
+                flattened = _flatten_geometry_points(geometry)
+                if flattened:
+                    attrs.setdefault("lon", flattened[0][0])
+                    attrs.setdefault("lat", flattened[0][1])
+                    attrs.setdefault("geometry_points", flattened)
 
-        if target_bbox and hasattr(sr.shape, "bbox") and sr.shape.bbox:
-            shp_bbox = tuple(sr.shape.bbox)  # xmin, ymin, xmax, ymax
-            if not _bbox_intersects(shp_bbox, target_bbox):
-                dropped += 1
+            if target_bbox and hasattr(sr.shape, "bbox") and sr.shape.bbox:
+                shp_bbox = tuple(sr.shape.bbox)  # xmin, ymin, xmax, ymax
+                if not _bbox_intersects(shp_bbox, target_bbox):
+                    dropped_rows += 1
+                    continue
+
+            normalized = _apply_field_map(attrs, field_map)
+            if not _passes_attribute_filters(normalized, attr_filters):
+                dropped_rows += 1
                 continue
+            rows.append(normalized)
+        return rows, dropped_rows
 
-        normalized = _apply_field_map(attrs, field_map)
-        if not _passes_attribute_filters(normalized, attr_filters):
-            dropped += 1
-            continue
-        records.append(normalized)
+    try:
+        records, dropped = _read_records(reader)
+    except UnicodeDecodeError:
+        # Some StatsCan DBF sources are published with legacy encodings.
+        reader = shapefile.Reader(str(shp_path), encoding="latin1")
+        records, dropped = _read_records(reader)
 
     raw = path.read_bytes()
     metadata = {
@@ -640,6 +651,11 @@ def load_payload_for_source(
         return _normalize_geojson(source_path, field_map, spec)
     if technique in {"local_shapefile", "remote_shapefile"}:
         return _normalize_shapefile(source_path, field_map, spec)
+    if technique == "local_ivt":
+        raise RuntimeError(
+            "StatsCan .ivt files are not directly supported. "
+            "Export/download the corresponding CSV and pass that path via --source."
+        )
     if technique == "arcgis_rest_json":
         return _normalize_arcgis(source_path, field_map, spec)
 

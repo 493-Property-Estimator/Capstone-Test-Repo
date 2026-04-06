@@ -10,8 +10,16 @@ from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-# Ensure repo root and src/ are importable
-REPO_ROOT = Path(__file__).resolve().parents[3]
+# Ensure repo root and src/ are importable regardless of which backend tree this file lives in.
+_THIS_FILE = Path(__file__).resolve()
+REPO_ROOT = next(
+    (
+        parent
+        for parent in _THIS_FILE.parents
+        if (parent / "src").exists() and (parent / "backend").exists()
+    ),
+    _THIS_FILE.parents[2],
+)
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 SRC_ROOT = REPO_ROOT / "src"
@@ -141,4 +149,6 @@ async def _refresh_scheduler_loop() -> None:
             app.state.last_refresh_run = {"status": "failed", "error": str(exc)}
         finally:
             app.state.refresh_scheduler_active = False
-        await asyncio.sleep(max(app.state.settings.refresh_schedule_seconds, 30))
+        await asyncio.sleep(
+            max(app.state.settings.refresh_schedule_seconds, app.state.settings.refresh_schedule_min_seconds)
+        )

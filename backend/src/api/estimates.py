@@ -7,7 +7,6 @@ import json
 import logging
 import time
 from typing import Any
-
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -272,9 +271,9 @@ def _adapt_estimator_response(
         "top_negative_factors": [_adapt_factor(item) for item in estimate.get("top_negative_factors", [])],
         "confidence": {
             "score": round(confidence_score, 2),
-            "percentage": int(round(confidence_score * 100)),
+            "percentage": int(round(confidence_score)),
             "label": str(estimate.get("confidence_label") or "unknown"),
-            "completeness": "complete" if completeness_score >= 0.99 else "partial",
+            "completeness": "complete" if completeness_score >= 99.0 else "partial",
         },
         "property_details_incorporation": attribute_usage,
         "warnings": warnings,

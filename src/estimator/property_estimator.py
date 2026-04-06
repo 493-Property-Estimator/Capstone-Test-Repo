@@ -418,6 +418,15 @@ class PropertyEstimator:
                     "census_prod is empty, so census-based neighbourhood indicators were omitted.",
                 )
             )
+        census_indicators = self._census_indicators_for_neighbourhood(primary_name) if census_available else None
+        if census_available and census_indicators is None:
+            warnings.append(
+                self._warning(
+                    "census_neighbourhood_unavailable",
+                    "low",
+                    f"Census indicators for neighbourhood '{primary_name}' were unavailable, so no direct census valuation adjustment was applied.",
+                )
+            )
 
         return {
             "primary_neighbourhood": primary_name,
@@ -427,6 +436,8 @@ class PropertyEstimator:
             "other_neighbourhoods": other_crime,
             "crime_available": bool(crime_available),
             "census_available": census_available,
+            "census_indicators": census_indicators,
+            "census_indicators_available": census_indicators is not None,
             "resolution_method": "matched_property_neighbourhood"
             if matched_property and matched_property.get("neighbourhood")
             else neighbourhood_context.get("resolution_method"),
@@ -636,6 +647,36 @@ class PropertyEstimator:
                     {"neighbourhood_average_assessment": self._round_money(neighbourhood_average_value)},
                 )
             )
+        census_indicators = neighbourhood_context.get("census_indicators") or {}
+        census_baselines = self._citywide_census_baselines()
+        if census_indicators and census_baselines:
+            population_density = float(census_indicators.get("population_density") or 0.0)
+            household_size = float(census_indicators.get("household_size") or 0.0)
+            avg_density = float(census_baselines.get("avg_population_density") or 0.0)
+            avg_household_size = float(census_baselines.get("avg_household_size") or 0.0)
+            if avg_density > 0 and avg_household_size > 0 and population_density > 0 and household_size > 0:
+                density_delta = max(-1.0, min(1.0, (population_density - avg_density) / avg_density))
+                household_delta = max(-1.0, min(1.0, (household_size - avg_household_size) / avg_household_size))
+                census_adjustment = baseline_value * ((0.012 * density_delta) + (0.008 * household_delta))
+                census_adjustment = max(-0.025 * baseline_value, min(0.025 * baseline_value, census_adjustment))
+                census_adjustment = max(-60_000.0, min(60_000.0, census_adjustment))
+                if census_indicators.get("limited_accuracy"):
+                    census_adjustment *= 0.5
+                adjustments.append(
+                    self._adjustment(
+                        "census_indicators",
+                        "Census neighbourhood indicators",
+                        census_adjustment,
+                        {
+                            "area_id": census_indicators.get("area_id"),
+                            "population_density": round(population_density, 2),
+                            "city_avg_population_density": round(avg_density, 2),
+                            "household_size": round(household_size, 3),
+                            "city_avg_household_size": round(avg_household_size, 3),
+                            "limited_accuracy": bool(census_indicators.get("limited_accuracy")),
+                        },
+                    )
+                )
 
         for amenity_group, baseline_distance in (
             ("parks", 1_400.0),
@@ -692,7 +733,7 @@ class PropertyEstimator:
 
         rounded_estimate = self._round_money(max(0.0, final_estimate))
         rounded_adjustments = [
-            {**item, "value": self._round_money(item["value"])}
+            {**item, "value": self._round_signed_money(item["value"])}
             for item in sorted(adjustments, key=lambda row: (abs(row["value"]), row["code"]), reverse=True)
         ]
         completeness_score = self._calculate_completeness(
@@ -769,7 +810,7 @@ class PropertyEstimator:
             (downtown.get("road_distance_m") is not None, 10.0),
             (neighbourhood_context.get("primary_average_assessment") is not None, 14.0),
             (neighbourhood_context.get("crime_available"), 8.0),
-            (neighbourhood_context.get("census_available"), 8.0),
+            (neighbourhood_context.get("census_indicators_available"), 8.0),
             (bool(comparables.get("matching")) or bool(comparables.get("non_matching")), 18.0),
         ]
         score = sum(weight for condition, weight in weighted_checks if condition)
@@ -908,6 +949,82 @@ class PropertyEstimator:
             result = connection.execute(f"SELECT COUNT(*) AS row_count FROM {table_name}").fetchone()
         return int(result["row_count"] or 0)
 
+    def _census_indicators_for_neighbourhood(self, neighbourhood: str) -> dict[str, Any] | None:
+        neighbourhood_id = self._neighbourhood_numeric_id(neighbourhood)
+        if neighbourhood_id is None:
+            return None
+        area_id = f"N{neighbourhood_id:04d}"
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT area_id, population, households, area_sq_km, population_density, limited_accuracy
+                FROM census_prod
+                WHERE area_id = ?
+                LIMIT 1
+                """,
+                (area_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        households = float(row["households"] or 0.0)
+        population = float(row["population"] or 0.0)
+        household_size = (population / households) if households > 0 else None
+        return {
+            "area_id": row["area_id"],
+            "population": int(row["population"] or 0),
+            "households": int(row["households"] or 0),
+            "area_sq_km": float(row["area_sq_km"] or 0.0),
+            "population_density": float(row["population_density"] or 0.0),
+            "household_size": household_size,
+            "limited_accuracy": bool(row["limited_accuracy"]),
+        }
+
+    def _neighbourhood_numeric_id(self, neighbourhood: str) -> int | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT neighbourhood_id, COUNT(*) AS sample_count
+                FROM property_locations_prod
+                WHERE UPPER(COALESCE(neighbourhood, '')) = UPPER(?)
+                  AND neighbourhood_id IS NOT NULL
+                GROUP BY neighbourhood_id
+                ORDER BY sample_count DESC
+                LIMIT 1
+                """,
+                (neighbourhood,),
+            ).fetchone()
+        if row is None:
+            return None
+        raw_value = row["neighbourhood_id"]
+        try:
+            return int(float(raw_value))
+        except (TypeError, ValueError):
+            return None
+
+    def _citywide_census_baselines(self) -> dict[str, float] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    AVG(population_density) AS avg_population_density,
+                    AVG(CAST(population AS REAL) / NULLIF(CAST(households AS REAL), 0)) AS avg_household_size
+                FROM census_prod
+                WHERE area_sq_km > 0
+                  AND households > 0
+                  AND population > 0
+                """
+            ).fetchone()
+        if row is None:
+            return None
+        avg_population_density = float(row["avg_population_density"] or 0.0)
+        avg_household_size = float(row["avg_household_size"] or 0.0)
+        if avg_population_density <= 0 or avg_household_size <= 0:
+            return None
+        return {
+            "avg_population_density": avg_population_density,
+            "avg_household_size": avg_household_size,
+        }
+
     def _comparable_payload(self, item: dict[str, Any]) -> dict[str, Any]:
         return {
             "canonical_location_id": item.get("canonical_location_id"),
@@ -979,6 +1096,12 @@ class PropertyEstimator:
         if value is None:
             return None
         return round(max(0.0, float(value)), 2)
+
+    @staticmethod
+    def _round_signed_money(value: Any) -> float | None:
+        if value is None:
+            return None
+        return round(float(value), 2)
 
 
 def estimate_property_value(

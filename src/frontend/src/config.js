@@ -5,6 +5,16 @@ const DEFAULT_ENV = {
   ALLOW_MOCK_FALLBACK: "1",
   SEARCH_PROVIDER: "db",
   ESTIMATE_API_TOKEN: "dev-local-token",
+  SEARCH_QUERY_MIN_CHARS: "3",
+  SEARCH_SUGGESTIONS_DEFAULT_LIMIT: "5",
+  PROPERTY_CACHE_TTL_MS: "30000",
+  PROPERTY_LIMIT_DEFAULT: "5000",
+  PROPERTY_LIMIT_HIGH_ZOOM: "4000",
+  PROPERTY_HIGH_ZOOM_THRESHOLD: "17",
+  PROPERTY_PREFETCH_VIEWPORTS: "2",
+  LAYERS_REFRESH_DEBOUNCE_MS: "300",
+  PROPERTY_REFRESH_DEBOUNCE_MS: "180",
+  SEARCH_INPUT_DEBOUNCE_MS: "300",
   ESTIMATE_REQUESTED_FACTORS: "crime_statistics,school_access,green_space,commute_access",
   ESTIMATE_INCLUDE_BREAKDOWN: "1",
   ESTIMATE_INCLUDE_TOP_FACTORS: "1",
@@ -86,7 +96,21 @@ function parseWeight(value, fallback = 50) {
   if (!Number.isFinite(parsed)) {
     return fallback;
   }
-  return Math.min(100, Math.max(0, parsed));
+  return Math.max(0, Math.min(100, parsed));
+}
+
+function parseNumber(value, fallback, { min = null, max = null } = {}) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  if (min !== null && parsed < min) {
+    return min;
+  }
+  if (max !== null && parsed > max) {
+    return max;
+  }
+  return parsed;
 }
 
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
@@ -94,6 +118,16 @@ export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
 export const ALLOW_MOCK_FALLBACK = String(RUNTIME_ENV.ALLOW_MOCK_FALLBACK) !== "0";
 export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN ?? "");
 export const SEARCH_PROVIDER = normalizeSearchProvider(RUNTIME_ENV.SEARCH_PROVIDER);
+export const SEARCH_QUERY_MIN_CHARS = parseNumber(RUNTIME_ENV.SEARCH_QUERY_MIN_CHARS, 3, { min: 1 });
+export const SEARCH_SUGGESTIONS_DEFAULT_LIMIT = parseNumber(RUNTIME_ENV.SEARCH_SUGGESTIONS_DEFAULT_LIMIT, 5, { min: 1 });
+export const PROPERTY_CACHE_TTL_MS = parseNumber(RUNTIME_ENV.PROPERTY_CACHE_TTL_MS, 30000, { min: 1 });
+export const PROPERTY_LIMIT_DEFAULT = parseNumber(RUNTIME_ENV.PROPERTY_LIMIT_DEFAULT, 5000, { min: 1 });
+export const PROPERTY_LIMIT_HIGH_ZOOM = parseNumber(RUNTIME_ENV.PROPERTY_LIMIT_HIGH_ZOOM, 4000, { min: 1 });
+export const PROPERTY_HIGH_ZOOM_THRESHOLD = parseNumber(RUNTIME_ENV.PROPERTY_HIGH_ZOOM_THRESHOLD, 17, { min: 0 });
+export const PROPERTY_PREFETCH_VIEWPORTS = parseNumber(RUNTIME_ENV.PROPERTY_PREFETCH_VIEWPORTS, 2, { min: 0 });
+export const LAYERS_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.LAYERS_REFRESH_DEBOUNCE_MS, 300, { min: 1 });
+export const PROPERTY_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.PROPERTY_REFRESH_DEBOUNCE_MS, 180, { min: 1 });
+export const SEARCH_INPUT_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.SEARCH_INPUT_DEBOUNCE_MS, 300, { min: 1 });
 export const ESTIMATE_REQUESTED_FACTORS = parseList(RUNTIME_ENV.ESTIMATE_REQUESTED_FACTORS);
 export const ESTIMATE_OPTIONS_DEFAULTS = {
   includeBreakdown: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_BREAKDOWN, true),
@@ -153,6 +187,7 @@ export const __configInternals = {
   parseList,
   normalizeSearchProvider,
   parseBooleanFlag,
+  parseNumber,
   parseWeight
 };
 /* node:coverage enable */

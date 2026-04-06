@@ -1264,19 +1264,26 @@ def run_census_ingest(conn, trigger: str = "manual", source_overrides: dict[str,
     refined: list[dict[str, Any]] = []
     missing_areas: list[str] = []
     map_table = payload.metadata.get("area_map", {})
+    normalized_records = _normalize_census_input_records(payload.records, warnings)
+    if normalized_records and normalized_records is not payload.records:
+        warnings.append(
+            f"normalized {len(payload.records)} raw census records into {len(normalized_records)} area-level rows"
+        )
+    records_for_ingest = normalized_records if normalized_records else payload.records
 
-    for record in payload.records:
+    for record in records_for_ingest:
         missing = require_fields(record, ("source_area_id", "geography_level", "population", "households", "area_sq_km"))
         if missing:
             errors.append(f"census missing fields {missing}")
             continue
 
-        area_id = map_table.get(record["source_area_id"])
+        source_area_id = str(record["source_area_id"])
+        area_id = map_table.get(source_area_id) if map_table else source_area_id
         if not area_id:
-            missing_areas.append(record["source_area_id"])
+            missing_areas.append(source_area_id)
             continue
 
-        suppressed = bool(record.get("suppressed_income", False))
+        suppressed = _coerce_bool(record.get("suppressed_income"))
         income = record.get("median_income")
         limited_accuracy = 1 if suppressed else 0
         if suppressed and income is None:
@@ -1304,7 +1311,7 @@ def run_census_ingest(conn, trigger: str = "manual", source_overrides: dict[str,
             }
         )
 
-    coverage_percent = len(refined) / max(len(payload.records), 1)
+    coverage_percent = len(refined) / max(len(records_for_ingest), 1)
     if missing_areas:
         warnings.append(f"unmapped areas: {sorted(set(missing_areas))}")
     if coverage_percent < CENSUS_COVERAGE_THRESHOLD:
@@ -1391,6 +1398,157 @@ def run_census_ingest(conn, trigger: str = "manual", source_overrides: dict[str,
         "errors": errors,
         "completed_at": completed_at,
     }
+
+
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    text = str(value or "").strip().lower()
+    return text in {"1", "true", "t", "yes", "y"}
+
+
+def _normalize_census_input_records(records: list[dict[str, Any]], warnings: list[str]) -> list[dict[str, Any]]:
+    if not records:
+        return []
+    required = {"source_area_id", "geography_level", "population", "households", "area_sq_km"}
+    if all(required.issubset(record.keys()) for record in records):
+        return records
+
+    converted = _convert_statscan_census_long_rows(records)
+    if converted:
+        warnings.append("detected StatsCan long-format census rows; converted to area-level indicators")
+        return converted
+
+    converted = _convert_edmonton_neighbourhood_rows(records)
+    if converted:
+        warnings.append("detected Edmonton neighbourhood census rows; converted to census indicator schema")
+        return converted
+    return []
+
+
+def _convert_statscan_census_long_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, dict[str, Any]] = {}
+    for record in records:
+        area_id = _normalize_text(
+            record.get("source_area_id")
+            or record.get("area_id")
+            or record.get("dguid")
+            or record.get("DGUID")
+            or record.get("geo_uid")
+            or record.get("GEOUID")
+            or record.get("csduid")
+            or record.get("CSDUID")
+            or record.get("geo_code")
+        )
+        if area_id is None:
+            continue
+
+        row = grouped.setdefault(
+            area_id,
+            {
+                "source_area_id": area_id,
+                "geography_level": "census_subdivision",
+                "population": None,
+                "households": None,
+                "area_sq_km": None,
+                "median_income": None,
+                "suppressed_income": False,
+                "_year": -1,
+                "_households_priority": 0,
+            },
+        )
+        year = (
+            _safe_int(record.get("year"))
+            or _safe_int(record.get("ref_date"))
+            or _safe_int(record.get("REF_DATE"))
+            or -1
+        )
+        if year >= row["_year"]:
+            row["_year"] = year
+
+        measure_label = _normalize_text(
+            record.get("characteristic")
+            or record.get("Characteristics")
+            or record.get("population_and_dwelling_counts")
+            or record.get("Population and dwelling counts")
+            or record.get("Population and dwelling counts (13)")
+            or record.get("indicator")
+        )
+        statistics_label = _normalize_text(record.get("statistics") or record.get("Statistics"))
+        composite_label = " ".join(part for part in (measure_label, statistics_label) if part).lower()
+        numeric_value = _safe_float(record.get("value") or record.get("VALUE"))
+        if numeric_value is None:
+            continue
+
+        if "land area" in composite_label and ("square kilomet" in composite_label or "km" in composite_label):
+            row["area_sq_km"] = numeric_value
+            continue
+        if "population" in composite_label and "density" not in composite_label:
+            row["population"] = int(round(numeric_value))
+            continue
+        if "private dwellings occupied by usual residents" in composite_label:
+            row["households"] = int(round(numeric_value))
+            row["_households_priority"] = 2
+            continue
+        if "private dwellings" in composite_label or "dwelling" in composite_label:
+            if row["_households_priority"] < 1:
+                row["households"] = int(round(numeric_value))
+                row["_households_priority"] = 1
+
+    converted: list[dict[str, Any]] = []
+    for row in grouped.values():
+        if row["population"] is None or row["households"] is None or row["area_sq_km"] is None:
+            continue
+        converted.append(
+            {
+                "source_area_id": row["source_area_id"],
+                "geography_level": row["geography_level"],
+                "population": row["population"],
+                "households": row["households"],
+                "median_income": row["median_income"],
+                "suppressed_income": row["suppressed_income"],
+                "area_sq_km": row["area_sq_km"],
+            }
+        )
+    return converted
+
+
+def _convert_edmonton_neighbourhood_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    converted: list[dict[str, Any]] = []
+    for record in records:
+        neighbourhood_number = _safe_int(
+            record.get("neighbourhood_number")
+            or record.get("neighbourhood_no")
+            or record.get("neighbourhood id")
+            or record.get("neighbourhood_id")
+        )
+        population = _safe_float(record.get("population_2021") or record.get("population"))
+        households = _safe_float(record.get("households_2021") or record.get("households"))
+        area_sq_km = _safe_float(record.get("area_sq_km") or record.get("land_area_sq_km"))
+        median_income = _safe_float(
+            record.get("median_household_income_2020_cad")
+            or record.get("median_household_income")
+            or record.get("median_income")
+        )
+        if neighbourhood_number is None or population is None or households is None or area_sq_km is None:
+            continue
+        if area_sq_km <= 0:
+            continue
+
+        converted.append(
+            {
+                "source_area_id": f"N{neighbourhood_number:03d}",
+                "geography_level": "neighbourhood",
+                "population": int(round(population)),
+                "households": int(round(households)),
+                "median_income": median_income,
+                "suppressed_income": False,
+                "area_sq_km": float(area_sq_km),
+            }
+        )
+    return converted
 
 
 def _crime_count_key(row: dict[str, Any]) -> tuple[str, str, str, int]:

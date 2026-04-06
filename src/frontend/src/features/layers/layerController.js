@@ -1,4 +1,14 @@
-import { LAYER_DEFINITIONS, PROPERTY_LAYER_ENABLED } from "../../config.js";
+import {
+  LAYER_DEFINITIONS,
+  LAYERS_REFRESH_DEBOUNCE_MS,
+  PROPERTY_CACHE_TTL_MS,
+  PROPERTY_HIGH_ZOOM_THRESHOLD,
+  PROPERTY_LAYER_ENABLED,
+  PROPERTY_LIMIT_DEFAULT,
+  PROPERTY_LIMIT_HIGH_ZOOM,
+  PROPERTY_PREFETCH_VIEWPORTS,
+  PROPERTY_REFRESH_DEBOUNCE_MS
+} from "../../config.js";
 import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
 
@@ -15,7 +25,6 @@ export function createLayerController({
   let propertyAbortController = null;
   const propertyResponseCache = new Map();
   const layerRequestSeqById = new Map();
-  const PROPERTY_CACHE_TTL_MS = 30_000;
 
   /* node:coverage disable */
   function formatStatus(status) {
@@ -277,8 +286,8 @@ export function createLayerController({
 
     try {
       const response = await apiClient.getProperties({
-        ...normalizedViewport,
-        limit: normalizedViewport.zoom >= 17 ? 4000 : 5000,
+        ...viewport,
+        limit: viewport.zoom >= PROPERTY_HIGH_ZOOM_THRESHOLD ? PROPERTY_LIMIT_HIGH_ZOOM : PROPERTY_LIMIT_DEFAULT,
         signal: propertyAbortController.signal
       });
 
@@ -310,7 +319,7 @@ export function createLayerController({
           : "Assessment Properties ready."
       );
       buildAdjacentViewports(normalizedViewport)
-        .slice(0, 2)
+        .slice(0, PROPERTY_PREFETCH_VIEWPORTS)
         .forEach((adjacentViewport) => {
           prefetchPropertyViewport(adjacentViewport);
         });
@@ -346,7 +355,10 @@ export function createLayerController({
     try {
       const response = await apiClient.getProperties({
         ...normalizedViewport,
-        limit: normalizedViewport.zoom >= 17 ? 4000 : 5000
+        limit:
+          normalizedViewport.zoom >= PROPERTY_HIGH_ZOOM_THRESHOLD
+            ? PROPERTY_LIMIT_HIGH_ZOOM
+            : PROPERTY_LIMIT_DEFAULT
       });
 
       cachePropertyResponse(viewportKey, {
@@ -397,12 +409,14 @@ export function createLayerController({
     LAYER_DEFINITIONS
       .filter((layer) => layer.id !== "assessment_properties")
       .filter((layer) => state.activeLayers[layer.id]?.enabled)
-      .forEach((layer) => loadLayer(layer.id));
-  }, 300);
+      .forEach(
+      (layer) => loadLayer(layer.id)
+    );
+  }, LAYERS_REFRESH_DEBOUNCE_MS);
 
   const refreshPropertyLayer = debounce((viewport) => {
     loadPropertyLayer(viewport);
-  }, 180);
+  }, PROPERTY_REFRESH_DEBOUNCE_MS);
 
   mapAdapter.setViewportChangeHandler(() => {
     const viewport = mapAdapter.getViewport();

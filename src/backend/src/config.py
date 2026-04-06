@@ -19,8 +19,22 @@ class Settings:
     estimate_api_token: str
     routing_provider: str
     health_rate_limit_per_minute: int
+    health_rate_limit_window_seconds: float
+    memory_high_rss_kb: int
     refresh_scheduler_enabled: bool
     refresh_schedule_seconds: int
+    refresh_schedule_min_seconds: int
+    search_query_min_chars: int
+    search_suggestions_default_limit: int
+    search_suggestions_limit_min: int
+    search_suggestions_limit_max: int
+    search_resolve_match_limit: int
+    properties_default_limit: int
+    properties_limit_min: int
+    properties_limit_max: int
+    properties_zoom_min: float
+    properties_zoom_max: float
+    properties_cluster_zoom_threshold: float
 
 
 def _parse_env_file(path: Path) -> dict[str, str]:
@@ -91,8 +105,22 @@ def load_settings() -> Settings:
         estimate_api_token=str(_get_setting(env, shared, "ESTIMATE_API_TOKEN", "dev-local-token")),
         routing_provider=str(_get_setting(env, shared, "ROUTING_PROVIDER", "mock_road")).strip().lower(),
         health_rate_limit_per_minute=int(_get_setting(env, shared, "HEALTH_RATE_LIMIT_PER_MINUTE", "120")),
+        health_rate_limit_window_seconds=float(_get_setting(env, shared, "HEALTH_RATE_LIMIT_WINDOW_SECONDS", "60.0")),
+        memory_high_rss_kb=int(_get_setting(env, shared, "MEMORY_HIGH_RSS_KB", "1200000")),
         refresh_scheduler_enabled=str(_get_setting(env, shared, "REFRESH_SCHEDULER_ENABLED", "0")) == "1",
         refresh_schedule_seconds=int(_get_setting(env, shared, "REFRESH_SCHEDULE_SECONDS", "3600")),
+        refresh_schedule_min_seconds=int(_get_setting(env, shared, "REFRESH_SCHEDULE_MIN_SECONDS", "30")),
+        search_query_min_chars=int(_get_setting(env, shared, "SEARCH_QUERY_MIN_CHARS", "3")),
+        search_suggestions_default_limit=int(_get_setting(env, shared, "SEARCH_SUGGESTIONS_DEFAULT_LIMIT", "5")),
+        search_suggestions_limit_min=int(_get_setting(env, shared, "SEARCH_SUGGESTIONS_LIMIT_MIN", "1")),
+        search_suggestions_limit_max=int(_get_setting(env, shared, "SEARCH_SUGGESTIONS_LIMIT_MAX", "10")),
+        search_resolve_match_limit=int(_get_setting(env, shared, "SEARCH_RESOLVE_MATCH_LIMIT", "5")),
+        properties_default_limit=int(_get_setting(env, shared, "PROPERTIES_DEFAULT_LIMIT", "5000")),
+        properties_limit_min=int(_get_setting(env, shared, "PROPERTIES_LIMIT_MIN", "100")),
+        properties_limit_max=int(_get_setting(env, shared, "PROPERTIES_LIMIT_MAX", "10000")),
+        properties_zoom_min=float(_get_setting(env, shared, "PROPERTIES_ZOOM_MIN", "0")),
+        properties_zoom_max=float(_get_setting(env, shared, "PROPERTIES_ZOOM_MAX", "25")),
+        properties_cluster_zoom_threshold=float(_get_setting(env, shared, "PROPERTIES_CLUSTER_ZOOM_THRESHOLD", "17")),
     )
 
 

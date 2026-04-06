@@ -41,7 +41,7 @@ async def health(request: Request):
         "pid": os.getpid(),
         "active_threads": threading.active_count(),
         "thread_pool": "ok",
-        "memory": _memory_health_status(),
+        "memory": _memory_health_status(settings),
     }
     dependencies.append({"name": "internal_service", "status": "ok", "details": internal_details})
 
@@ -99,13 +99,14 @@ async def metrics(request: Request):
     }
 
 
-def _memory_health_status() -> str:
+def _memory_health_status(settings) -> str:
     try:
         import resource
 
         rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         # Conservative threshold for a small local service process.
-        return "high" if rss_kb > 1_200_000 else "ok"
+        threshold_kb = max(1, int(settings.memory_high_rss_kb))
+        return "high" if rss_kb > threshold_kb else "ok"
     except Exception:
         return "unknown"
 
@@ -154,8 +155,9 @@ def _latest_dataset_freshness(db_path, freshness_days: int) -> dict:
 
 def _apply_health_rate_limit(request: Request) -> bool:
     now = time.time()
-    window_seconds = 60.0
-    limit = max(1, int(request.app.state.settings.health_rate_limit_per_minute))
+    settings = request.app.state.settings
+    window_seconds = max(0.1, float(settings.health_rate_limit_window_seconds))
+    limit = max(1, int(settings.health_rate_limit_per_minute))
     stamps = getattr(request.app.state, "health_request_timestamps", None)
     if stamps is None:
         stamps = []

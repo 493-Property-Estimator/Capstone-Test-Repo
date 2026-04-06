@@ -59,3 +59,116 @@ def test_uc28_strict_mode_missing_factor(client, monkeypatch):
     assert resp.status_code == 424
     data = resp.json()
     assert data["error"]["code"] == "REQUIRED_FACTOR_MISSING"
+
+
+def test_confidence_percentage_and_completeness_mapping(client, monkeypatch):
+    from backend.src.api import estimates as estimate_api
+
+    def fake_estimate_property_value(*args, **kwargs):
+        return {
+            "request_id": "est-test",
+            "query_point": {"lat": 53.5461, "lon": -113.4938},
+            "matched_property": None,
+            "baseline": {
+                "canonical_location_id": "loc_001",
+                "assessment_year": 2026,
+                "assessment_value": 410000.0,
+                "baseline_type": "nearest_neighbour_assessment",
+                "source_table": "property_locations_prod",
+                "distance_to_query_m": 5.0,
+                "address": "123 Main St, Edmonton, AB",
+                "neighbourhood": "Downtown",
+                "matched_property": False,
+            },
+            "final_estimate": 400000.0,
+            "low_estimate": 360000.0,
+            "high_estimate": 440000.0,
+            "confidence_score": 99.0,
+            "confidence_label": "high",
+            "completeness_score": 92.0,
+            "warnings": [],
+            "missing_factors": [],
+            "fallback_flags": [],
+            "feature_breakdown": {"amenities": {}, "downtown_accessibility": {}, "valuation_adjustments": []},
+            "top_positive_factors": [],
+            "top_negative_factors": [],
+            "comparables_matching": [],
+            "comparables_non_matching": [],
+            "neighbourhood_context": {},
+        }
+
+    monkeypatch.setattr(estimate_api, "estimate_property_value", fake_estimate_property_value)
+    resp = client.post(
+        "/api/v1/estimates",
+        json={"location": {"coordinates": {"lat": 53.5461, "lng": -113.4938}}},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["confidence"]["percentage"] == 99
+    assert data["confidence"]["completeness"] == "partial"
+
+
+def test_factor_breakdown_preserves_negative_values(client, monkeypatch):
+    from backend.src.api import estimates as estimate_api
+
+    def fake_estimate_property_value(*args, **kwargs):
+        return {
+            "request_id": "est-test",
+            "query_point": {"lat": 53.5461, "lon": -113.4938},
+            "matched_property": None,
+            "baseline": {
+                "canonical_location_id": "loc_001",
+                "assessment_year": 2026,
+                "assessment_value": 410000.0,
+                "baseline_type": "nearest_neighbour_assessment",
+                "source_table": "property_locations_prod",
+                "distance_to_query_m": 5.0,
+                "address": "123 Main St, Edmonton, AB",
+                "neighbourhood": "Downtown",
+                "matched_property": False,
+            },
+            "final_estimate": 390000.0,
+            "low_estimate": 340000.0,
+            "high_estimate": 430000.0,
+            "confidence_score": 85.0,
+            "confidence_label": "high",
+            "completeness_score": 99.0,
+            "warnings": [],
+            "missing_factors": [],
+            "fallback_flags": [],
+            "feature_breakdown": {
+                "amenities": {},
+                "downtown_accessibility": {},
+                "valuation_adjustments": [
+                    {
+                        "code": "nearby_comparables",
+                        "label": "Nearby assessments",
+                        "value": -47000.0,
+                        "metadata": {"median_assessment": 397000.0, "sample_size": 8},
+                    }
+                ],
+            },
+            "top_positive_factors": [],
+            "top_negative_factors": [
+                {
+                    "code": "nearby_comparables",
+                    "label": "Nearby assessments",
+                    "value": -47000.0,
+                    "metadata": {"median_assessment": 397000.0, "sample_size": 8},
+                }
+            ],
+            "comparables_matching": [],
+            "comparables_non_matching": [],
+            "neighbourhood_context": {},
+        }
+
+    monkeypatch.setattr(estimate_api, "estimate_property_value", fake_estimate_property_value)
+    resp = client.post(
+        "/api/v1/estimates",
+        json={"location": {"coordinates": {"lat": 53.5461, "lng": -113.4938}}},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    matching = [item for item in data["factor_breakdown"] if item["factor_id"] == "nearby_comparables"]
+    assert len(matching) == 1
+    assert matching[0]["value"] == -47000.0

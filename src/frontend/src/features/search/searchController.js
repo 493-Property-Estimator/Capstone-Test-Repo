@@ -1,6 +1,11 @@
 /* node:coverage disable */
 import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
+import {
+  SEARCH_INPUT_DEBOUNCE_MS,
+  SEARCH_QUERY_MIN_CHARS,
+  SEARCH_SUGGESTIONS_DEFAULT_LIMIT
+} from "../../config.js";
 
 export function createSearchController({
   apiClient,
@@ -13,7 +18,7 @@ export function createSearchController({
   onLocationResolved
 }) {
   async function resolveQuery(query) {
-    if (!query || query.trim().length < 3) {
+    if (!query || query.trim().length < SEARCH_QUERY_MIN_CHARS) {
       setText(helperText, "Enter more details.");
       setText(statusElement, "Waiting");
       clearElement(suggestionsRoot);
@@ -67,14 +72,14 @@ export function createSearchController({
   }
 
   async function loadSuggestions(query) {
-    if (!query || query.trim().length < 3) {
+    if (!query || query.trim().length < SEARCH_QUERY_MIN_CHARS) {
       clearElement(suggestionsRoot);
       clearElement(candidateResultsRoot);
       return;
     }
 
     try {
-      const response = await apiClient.getAddressSuggestions(query.trim(), 5);
+      const response = await apiClient.getAddressSuggestions(query.trim(), SEARCH_SUGGESTIONS_DEFAULT_LIMIT);
       renderSuggestions(response.suggestions || []);
       setText(helperText, response.suggestions?.length ? "Suggestions" : "No suggestions found.");
     } catch (error) {
@@ -146,7 +151,7 @@ export function createSearchController({
   }
   /* node:coverage enable */
 
-  const debouncedSuggestionLoader = debounce(loadSuggestions, 300);
+  const debouncedSuggestionLoader = debounce(loadSuggestions, SEARCH_INPUT_DEBOUNCE_MS);
 
   input.addEventListener("input", (event) => {
     debouncedSuggestionLoader(event.target.value);
@@ -170,7 +175,7 @@ export function createSearchController({
       input.value = "";
       clearElement(suggestionsRoot);
       clearElement(candidateResultsRoot);
-      setText(helperText, "Enter at least 3 characters to load suggestions.");
+      setText(helperText, `Enter at least ${SEARCH_QUERY_MIN_CHARS} characters to load suggestions.`);
       setText(statusElement, "Idle");
     }
   };
