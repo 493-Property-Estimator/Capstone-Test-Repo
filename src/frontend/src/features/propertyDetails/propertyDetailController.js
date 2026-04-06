@@ -56,6 +56,17 @@ function formatArea(value) {
   return `${formatNumber(value)} sq ft`;
 }
 
+function formatYear(value, fallback = "--") {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return String(value);
+  }
+  return String(Math.trunc(numeric));
+}
+
 function formatPercent(value) {
   if (value === null || value === undefined || value === "") {
     return "--";
@@ -127,7 +138,7 @@ export function createPropertyDetailController({
         metric("Bedrooms", formatCount(details.bedrooms ?? details.bedrooms_estimated, "bedrooms")),
         metric("Bathrooms", formatCount(details.bathrooms ?? details.bathrooms_estimated, "bathrooms")),
         metric("Area", formatArea(details.total_gross_area)),
-        metric("Year Built", formatNumber(details.year_built)),
+        metric("Year Built", formatYear(details.year_built)),
         metric("Lot Size", formatNumber(details.lot_size)),
         metric("Zoning", formatValue(details.zoning)),
         metric("Suite", formatValue(details.suite)),

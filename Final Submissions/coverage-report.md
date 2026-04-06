@@ -44,13 +44,13 @@ The latest verified frontend coverage run passes and meets the `100%` line-cover
 ```text
 file                             | line % | branch % | funcs %
 --------------------------------------------------------------
-app.js                           | 100.00 |    87.50 |   87.50
+app.js                           | 100.00 |   100.00 |   87.50
 config.js                        | 100.00 |   100.00 |  100.00
 estimateController.js            | 100.00 |   100.00 |  100.00
 layerController.js               | 100.00 |   100.00 |  100.00
 mapSelectionController.js        | 100.00 |   100.00 |  100.00
 propertyDetailController.js      | 100.00 |   100.00 |  100.00
-searchController.js              |  99.40 |   100.00 |   92.86
+searchController.js              | 100.00 |   100.00 |  100.00
 warningController.js             | 100.00 |   100.00 |  100.00
 mapAdapter.js                    | 100.00 |   100.00 |  100.00
 apiClient.js                     | 100.00 |   100.00 |   88.89
