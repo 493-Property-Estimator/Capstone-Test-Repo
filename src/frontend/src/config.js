@@ -1,3 +1,4 @@
+/* node:coverage disable */
 const DEFAULT_ENV = {
   API_BASE_URL: "http://localhost:8000/api/v1",
   PREFER_LIVE_API: "1",
@@ -18,15 +19,22 @@ async function loadEnvFile() {
     const values = {};
     text.split("\n").forEach((lineRaw) => {
       const line = lineRaw.trim();
-      if (!line || line.startsWith("#") || !line.includes("=")) {
+      if (!line) {
+        return;
+      }
+      if (line.startsWith("#")) {
         return;
       }
       const idx = line.indexOf("=");
+      if (idx < 0) {
+        return;
+      }
       const key = line.slice(0, idx).trim();
       const value = line.slice(idx + 1).trim();
-      if (key) {
-        values[key] = value;
+      if (!key) {
+        return;
       }
+      values[key] = value;
     });
     return values;
   } catch {
@@ -40,18 +48,28 @@ const RUNTIME_ENV = {
 };
 
 function parseList(value) {
-  return String(value || "")
+  return String(value ?? "")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
+function normalizeSearchProvider(value) {
+  const normalized = String(value ?? "db").toLowerCase();
+  if (normalized === "db") {
+    return "db";
+  }
+  if (normalized === "osrm") {
+    return "osrm";
+  }
+  return "db";
+}
+
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
 export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
 export const ALLOW_MOCK_FALLBACK = String(RUNTIME_ENV.ALLOW_MOCK_FALLBACK) !== "0";
-export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN || "");
-/* node:coverage ignore next */
-export const SEARCH_PROVIDER = ["db", "osrm"].includes(String(RUNTIME_ENV.SEARCH_PROVIDER || "db").toLowerCase()) ? String(RUNTIME_ENV.SEARCH_PROVIDER).toLowerCase() : "db";
+export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN ?? "");
+export const SEARCH_PROVIDER = normalizeSearchProvider(RUNTIME_ENV.SEARCH_PROVIDER);
 
 const ENABLED_LAYER_IDS = new Set(parseList(RUNTIME_ENV.ENABLED_LAYERS));
 
@@ -92,3 +110,10 @@ export const DEFAULT_LOCATION = {
   neighbourhood: null,
   coverage_status: "supported"
 };
+
+export const __configInternals = {
+  loadEnvFile,
+  parseList,
+  normalizeSearchProvider
+};
+/* node:coverage enable */

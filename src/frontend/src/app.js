@@ -173,5 +173,6 @@ document.getElementById("reset-selection").addEventListener("click", () => {
 export const __app = {
   store,
   mapAdapter,
-  searchController
+  searchController,
+  findMatchingProperty
 };

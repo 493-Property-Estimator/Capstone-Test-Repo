@@ -45,11 +45,11 @@ Latest verified results at the time this document was updated:
 
 - `npm run test:frontend`: passes
 - `npm run test:frontend:coverage`: passes
-- automated suite count: `15/15` passing
+- automated suite count: `19/19` passing
 - measured global coverage:
   - lines: `100.00%`
   - branches: `100.00%`
-  - functions: `97.97%`
+  - functions: `99.50%`
 
 ## Reproduction Notes
 

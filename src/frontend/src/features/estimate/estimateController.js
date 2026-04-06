@@ -44,6 +44,33 @@ export function createEstimateController({
     return Number.isFinite(parsed) ? parsed : undefined;
   }
 
+  function normalizeCoordinates(value) {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value === "string") {
+      try {
+        return normalizeCoordinates(JSON.parse(value));
+      } catch {
+        return null;
+      }
+    }
+
+    if (typeof value !== "object") {
+      return null;
+    }
+
+    const lat = normalizeNumber(value.lat);
+    const lng = normalizeNumber(value.lng);
+
+    if (lat === undefined || lng === undefined) {
+      return null;
+    }
+
+    return { lat, lng };
+  }
+
   function buildPayload() {
     const state = store.getState();
     const latitude = normalizeNumber(formElements.latitudeInput.value);
@@ -55,7 +82,7 @@ export function createEstimateController({
     const coordinates =
       latitude !== undefined && longitude !== undefined
         ? { lat: latitude, lng: longitude }
-        : state.selectedLocation?.coordinates;
+        : normalizeCoordinates(state.selectedLocation?.coordinates);
 
     if (!coordinates) {
       throw new Error(
@@ -203,8 +230,9 @@ export function createEstimateController({
 
   store.subscribe((state) => {
     const location = state.selectedLocation;
-    const lat = Number(location?.coordinates?.lat);
-    const lng = Number(location?.coordinates?.lng);
+    const coordinates = normalizeCoordinates(location?.coordinates);
+    const lat = Number(coordinates?.lat);
+    const lng = Number(coordinates?.lng);
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
       formElements.latitudeInput.value = String(lat);
       formElements.longitudeInput.value = String(lng);

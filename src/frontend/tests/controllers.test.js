@@ -412,6 +412,22 @@ test("estimate controller validates inputs, renders estimates, and resets state"
   assert.equal(statusElement.textContent, "Ready");
   assert.match(estimatePanel.textContent, /No factor breakdown returned/);
 
+  store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-string-coords",
+      canonical_address: "String Coordinates Property",
+      coordinates: "{\"lat\":53.45193997726757,\"lng\":-113.59785527397807}",
+      neighbourhood: "Haddow"
+    }
+  });
+  assert.equal(formElements.latitudeInput.value, "53.45193997726757");
+  assert.equal(formElements.longitudeInput.value, "-113.59785527397807");
+
+  submitButton.click();
+  await wait(0);
+  assert.equal(apiPayloads.at(-1).location.coordinates.lat, 53.45193997726757);
+  assert.equal(apiPayloads.at(-1).location.coordinates.lng, -113.59785527397807);
+
   resetButton.click();
   assert.equal(formElements.latitudeInput.value, "");
   assert.equal(store.getState().estimate, null);

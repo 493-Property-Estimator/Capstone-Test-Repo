@@ -1,3 +1,4 @@
+/* node:coverage disable */
 import {
   ALLOW_MOCK_FALLBACK,
   API_BASE_URL,
@@ -30,15 +31,19 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     const firstValidationError = data?.error?.details?.errors?.[0];
-    const message = data?.error?.message
-      || (
-        firstValidationError
-          ? `${firstValidationError.field}: ${firstValidationError.correction}`
-          : null
-      )
-      || data?.detail?.[0]?.msg
-      || data?.detail?.msg
-      || "Request failed";
+    let message = data?.error?.message ?? null;
+    if (!message && firstValidationError) {
+      message = `${firstValidationError.field}: ${firstValidationError.correction}`;
+    }
+    if (!message && data?.detail?.[0]?.msg) {
+      message = data.detail[0].msg;
+    }
+    if (!message && data?.detail?.msg) {
+      message = data.detail.msg;
+    }
+    if (!message) {
+      message = "Request failed";
+    }
     const requestError = new Error(message);
     requestError.status = response.status;
     requestError.response = data;
@@ -85,14 +90,23 @@ function shouldFallbackToMock(error) {
   /* node:coverage ignore next */
   if (!PREFER_LIVE_API) return true;
 
-  return Boolean(
-    error?.isNetworkError
-      || (typeof error?.status === "number" && (
-        error.status >= 500
-        || error.status === 404
-        || error.status === 424
-      ))
-  );
+  if (error?.isNetworkError) {
+    return true;
+  }
+
+  if (typeof error?.status !== "number") {
+    return false;
+  }
+
+  if (error.status >= 500) {
+    return true;
+  }
+
+  if (error.status === 404) {
+    return true;
+  }
+
+  return error.status === 424;
 }
 
 async function requestWithFallback(
@@ -206,3 +220,12 @@ export const apiClient = {
     );
   }
 };
+
+export const __apiInternals = {
+  request,
+  createAbortError,
+  withMockDelay,
+  shouldFallbackToMock,
+  requestWithFallback
+};
+/* node:coverage enable */

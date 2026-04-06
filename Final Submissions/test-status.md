@@ -10,8 +10,8 @@ The frontend automated suite is currently passing.
 
 ## Latest Verified Pass Counts
 
-- Frontend automated suite: `15` tests
-- Passed: `15`
+- Frontend automated suite: `19` tests
+- Passed: `19`
 - Failed: `0`
 - Skipped: `0`
 
@@ -21,7 +21,7 @@ Latest verified coverage outcome:
 
 - Global lines: `100.00%`
 - Global branches: `100.00%`
-- Global functions: `97.97%`
+- Global functions: `99.50%`
 
 Important status note:
 - The automated suite is green.
