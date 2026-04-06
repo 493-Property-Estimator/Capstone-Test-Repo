@@ -309,7 +309,6 @@ export function createLayerController({
           ? "Assessment Properties partial."
           : "Assessment Properties ready."
       );
-
       buildAdjacentViewports(normalizedViewport)
         .slice(0, 2)
         .forEach((adjacentViewport) => {

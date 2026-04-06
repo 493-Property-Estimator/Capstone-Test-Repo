@@ -6,6 +6,7 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+import csv
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -70,6 +71,71 @@ class IngestCliTests(unittest.TestCase):
         self.assertIn("    - id INTEGER PK", output)
         self.assertIn("    - run_id", output)
         self.assertIn("    - created_at TEXT NOT NULL", output)
+
+    def test_ingest_bedbath_backfills_property_location_fields_from_listings_csv(self) -> None:
+        service = IngestionService(db_path=self.db_path)
+        service.init_database()
+
+        conn = sqlite3.connect(self.db_path)
+        self.addCleanup(conn.close)
+        conn.execute(
+            """
+            INSERT INTO property_locations_prod (
+                canonical_location_id, house_number, street_name, lat, lon,
+                source_ids_json, record_ids_json, link_method, confidence
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("loc-1", "6079", "MAYNARD WY NW", None, None, "[]", "[]", "seed", 0.99),
+        )
+        conn.commit()
+
+        listings_csv = Path(self.temp_dir.name) / "cleaned_edmonton_realtor_cards.csv"
+        with listings_csv.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=["address", "beds", "baths", "square_footage", "price", "link", "neighborhood", "lat", "long"],
+            )
+            writer.writeheader()
+            writer.writerow(
+                {
+                    "address": "#251 6079 MAYNARD WY NW",
+                    "beds": "2",
+                    "baths": "2",
+                    "square_footage": "1136",
+                    "price": "$349,900",
+                    "link": "https://www.realtor.ca/real-estate/29552551/251-6079-maynard-wy-nw-edmonton-mactaggart",
+                    "neighborhood": "Mactaggart",
+                    "lat": "53.4417395",
+                    "long": "-113.5610437",
+                }
+            )
+
+        payload = self._run_cli(
+            "ingest-bedbath",
+            "--db",
+            str(self.db_path),
+            "--listings-csv",
+            str(listings_csv),
+            "--backfill-location-fields",
+            "--min-training-rows",
+            "999999",
+        )
+
+        self.assertEqual(payload["status"], "succeeded")
+        self.assertEqual(payload["location_backfill"]["rows_updated"], 1)
+        self.assertEqual(payload["location_backfill"]["field_updates"]["lat"], 1)
+        self.assertEqual(payload["location_backfill"]["field_updates"]["lon"], 1)
+
+        row = conn.execute(
+            "SELECT suite, house_number, street_name, lat, lon FROM property_locations_prod WHERE canonical_location_id = ?",
+            ("loc-1",),
+        ).fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row[0], "251")
+        self.assertEqual(row[1], "6079")
+        self.assertEqual(row[2], "MAYNARD WY NW")
+        self.assertAlmostEqual(row[3], 53.4417395, places=6)
+        self.assertAlmostEqual(row[4], -113.5610437, places=6)
 
 
 if __name__ == "__main__":

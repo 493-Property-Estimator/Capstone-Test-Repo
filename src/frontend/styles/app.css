@@ -275,6 +275,29 @@ p {
   margin-top: 12px;
 }
 
+.collapsible-section {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.collapsible-summary {
+  cursor: pointer;
+  padding: 12px;
+}
+
+.collapsible-summary h3 {
+  margin: 0;
+  display: inline;
+}
+
+.collapsible-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
 .warning-item.info {
   border-color: #c8d8ef;
   background: #f4f8ff;

@@ -33,7 +33,7 @@ export function createStore() {
     selectedPropertyDetails: null,
     propertyDetailsDismissed: false,
     estimate: null,
-    warningsCollapsed: false
+    warningsCollapsed: true
   };
 
   const listeners = new Set();

@@ -8,3 +8,5 @@ __pycache__/
 linuxenv/
 TestingStage/env/
 .venv/
+.playwright_profile/
+reports/

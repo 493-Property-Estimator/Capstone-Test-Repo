@@ -52,6 +52,27 @@ class PropertyEstimatorTests(unittest.TestCase):
                 (row[0], row[1], row[2], f"rec-{row[0]}"),
             )
 
+        property_attributes = [
+            ("loc-1", 2, 2.0),
+            ("loc-2", 2, 2.5),
+            ("loc-3", 3, 1.0),
+            ("loc-4", 4, 3.0),
+            ("loc-5", 1, 1.0),
+            ("loc-6", 5, 4.0),
+            ("loc-7", None, None),
+        ]
+        for canonical_location_id, bedrooms, bathrooms in property_attributes:
+            connection.execute(
+                """
+                INSERT INTO property_attributes_prod (
+                    canonical_location_id, bedrooms, bathrooms, bedrooms_estimated, bathrooms_estimated,
+                    source_type, source_name, source_record_id, observed_at, confidence, match_method,
+                    ambiguous, quarantined, reason_code, feature_snapshot_json, raw_payload_json, updated_at
+                ) VALUES (?, ?, ?, NULL, NULL, 'observed', 'test_seed', NULL, NULL, 1.0, 'seed', 0, 0, NULL, '{}', '{}', '2026-04-01T00:00:00+00:00')
+                """,
+                (canonical_location_id, bedrooms, bathrooms),
+            )
+
         if include_roads:
             segments = [
                 ("seg-1", "road-1", 53.5460, -113.4950, 53.5460, -113.4940),
@@ -208,6 +229,21 @@ class PropertyEstimatorTests(unittest.TestCase):
         second = service.get_property_estimate(53.5460, -113.4930)
 
         self.assertEqual(first, second)
+
+    def test_bedbath_attributes_filter_matching_comparables(self) -> None:
+        service = self.build_service()
+        payload = service.get_property_estimate(
+            53.5460,
+            -113.4930,
+            property_attributes={"bedrooms": 2, "bathrooms": 2},
+        )
+
+        matching_ids = {row["canonical_location_id"] for row in payload["comparables_matching"]}
+        non_matching_ids = {row["canonical_location_id"] for row in payload["comparables_non_matching"]}
+        self.assertIn("loc-1", matching_ids)
+        self.assertIn("loc-2", matching_ids)
+        self.assertNotIn("loc-3", matching_ids)
+        self.assertIn("loc-3", non_matching_ids)
 
 
 if __name__ == "__main__":

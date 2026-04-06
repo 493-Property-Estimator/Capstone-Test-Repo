@@ -1,2 +1,0 @@
-canonical_location_id,source_record_id,source_type,source_name,match_method,reason_code,confidence,normalized_address,raw_source_address,suite,house_number,street_name,legal_description,lat,lon
-loc-4,,imputed,bedbath-grouped-v1,model_imputation,,0.78,,,,104,MAPLE ST NW,PLAN 1 BLK 1 LOT 4,53.5515,-113.5015

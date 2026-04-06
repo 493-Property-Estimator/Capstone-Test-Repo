@@ -305,26 +305,30 @@ def _fetch_properties(
     _require_table(db_path, "property_locations_prod")
     sql = """
         SELECT
-            canonical_location_id,
-            suite,
-            house_number,
-            street_name,
-            neighbourhood,
-            ward,
-            assessment_value,
-            lat,
-            lon,
-            point_location,
-            zoning,
-            lot_size,
-            total_gross_area,
-            year_built,
-            garage,
-            tax_class,
-            assessment_class_1,
-            assessment_class_2,
-            assessment_class_3
-        FROM property_locations_prod
+            pl.canonical_location_id,
+            pl.suite,
+            pl.house_number,
+            pl.street_name,
+            pl.neighbourhood,
+            pl.ward,
+            pl.assessment_value,
+            pl.lat,
+            pl.lon,
+            pl.point_location,
+            pl.zoning,
+            pl.lot_size,
+            pl.total_gross_area,
+            pl.year_built,
+            pl.garage,
+            pl.tax_class,
+            pl.assessment_class_1,
+            pl.assessment_class_2,
+            pl.assessment_class_3,
+            COALESCE(pa.bedrooms, pa.bedrooms_estimated) AS bedrooms,
+            COALESCE(pa.bathrooms, pa.bathrooms_estimated) AS bathrooms
+        FROM property_locations_prod pl
+        LEFT JOIN property_attributes_prod pa
+          ON pa.canonical_location_id = pl.canonical_location_id
         WHERE lon IS NOT NULL
           AND lat IS NOT NULL
     """
@@ -339,26 +343,30 @@ def _fetch_properties_by_street(db_path: Path | str, street_name: str) -> list[d
     _require_table(db_path, "property_locations_prod")
     sql = """
         SELECT
-            canonical_location_id,
-            suite,
-            house_number,
-            street_name,
-            neighbourhood,
-            ward,
-            assessment_value,
-            lat,
-            lon,
-            point_location,
-            zoning,
-            lot_size,
-            total_gross_area,
-            year_built,
-            garage,
-            tax_class,
-            assessment_class_1,
-            assessment_class_2,
-            assessment_class_3
-        FROM property_locations_prod
+            pl.canonical_location_id,
+            pl.suite,
+            pl.house_number,
+            pl.street_name,
+            pl.neighbourhood,
+            pl.ward,
+            pl.assessment_value,
+            pl.lat,
+            pl.lon,
+            pl.point_location,
+            pl.zoning,
+            pl.lot_size,
+            pl.total_gross_area,
+            pl.year_built,
+            pl.garage,
+            pl.tax_class,
+            pl.assessment_class_1,
+            pl.assessment_class_2,
+            pl.assessment_class_3,
+            COALESCE(pa.bedrooms, pa.bedrooms_estimated) AS bedrooms,
+            COALESCE(pa.bathrooms, pa.bathrooms_estimated) AS bathrooms
+        FROM property_locations_prod pl
+        LEFT JOIN property_attributes_prod pa
+          ON pa.canonical_location_id = pl.canonical_location_id
         WHERE lon IS NOT NULL
           AND lat IS NOT NULL
           AND TRIM(COALESCE(street_name, '')) = TRIM(?)
@@ -559,6 +567,8 @@ def _normalize_comparable_attributes(attributes: dict[str, Any]) -> dict[str, An
         "year_built",
         "lot_size",
         "total_gross_area",
+        "bedrooms",
+        "bathrooms",
         "garage",
         "tax_class",
         "assessment_class_1",
@@ -569,7 +579,7 @@ def _normalize_comparable_attributes(attributes: dict[str, Any]) -> dict[str, An
         if key not in attributes:
             continue
         value = attributes[key]
-        if key in {"year_built", "lot_size", "total_gross_area"}:
+        if key in {"year_built", "lot_size", "total_gross_area", "bedrooms", "bathrooms"}:
             if value in (None, ""):
                 continue
             normalized[key] = float(value)
@@ -593,6 +603,16 @@ def _matches_comparable_attributes(
             if actual is None:
                 return False
             if abs(float(actual) - float(expected)) > 5:
+                return False
+        elif key == "bedrooms":
+            if actual in (None, ""):
+                return False
+            if abs(float(actual) - float(expected)) > 1.0:
+                return False
+        elif key == "bathrooms":
+            if actual in (None, ""):
+                return False
+            if abs(float(actual) - float(expected)) > 0.5:
                 return False
         elif key in {"lot_size", "total_gross_area"}:
             if actual in (None, ""):

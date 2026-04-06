@@ -72,6 +72,7 @@ test("search controller covers suggestions, resolved, ambiguous, unsupported, an
             },
             {
               candidate_id: "cand-2",
+              canonical_location_id: "loc-2",
               display_text: "123 Main St SW, Calgary, AB",
               coordinates: { lat: 51.0, lng: -114.0 },
               coverage_status: "unsupported"
@@ -256,13 +257,20 @@ test("warning controller renders confidence, warnings, dismiss, and restore flow
     }
   });
 
-  assert.equal(warningPanel.children.length, 2);
+  assert.equal(warningPanel.children.length, 1);
   assert.equal(warningIndicator.classList.contains("is-hidden"), true);
+  const warningDetails = warningPanel.children[0];
+  assert.equal(warningDetails.tagName, "DETAILS");
+  assert.equal(warningDetails.open, false);
 
-  const dismissButton = warningPanel.children[1].children[3].children[0];
+  warningDetails.open = true;
+  warningDetails.dispatchEvent({ type: "toggle" });
+  assert.equal(store.getState().warningsCollapsed, false);
+
+  const dismissButton = warningDetails.children[1].children[1].children[3].children[0];
   dismissButton.click();
   assert.equal(store.getState().warningsCollapsed, true);
-  assert.equal(warningIndicator.classList.contains("is-hidden"), false);
+  assert.equal(warningIndicator.classList.contains("is-hidden"), true);
 
   warningIndicator.click();
   assert.equal(store.getState().warningsCollapsed, false);
@@ -282,8 +290,8 @@ test("warning controller renders confidence, warnings, dismiss, and restore flow
     }
   });
 
-  assert.equal(warningPanel.children.length, 2);
-  assert.equal(warningPanel.children[1].children.length, 2);
+  assert.equal(warningPanel.children.length, 1);
+  assert.equal(warningPanel.children[0].children[1].children.length, 2);
 });
 
 test("estimate controller validates inputs, renders estimates, and resets state", async () => {
@@ -362,6 +370,8 @@ test("estimate controller validates inputs, renders estimates, and resets state"
   assert.equal(apiPayloads.length, 1);
   assert.equal(apiPayloads[0].property_details.floor_area_sqft, 1500);
   assert.match(estimatePanel.textContent, /Top Factors/);
+  assert.equal(estimatePanel.children[1].tagName, "DETAILS");
+  assert.equal(estimatePanel.children[1].open, false);
 
   formElements.latitudeInput.value = "0";
   formElements.longitudeInput.value = "0";
