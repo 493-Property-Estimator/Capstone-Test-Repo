@@ -160,6 +160,9 @@ test("search controller covers suggestions, resolved, ambiguous, unsupported, an
   await wait(0);
   assert.equal(resolved.length, 3);
 
+  controller.setQuery("870 ABBOTTSFIELD ROAD NW");
+  assert.equal(input.value, "870 ABBOTTSFIELD ROAD NW");
+
   controller.clear();
   assert.equal(input.value, "");
   assert.equal(statusElement.textContent, "Idle");

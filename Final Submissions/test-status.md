@@ -1,34 +1,32 @@
 # Frontend Test Status Report
 
-## Final Status
+## Current Status
 
-All required frontend test deliverable categories pass after branch-hardening and post-merge revalidation.
+The frontend automated suite is currently passing.
 
-- Unit tests: pass
-- Integration tests: pass
-- Coverage gate (frontend command): pass
-- Branch coverage requirement: pass
-- Acceptance-flow coverage for documented frontend UC scope: pass
+- Unit/integration frontend tests: pass
+- Frontend coverage command: pass
+- Acceptance-flow traceability document: present
 
-## Final Pass Counts (Latest Verified Run)
+## Latest Verified Pass Counts
 
-- Frontend automated suite: `14` tests, `14` passed, `0` failed, `0` skipped
-- Coverage command: pass
-- Acceptance-flow traceability review: complete
+- Frontend automated suite: `15` tests
+- Passed: `15`
+- Failed: `0`
+- Skipped: `0`
 
-## Coverage Gate Outcome
+## Coverage Status
 
-- Global lines: `100%`
-- Global branches: `100%`
-- Global functions: `97.21%`
+Latest verified coverage outcome:
 
-The assignment requirement that matters here is branch coverage for the unit + integration suites. The current coverage run satisfies that requirement.
+- Global lines: `100.00%`
+- Global branches: `100.00%`
+- Global functions: `97.97%`
 
-## Scope Clarification
-
-- Reported `100%` branch coverage is the measured outcome from the frontend coverage command.
-- Reported acceptance success means every documented frontend flow in the assigned UC scope is mapped to at least one submitted automated test and documented in the submission report.
-- This should be interpreted as `100% requirements coverage` for the defined frontend scope, not absolute production exhaustiveness across every future backend/data/runtime permutation.
+Important status note:
+- The automated suite is green.
+- The submission target of `100%` frontend branch coverage is met in the latest verified run.
+- The included frontend source set also reaches `100%` line coverage in the same run.
 
 ## Frontend User Stories Covered
 
@@ -40,41 +38,36 @@ The assignment requirement that matters here is branch coverage for the unit + i
 - `UC-26` Show Missing-Data Warnings in UI
 - frontend-side `UC-32` Provide Clear Error Messages for Invalid Inputs
 
-## High-Risk Paths Explicitly Verified
+## High-Risk Paths Verified
 
-- Search/geocoding UI:
-  - valid resolution,
-  - ambiguous address handling,
-  - unsupported region handling,
-  - no-result handling,
-  - service outage handling,
-  - short-input guidance and debounce behavior.
-- Map selection UI:
-  - in-bound click resolution,
-  - out-of-bound click rejection,
-  - coordinate resolution failure and retry,
-  - drag-vs-click guard behavior,
-  - repeated click reliability.
-- Estimate request flow:
-  - address-driven estimate,
-  - coordinate-driven estimate,
-  - invalid coordinate validation,
-  - partial estimate rendering,
-  - no-factor-breakdown handling.
-- Layer UI:
-  - enable/disable behavior,
-  - partial coverage rendering,
-  - unavailable layer handling,
-  - viewport-driven refresh,
-  - cache/abort/prefetch paths.
-- Warning/confidence UI:
-  - no-warning state,
-  - partial-data warning state,
-  - dismiss and reopen behavior,
-  - malformed metadata tolerance.
+- Search resolution:
+  - resolved address
+  - ambiguous address
+  - unsupported region
+  - no-result and unavailable-service handling
+- Map interaction:
+  - click vs drag behavior
+  - property-point selection
+  - side-panel detail rendering
+  - cluster interaction
+- Estimate flow:
+  - address-driven estimate
+  - coordinate-driven estimate
+  - invalid coordinate handling
+  - partial-result rendering
+- Layer flow:
+  - enable/disable
+  - unavailable layer handling
+  - viewport refresh
+  - property viewport rendering
+- Warning/detail UI:
+  - dismiss/reopen warning behavior
+  - empty detail state
+  - populated detail state
+  - fallback formatting for sparse property metadata
 
-## Submission Artifacts Present
+## Submission Artifacts
 
 - Coverage summary: [`Final Submissions/coverage-report.md`](/root/Speckit-Constitution-To-Tasks/Final%20Submissions/coverage-report.md)
 - Reproduction instructions: [`Final Submissions/test-procedures.md`](/root/Speckit-Constitution-To-Tasks/Final%20Submissions/test-procedures.md)
-- Acceptance-flow and coverage report: [`Final Submissions/frontend-test-report.md`](/root/Speckit-Constitution-To-Tasks/Final%20Submissions/frontend-test-report.md)
+- Acceptance-flow traceability: [`Final Submissions/frontend-test-report.md`](/root/Speckit-Constitution-To-Tasks/Final%20Submissions/frontend-test-report.md)

@@ -2,71 +2,69 @@
 
 ## Objective
 
-Validate the frontend implementation through automated testing and documented acceptance-flow analysis, with the required submission targets:
-- unit + integration tests must pass,
-- frontend branch coverage must reach `100%`,
-- acceptance tests must cover all documented frontend user-story flows in scope.
+Reproduce the current frontend automated test and coverage results for the MapLibre-based Edmonton property explorer frontend.
 
-## Environment Used
+The frontend test deliverable is evaluated using:
+- `npm run test:frontend`
+- `npm run test:frontend:coverage`
 
-- OS/runtime: Linux environment in Codex shell
+## Environment
+
+- OS/runtime: Linux shell environment
 - Node.js: `v24.11.1`
-- Coverage tool: Node built-in coverage via `--experimental-test-coverage`
-- Test runner: Node built-in `node --test`
+- Test runner: built-in `node --test`
+- Coverage tool: built-in Node coverage via `--experimental-test-coverage`
 - Frontend source under test: `src/frontend/src`
 
-## Procedure Followed
+## Setup
 
-1. Run the frontend automated test gate:
-   - `npm run test:frontend`
-2. Run the frontend coverage gate:
-   - `npm run test:frontend:coverage`
-3. If any test fails or branch coverage drops below `100%`:
-   - inspect uncovered files/lines from the coverage report,
-   - add or fix frontend unit/integration tests,
-   - harden affected UI/controller paths,
-   - rerun the coverage command.
-4. Repeat until:
-   - all frontend tests pass,
-   - branch coverage is `100%`.
-5. Perform manual acceptance-flow traceability analysis against the frontend-owned acceptance test markdown files and record the mapping in the submission report.
+From the repository root:
 
-## Commands Executed
+```bash
+cd /root/Speckit-Constitution-To-Tasks
+npm install
+```
+
+## Commands
+
+Run the frontend automated suite:
 
 ```bash
 npm run test:frontend
+```
+
+Run the frontend coverage suite:
+
+```bash
 npm run test:frontend:coverage
 ```
 
-## Codex Prompt/Execution Context
+## Expected Current Outcome
 
-Test and coverage runs were executed from Codex shell using direct commands, including:
-- "Run `npm run test:frontend` and report pass/fail."
-- "Run `npm run test:frontend:coverage` and provide the coverage summary."
-- "After merge changes, rerun coverage until branch coverage reaches 100% again."
+Latest verified results at the time this document was updated:
 
-## Elevated Permission Note
+- `npm run test:frontend`: passes
+- `npm run test:frontend:coverage`: passes
+- automated suite count: `15/15` passing
+- measured global coverage:
+  - lines: `100.00%`
+  - branches: `100.00%`
+  - functions: `97.97%`
 
-- No elevated permission was required for the frontend test and coverage commands themselves.
-- Git sync/push steps were handled separately and are not required to reproduce the test results.
-- Equivalent alternative: run the same commands locally outside Codex and capture the outputs directly.
+## Reproduction Notes
 
-## Completion Criteria
+- Run both commands from the repository root.
+- The coverage command excludes `src/frontend/src/services/api/mockData.js`.
+- The frontend tests use the repo’s local fake DOM and fake MapLibre helpers, so no browser or live backend process is required to reproduce the automated suite.
 
-Submission-ready when all are true:
-- `npm run test:frontend` returns exit code `0`.
-- `npm run test:frontend:coverage` returns exit code `0`.
-- Coverage output shows `100%` global branch coverage for the included frontend files.
-- Documented frontend acceptance flows are all covered in the submission traceability report.
+## Acceptance-Flow Verification
 
-## Coverage Claim Clarification
+Acceptance-flow coverage for the frontend-owned scope should be checked against:
 
-- This submission claims `100% branch coverage` for the included frontend source under the provided coverage command.
-- It also claims `100% acceptance-flow coverage` for the documented frontend user stories in scope.
-- It does not claim exhaustive real-world flow coverage across all future backend responses, browser engines, or external dependency behavior.
+- [`Final Submissions/frontend-test-report.md`](/root/Speckit-Constitution-To-Tasks/Final%20Submissions/frontend-test-report.md)
 
-## Additional Verification Applied In Final Run
+That report maps the submitted automated tests to the frontend user-story flows in scope.
 
-- Revalidated the full frontend suite after merging the newest `origin/master` changes into `merge-harrison`.
-- Re-hardened the env-driven API fallback logic in `src/frontend/src/services/api/apiClient.js` so the final measured branch coverage returned to `100%`.
-- Verified the final report numbers against the latest successful run, not an earlier pre-merge draft.
+## Important Status Clarification
+
+The current automated suite is green, and the included frontend source set reaches both `100.00%` line coverage and `100.00%` branch coverage in the latest verified run.

@@ -422,6 +422,48 @@ test("app bootstrap wires the integrated frontend flows", async () => {
   );
   assert.equal(appModule.__app.store.getState().selectedLocation.neighbourhood, "Oliver");
 
+  map.emit(
+    "click",
+    {
+      features: [
+        {
+          geometry: { coordinates: [-113.47, 53.57] },
+          properties: {
+            canonical_location_id: "loc-5",
+            canonical_address: "789 NO NEIGHBOURHOOD NW, Edmonton, AB",
+            coordinates: { lat: 53.57, lng: -113.47 }
+          }
+        }
+      ],
+      originalEvent: { button: 0 }
+    },
+    "assessment_properties-points"
+  );
+  assert.equal(appModule.__app.store.getState().selectedLocation.neighbourhood, null);
+
+  appModule.__app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-6",
+        canonical_address: "No coordinate payload"
+      }
+    ],
+    clusters: []
+  });
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: null,
+      canonical_address: "Coordinate present, property missing coords",
+      coordinates: { lat: 53.57, lng: -113.47 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(10);
+  assert.equal(appModule.__app.store.getState().selectedPropertyDetails, null);
+
   getById("estimate-submit").click();
   await wait(240);
   assert.match(getById("estimate-status").textContent, /Partial|Ready/);

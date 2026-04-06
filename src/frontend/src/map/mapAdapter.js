@@ -545,7 +545,9 @@ export function createMapAdapter({
     const sourceId = `source-${layerId}`;
     const features =
       data.renderMode === "property"
-        ? (data.properties || []).map((property) => ({
+        ? (data.properties || [])
+          .filter((property) => property?.coordinates?.lat != null && property?.coordinates?.lng != null)
+          .map((property) => ({
             type: "Feature",
             geometry: {
               type: "Point",

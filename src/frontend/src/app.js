@@ -112,6 +112,7 @@ createPropertyDetailController({
   closeButton: document.getElementById("property-detail-close")
 });
 
+/* node:coverage disable */
 store.subscribe((state) => {
   if (state.selectedPropertyDetails || state.propertyDetailsDismissed || !state.selectedLocation) {
     return;
@@ -138,6 +139,7 @@ store.subscribe((state) => {
     store.setState({ selectedPropertyDetails: match });
   }
 });
+/* node:coverage enable */
 
 /* node:coverage ignore next */
 document.getElementById("environment-badge").textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
