@@ -73,7 +73,10 @@ export function createLayerController({
     }
 
     /* node:coverage ignore next */
-    if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) return propertyResponseCache.delete(viewportKey), null;
+    if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) {
+      propertyResponseCache.delete(viewportKey);
+      return null;
+    }
 
     return entry.data;
   }
@@ -242,8 +245,8 @@ export function createLayerController({
     const normalizedViewport = normalizeViewport(viewport);
     const viewportKey = buildViewportKey(normalizedViewport);
     const nextRequestSeq = store.getState().propertyLayer.requestSeq + 1;
-    const cached = getCachedPropertyResponse(viewportKey);
 
+    const cached = getCachedPropertyResponse(viewportKey);
     if (cached) {
       store.updatePropertyLayer({
         ...cached,
@@ -306,6 +309,7 @@ export function createLayerController({
           ? "Assessment Properties partial."
           : "Assessment Properties ready."
       );
+
       buildAdjacentViewports(normalizedViewport)
         .slice(0, 2)
         .forEach((adjacentViewport) => {
@@ -394,9 +398,7 @@ export function createLayerController({
     LAYER_DEFINITIONS
       .filter((layer) => layer.id !== "assessment_properties")
       .filter((layer) => state.activeLayers[layer.id]?.enabled)
-      .forEach(
-      (layer) => loadLayer(layer.id)
-    );
+      .forEach((layer) => loadLayer(layer.id));
   }, 300);
 
   const refreshPropertyLayer = debounce((viewport) => {
