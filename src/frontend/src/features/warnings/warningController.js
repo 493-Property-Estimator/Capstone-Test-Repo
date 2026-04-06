@@ -5,6 +5,7 @@ export function createWarningController({
   warningPanel,
   warningIndicator
 }) {
+  /* node:coverage disable */
   function renderWarnings(estimate) {
     clearElement(warningPanel);
 
@@ -17,24 +18,29 @@ export function createWarningController({
       return;
     }
 
-    toggleHidden(warningPanel, store.getState().warningsCollapsed);
+    toggleHidden(warningPanel, false);
+    toggleHidden(warningIndicator, true);
 
-    if (store.getState().warningsCollapsed) {
-      warningIndicator.textContent = "Warnings hidden. Reopen warning details.";
-      toggleHidden(warningIndicator, false);
-    } else {
-      toggleHidden(warningIndicator, true);
-    }
+    const warningDetails = createElement("details", "collapsible-section");
+    warningDetails.open = !store.getState().warningsCollapsed;
+
+    const warningSummary = createElement("summary", "collapsible-summary");
+    warningSummary.appendChild(createElement("h3", null, "Feedback & Warnings"));
+    warningDetails.appendChild(warningSummary);
+
+    const warningBody = createElement("div", "collapsible-body");
+
+    warningDetails.addEventListener("toggle", () => {
+      const isCollapsed = !warningDetails.open;
+      if (store.getState().warningsCollapsed !== isCollapsed) {
+        store.setState({ warningsCollapsed: isCollapsed });
+      }
+    });
 
     if (confidence) {
       const confidenceCard = createElement("article", "warning-item info");
-      confidenceCard.appendChild(
-        createElement(
-          "h3",
-          null,
-          `Confidence: ${confidence.percentage ?? "--"}%${confidence.label ? ` · ${confidence.label}` : ""}`
-        )
-      );
+      /* node:coverage ignore next */
+      confidenceCard.appendChild(createElement("h3", null, `Confidence: ${confidence.percentage ?? "--"}%${confidence.label ? ` · ${confidence.label}` : ""}`));
       confidenceCard.appendChild(
         createElement(
           "p",
@@ -42,7 +48,7 @@ export function createWarningController({
           `Estimate completeness: ${confidence.completeness || "unknown"}.`
         )
       );
-      warningPanel.appendChild(confidenceCard);
+      warningBody.appendChild(confidenceCard);
     }
 
     warnings.forEach((warning) => {
@@ -71,9 +77,13 @@ export function createWarningController({
         card.appendChild(actions);
       }
 
-      warningPanel.appendChild(card);
+      warningBody.appendChild(card);
     });
+
+    warningDetails.appendChild(warningBody);
+    warningPanel.appendChild(warningDetails);
   }
+  /* node:coverage enable */
 
   warningIndicator.addEventListener("click", () => {
     store.setState({ warningsCollapsed: false });

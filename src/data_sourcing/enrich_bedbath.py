@@ -34,6 +34,7 @@ WORKFLOW_STEPS = [
     "schema migration",
     "candidate extraction",
     "observed matching",
+    "location backfill",
     "permit parsing",
     "model training",
     "imputation",
@@ -55,6 +56,8 @@ class EnrichmentConfig:
     shadow_mode: bool = False
     promotion_target: str = "prod"
     shadow_table_name: str = "property_attributes_shadow"
+    backfill_property_locations_from_observed: bool = False
+    backfill_overwrite_existing_values: bool = False
 
 
 def _new_run_id(prefix: str = "bedbath") -> str:
@@ -86,6 +89,12 @@ def run_bedbath_enrichment(
     warnings: list[str] = []
     errors: list[str] = []
     report: dict[str, Any] = {}
+    location_backfill_result: dict[str, Any] = {
+        "enabled": cfg.backfill_property_locations_from_observed,
+        "matched_rows_considered": 0,
+        "rows_updated": 0,
+        "field_updates": {},
+    }
 
     clients = SourceClients(
         conn,
@@ -107,6 +116,20 @@ def run_bedbath_enrichment(
             step_runs,
             lambda: run_observed_matching(conn, run_id, candidate_rows, clients, cfg),
         )
+        if cfg.backfill_property_locations_from_observed:
+            location_backfill_result = _run_step(
+                conn,
+                run_id,
+                "location backfill",
+                step_runs,
+                lambda: backfill_property_locations_from_observed(
+                    conn,
+                    observed_rows,
+                    overwrite_existing=cfg.backfill_overwrite_existing_values,
+                ),
+            )
+        else:
+            step_runs.append({"dataset": "location backfill", "status": "skipped"})
         permit_rows = _run_step(
             conn,
             run_id,
@@ -159,6 +182,7 @@ def run_bedbath_enrichment(
             {
                 "report": report,
                 "promotion": promotion_result,
+                "location_backfill": location_backfill_result,
                 "training": {
                     "model_version": training_info["model_version"],
                     "training_rows": training_info["training_rows"],
@@ -174,6 +198,7 @@ def run_bedbath_enrichment(
             "step_runs": step_runs,
             "report": report,
             "promotion": promotion_result,
+            "location_backfill": location_backfill_result,
             "warnings": warnings,
             "errors": errors,
         }
@@ -792,6 +817,85 @@ def _coerce_float(value: Any) -> float | None:
         return None
 
 
+def backfill_property_locations_from_observed(
+    conn: sqlite3.Connection,
+    observed_rows: list[dict[str, Any]],
+    *,
+    overwrite_existing: bool = False,
+) -> dict[str, Any]:
+    matched_rows = [
+        row
+        for row in observed_rows
+        if row.get("source_type") == "observed" and not row.get("quarantined")
+    ]
+    field_updates: Counter[str] = Counter()
+    rows_updated = 0
+
+    for row in matched_rows:
+        canonical_location_id = row.get("canonical_location_id")
+        if not canonical_location_id:
+            continue
+        source_row = _decode_jsonish(row.get("raw_payload_json"))
+        if not source_row:
+            continue
+
+        current = conn.execute(
+            """
+            SELECT suite, house_number, street_name, lat, lon
+            FROM property_locations_prod
+            WHERE canonical_location_id = ?
+            """,
+            (str(canonical_location_id),),
+        ).fetchone()
+        if current is None:
+            continue
+        current_dict = dict(current)
+
+        candidate_updates: dict[str, Any] = {
+            "suite": source_row.get("suite"),
+            "house_number": source_row.get("house_number"),
+            "street_name": source_row.get("street_name"),
+            "lat": _coerce_float(source_row.get("lat")),
+            "lon": _coerce_float(source_row.get("lon")),
+        }
+
+        updates: dict[str, Any] = {}
+        for field, value in candidate_updates.items():
+            if value in (None, ""):
+                continue
+            existing_value = current_dict.get(field)
+            if overwrite_existing or existing_value in (None, ""):
+                updates[field] = value
+
+        if not updates:
+            continue
+
+        assignments = ", ".join(f"{field} = :{field}" for field in updates)
+        params = dict(updates)
+        params["updated_at"] = utc_now()
+        params["canonical_location_id"] = str(canonical_location_id)
+        conn.execute(
+            f"""
+            UPDATE property_locations_prod
+            SET {assignments}, updated_at = :updated_at
+            WHERE canonical_location_id = :canonical_location_id
+            """,
+            params,
+        )
+        rows_updated += 1
+        for field in updates:
+            field_updates[field] += 1
+
+    conn.commit()
+    return {
+        "enabled": True,
+        "overwrite_existing": overwrite_existing,
+        "matched_rows_considered": len(matched_rows),
+        "rows_updated": rows_updated,
+        "field_updates": dict(sorted(field_updates.items())),
+    }
+
+
 def _source_identity(row: dict[str, Any], source_type: str) -> str | None:
     source_record_id = row.get("source_record_id")
     if source_record_id not in (None, ""):
@@ -1022,6 +1126,16 @@ def main() -> None:
     parser.add_argument("--shadow-mode", action="store_true", help="Run in review-only shadow mode.")
     parser.add_argument("--disable-promotion", action="store_true", help="Do not promote staging rows to prod.")
     parser.add_argument("--shadow-table-name", help="Optional isolated table for shadow promotion output.")
+    parser.add_argument(
+        "--backfill-location-fields",
+        action="store_true",
+        help="Backfill matched property_locations_prod rows with suite/house/street/lat/lon from observed listing records.",
+    )
+    parser.add_argument(
+        "--overwrite-location-fields",
+        action="store_true",
+        help="When backfilling, overwrite existing non-null location fields instead of filling only missing values.",
+    )
     args = parser.parse_args()
 
     promotion_target = "prod"
@@ -1044,6 +1158,8 @@ def main() -> None:
             shadow_mode=args.shadow_mode,
             promotion_target=promotion_target,
             shadow_table_name=args.shadow_table_name or "property_attributes_shadow",
+            backfill_property_locations_from_observed=args.backfill_location_fields,
+            backfill_overwrite_existing_values=args.overwrite_location_fields,
         ),
     )
     print(json.dumps(result, indent=2))

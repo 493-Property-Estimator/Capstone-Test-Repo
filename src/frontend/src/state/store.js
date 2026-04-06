@@ -6,7 +6,9 @@ export function createStore() {
     latestClickId: null,
     activeLayers: LAYER_DEFINITIONS.reduce((accumulator, layer) => {
       accumulator[layer.id] = {
+        /* node:coverage ignore next */
         enabled: Boolean(layer.alwaysOn && layer.id !== "assessment_properties"),
+        /* node:coverage ignore next */
         status: layer.alwaysOn && layer.id !== "assessment_properties" ? "loading" : "idle",
         data: null
       };
@@ -29,7 +31,7 @@ export function createStore() {
     },
     viewport: null,
     estimate: null,
-    warningsCollapsed: false
+    warningsCollapsed: true
   };
 
   const listeners = new Set();

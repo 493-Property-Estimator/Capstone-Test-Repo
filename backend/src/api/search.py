@@ -60,7 +60,8 @@ async def resolve_search(request: Request, q: str):
     if len(matches) > 1:
         candidates = [
             {
-                "candidate_id": f"cand_{row.canonical_location_id}",
+                "candidate_id": row.canonical_location_id,
+                "canonical_location_id": row.canonical_location_id,
                 "display_text": _format_address(row),
                 "coordinates": {"lat": row.lat, "lng": row.lon},
                 "coverage_status": "supported" if _in_bounds(row.lat, row.lon) else "unsupported",

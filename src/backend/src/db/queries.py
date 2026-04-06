@@ -117,6 +117,35 @@ def get_location_by_id(db_path: Path, canonical_location_id: str) -> LocationRec
     )
 
 
+def resolve_coordinates_to_location(db_path: Path, lat: float, lon: float) -> LocationRecord | None:
+    sql = """
+        SELECT canonical_location_id, house_number, street_name, neighbourhood, ward,
+               assessment_value, lat, lon
+        FROM property_locations_prod
+        WHERE lat IS NOT NULL
+          AND lon IS NOT NULL
+        ORDER BY
+          ((lat - ?) * (lat - ?))
+          + ((lon - ?) * (lon - ?)),
+          canonical_location_id
+        LIMIT 1
+    """
+    with connect(db_path) as conn:
+        row = conn.execute(sql, (lat, lat, lon, lon)).fetchone()
+    if not row:
+        return None
+    return LocationRecord(
+        canonical_location_id=row["canonical_location_id"],
+        house_number=row["house_number"],
+        street_name=row["street_name"],
+        neighbourhood=row["neighbourhood"],
+        ward=row["ward"],
+        assessment_value=row["assessment_value"],
+        lat=row["lat"],
+        lon=row["lon"],
+    )
+
+
 def fetch_geospatial_features(
     db_path: Path,
     layer_id: str,

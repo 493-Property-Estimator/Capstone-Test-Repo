@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, UTC, timedelta
+from datetime import UTC, datetime
+import os
+import threading
+import time
 
 from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 from backend.src.db.connection import connect
-from backend.src.db.queries import get_latest_dataset_version
 from backend.src.services.errors import error_response
+from estimator import estimate_property_value
 
 router = APIRouter()
 
@@ -15,8 +19,31 @@ router = APIRouter()
 async def health(request: Request):
     request_id = request.state.request_id
     settings = request.app.state.settings
+
+    limited = _apply_health_rate_limit(request)
+    if limited:
+        return JSONResponse(
+            status_code=429,
+            content=error_response(
+                request_id=request_id,
+                code="HEALTH_RATE_LIMITED",
+                message="Health endpoint polling rate limit exceeded.",
+                details={"limit_per_minute": settings.health_rate_limit_per_minute},
+                retryable=True,
+            ),
+        )
+
     status = "healthy"
     dependencies = []
+
+    internal_details = {
+        "api_process": "ok",
+        "pid": os.getpid(),
+        "active_threads": threading.active_count(),
+        "thread_pool": "ok",
+        "memory": _memory_health_status(),
+    }
+    dependencies.append({"name": "internal_service", "status": "ok", "details": internal_details})
 
     # Feature store
     try:
@@ -31,7 +58,9 @@ async def health(request: Request):
     dependencies.append({"name": "cache_service", "status": "ok", "details": "in_memory"})
 
     # Routing provider
-    if settings.enable_routing:
+    if settings.enable_routing and settings.routing_provider == "mock_road":
+        dependencies.append({"name": "routing_provider", "status": "ok", "details": "mock_road"})
+    elif settings.enable_routing:
         dependencies.append({"name": "routing_provider", "status": "degraded", "details": "fallback_only"})
         if status == "healthy":
             status = "degraded"
@@ -40,14 +69,17 @@ async def health(request: Request):
         if status == "healthy":
             status = "degraded"
 
+    # Valuation engine
+    valuation_status = "ok" if callable(estimate_property_value) else "down"
+    dependencies.append({"name": "valuation_engine", "status": valuation_status, "details": "import_check"})
+    if valuation_status != "ok" and status == "healthy":
+        status = "degraded"
+
     # Ingestion freshness
-    version = get_latest_dataset_version(settings.data_db_path)
-    if not version:
-        dependencies.append({"name": "ingestion_freshness", "status": "degraded", "details": "no dataset version"})
-        if status == "healthy":
-            status = "degraded"
-    else:
-        dependencies.append({"name": "ingestion_freshness", "status": "ok", "details": version})
+    freshness = _latest_dataset_freshness(settings.data_db_path, settings.ingestion_freshness_days)
+    dependencies.append(freshness["dependency"])
+    if freshness["dependency"]["status"] == "degraded" and status == "healthy":
+        status = "degraded"
 
     return {"request_id": request_id, "status": status, "dependencies": dependencies}
 
@@ -65,3 +97,69 @@ async def metrics(request: Request):
         "avg_latency_ms": metrics.avg_latency_ms,
         "valuation_time_ms": metrics.valuation_time_ms,
     }
+
+
+def _memory_health_status() -> str:
+    try:
+        import resource
+
+        rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        # Conservative threshold for a small local service process.
+        return "high" if rss_kb > 1_200_000 else "ok"
+    except Exception:
+        return "unknown"
+
+
+def _latest_dataset_freshness(db_path, freshness_days: int) -> dict:
+    try:
+        with connect(db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT version_id, promoted_at
+                FROM dataset_versions
+                ORDER BY promoted_at DESC
+                LIMIT 1
+                """
+            ).fetchone()
+    except Exception as exc:
+        return {
+            "dependency": {"name": "ingestion_freshness", "status": "degraded", "details": str(exc)},
+        }
+
+    if not row:
+        return {
+            "dependency": {"name": "ingestion_freshness", "status": "degraded", "details": "no dataset version"},
+        }
+
+    promoted_at = str(row["promoted_at"] or "").replace("Z", "+00:00")
+    stale = False
+    age_days = None
+    try:
+        promoted_dt = datetime.fromisoformat(promoted_at)
+        if promoted_dt.tzinfo is None:
+            promoted_dt = promoted_dt.replace(tzinfo=UTC)
+        age_days = max((datetime.now(UTC) - promoted_dt).days, 0)
+        stale = age_days > max(int(freshness_days), 1)
+    except Exception:
+        stale = False
+
+    return {
+        "dependency": {
+            "name": "ingestion_freshness",
+            "status": "degraded" if stale else "ok",
+            "details": {"version_id": row["version_id"], "age_days": age_days},
+        },
+    }
+
+
+def _apply_health_rate_limit(request: Request) -> bool:
+    now = time.time()
+    window_seconds = 60.0
+    limit = max(1, int(request.app.state.settings.health_rate_limit_per_minute))
+    stamps = getattr(request.app.state, "health_request_timestamps", None)
+    if stamps is None:
+        stamps = []
+        request.app.state.health_request_timestamps = stamps
+    request.app.state.health_request_timestamps = [ts for ts in stamps if now - ts < window_seconds]
+    request.app.state.health_request_timestamps.append(now)
+    return len(request.app.state.health_request_timestamps) > limit

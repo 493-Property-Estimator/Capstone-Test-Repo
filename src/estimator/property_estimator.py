@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import sqlite3
+from functools import lru_cache
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -30,8 +31,10 @@ class PropertyEstimator:
     def __init__(self, db_path: Path) -> None:
         self._db_path = Path(db_path)
         self._services_module = self._load_testingstage_services()
-        self._road_graph = self._services_module.RoadGraph(self._db_path)
-        self._transit = self._services_module.TransitNetwork(self._db_path)
+        # Fast-path defaults: avoid eager initialization of heavy graph/network
+        # structures so estimator requests stay within API time budgets.
+        self._road_graph = None
+        self._transit = None
         self._osrm = self._services_module.OsrmService()
         provider = self._services_module.SQLiteCrimeProvider(self._db_path)
         self._crime_provider = (
@@ -479,12 +482,25 @@ class PropertyEstimator:
         fallback_flags: list[str],
         warnings: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        route = self._road_graph.route_distance(
-            point["lat"],
-            point["lon"],
-            float(target["lat"]),
-            float(target["lon"]),
-        )
+        if self._road_graph is not None:
+            route = self._road_graph.route_distance(
+                point["lat"],
+                point["lon"],
+                float(target["lat"]),
+                float(target["lon"]),
+            )
+        else:
+            straight_line_m = self._services_module.haversine_meters(
+                point["lat"],
+                point["lon"],
+                float(target["lat"]),
+                float(target["lon"]),
+            )
+            route = {
+                "road_distance_m": straight_line_m,
+                "straight_line_m": straight_line_m,
+                "routing_mode": "straight_line_fallback",
+            }
         road_distance_m = min(float(route["road_distance_m"]), MAX_ROUTE_FALLBACK_DISTANCE_M)
         route_mode = route["routing_mode"]
         fallback_used = route_mode == "straight_line_fallback"
@@ -525,7 +541,7 @@ class PropertyEstimator:
         transit_distance_m = None
         transit_time_s = None
         transit_mode = "unavailable"
-        if self._transit.has_data():
+        if self._transit is not None and self._transit.has_data():
             try:
                 journey = self._transit.plan_journey(
                     {
@@ -902,6 +918,8 @@ class PropertyEstimator:
             "year_built": item.get("year_built"),
             "lot_size": item.get("lot_size"),
             "total_gross_area": item.get("total_gross_area"),
+            "bedrooms": item.get("bedrooms"),
+            "bathrooms": item.get("bathrooms"),
             "garage": item.get("garage"),
             "tax_class": item.get("tax_class"),
             "attribute_match": bool(item.get("attribute_match")),
@@ -970,5 +988,14 @@ def estimate_property_value(
     lon: float,
     property_attributes: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    estimator = PropertyEstimator(db_path)
+    estimator = _get_estimator_cached(str(Path(db_path).resolve()))
     return estimator.estimate(lat=lat, lon=lon, property_attributes=property_attributes)
+
+
+@lru_cache(maxsize=4)
+def _get_estimator_cached(resolved_db_path: str) -> PropertyEstimator:
+    return PropertyEstimator(Path(resolved_db_path))
+
+
+def warm_estimator(db_path: Path | str) -> None:
+    _get_estimator_cached(str(Path(db_path).resolve()))

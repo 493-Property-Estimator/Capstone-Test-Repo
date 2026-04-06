@@ -1,9 +1,9 @@
 """Estimator helpers for proximity and simple summary lookups."""
 
-from .property_estimator import PropertyEstimator, estimate_property_value
+from .property_estimator import PropertyEstimator, estimate_property_value, warm_estimator
 from .simple_estimator import summarize_property_cluster
 
-__all__ = ["summarize_property_cluster", "PropertyEstimator", "estimate_property_value"]
+__all__ = ["summarize_property_cluster", "PropertyEstimator", "estimate_property_value", "warm_estimator"]
 
 try:
     from .proximity import (

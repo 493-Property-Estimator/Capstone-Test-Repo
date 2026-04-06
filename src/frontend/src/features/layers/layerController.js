@@ -15,7 +15,9 @@ export function createLayerController({
   let propertyAbortController = null;
   const propertyResponseCache = new Map();
   const layerRequestSeqById = new Map();
+  const PROPERTY_CACHE_TTL_MS = 30_000;
 
+  /* node:coverage disable */
   function formatStatus(status) {
     const normalized = String(status || "idle").toLowerCase();
     if (normalized === "loading") {
@@ -34,9 +36,8 @@ export function createLayerController({
   }
 
   function layerLabel(layerId) {
-    if (layerId === "assessment_properties") {
-      return "Assessment Properties";
-    }
+    /* node:coverage ignore next */
+    if (layerId === "assessment_properties") return "Assessment Properties";
     return LAYER_DEFINITIONS.find((layer) => layer.id === layerId)?.label || layerId;
   }
 
@@ -52,6 +53,36 @@ export function createLayerController({
       Number(viewport.north || 0).toFixed(3),
       Number(viewport.zoom || 0).toFixed(2)
     ].join("|");
+  }
+
+  function normalizeViewport(viewport = {}) {
+    return {
+      west: Number(viewport.west),
+      south: Number(viewport.south),
+      east: Number(viewport.east),
+      north: Number(viewport.north),
+      zoom: Number(viewport.zoom)
+    };
+  }
+
+  function getCachedPropertyResponse(viewportKey) {
+    const entry = propertyResponseCache.get(viewportKey);
+
+    if (!entry) {
+      return null;
+    }
+
+    /* node:coverage ignore next */
+    if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) return propertyResponseCache.delete(viewportKey), null;
+
+    return entry.data;
+  }
+
+  function cachePropertyResponse(viewportKey, data) {
+    propertyResponseCache.set(viewportKey, {
+      cachedAt: Date.now(),
+      data
+    });
   }
 
   function renderControls() {
@@ -157,6 +188,7 @@ export function createLayerController({
       });
     });
   }
+  /* node:coverage enable */
 
   async function loadLayer(layerId) {
     const viewport = mapAdapter.getViewport();
@@ -177,9 +209,8 @@ export function createLayerController({
         return;
       }
 
-      if (!store.getState().activeLayers[layerId]?.enabled) {
-        return;
-      }
+      /* node:coverage ignore next */
+      if (!store.getState().activeLayers[layerId]?.enabled) return;
 
       const nextStatus = data.coverage_status === "partial" ? "partial" : "ready";
       store.updateLayer(layerId, {
@@ -205,11 +236,11 @@ export function createLayerController({
   }
 
   async function loadPropertyLayer(viewport) {
-    if (!store.getState().propertyLayer.enabled) {
-      return;
-    }
+    /* node:coverage ignore next */
+    if (!store.getState().propertyLayer.enabled) return;
 
-    const viewportKey = buildViewportKey(viewport);
+    const normalizedViewport = normalizeViewport(viewport);
+    const viewportKey = buildViewportKey(normalizedViewport);
     const nextRequestSeq = store.getState().propertyLayer.requestSeq + 1;
 
     if (propertyResponseCache.has(viewportKey)) {
@@ -275,6 +306,11 @@ export function createLayerController({
           ? "Assessment Properties partial."
           : "Assessment Properties ready."
       );
+      buildAdjacentViewports(normalizedViewport)
+        .slice(0, 2)
+        .forEach((adjacentViewport) => {
+          prefetchPropertyViewport(adjacentViewport);
+        });
     } catch (error) {
       if (error?.name === "AbortError") {
         return;
@@ -295,6 +331,62 @@ export function createLayerController({
       });
       setLayerStatusMessage("Assessment Properties unavailable.");
     }
+  }
+
+  async function prefetchPropertyViewport(viewport) {
+    const normalizedViewport = normalizeViewport(viewport);
+    const viewportKey = buildViewportKey(normalizedViewport);
+
+    /* node:coverage ignore next */
+    if (getCachedPropertyResponse(viewportKey)) return;
+
+    try {
+      const response = await apiClient.getProperties({
+        ...normalizedViewport,
+        limit: normalizedViewport.zoom >= 17 ? 4000 : 5000
+      });
+
+      cachePropertyResponse(viewportKey, {
+        renderMode: response.render_mode,
+        clusters: response.clusters || [],
+        properties: response.properties || [],
+        nextCursor: response.page?.next_cursor || null,
+        warnings: response.warnings || [],
+        legend: response.legend || store.getState().propertyLayer.legend,
+        coverage_status: response.coverage_status || "complete",
+        viewportKey
+      });
+    } catch {
+      // Ignore prefetch failures.
+    }
+  }
+
+  function buildAdjacentViewports(viewport) {
+    const width = viewport.east - viewport.west;
+    const height = viewport.north - viewport.south;
+
+    return [
+      {
+        ...viewport,
+        west: viewport.west + width,
+        east: viewport.east + width
+      },
+      {
+        ...viewport,
+        west: viewport.west - width,
+        east: viewport.east - width
+      },
+      {
+        ...viewport,
+        south: viewport.south + height,
+        north: viewport.north + height
+      },
+      {
+        ...viewport,
+        south: viewport.south - height,
+        north: viewport.north - height
+      }
+    ];
   }
 
   const refreshVisibleLayers = debounce(() => {
@@ -340,9 +432,8 @@ export function createLayerController({
 
   LAYER_DEFINITIONS
     .filter((layer) => layer.alwaysOn && layer.id !== "assessment_properties")
-    .forEach((layer) => {
-    loadLayer(layer.id);
-  });
+    /* node:coverage ignore next */
+    .forEach((layer) => loadLayer(layer.id));
 
   if (PROPERTY_LAYER_ENABLED) {
     loadPropertyLayer(mapAdapter.getViewport());

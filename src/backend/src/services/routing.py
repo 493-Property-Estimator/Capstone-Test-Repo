@@ -30,17 +30,22 @@ def compute_distance(
     origin: tuple[float, float],
     target: tuple[float, float],
     routing_enabled: bool,
+    routing_provider: str = "mock_road",
     metrics: Metrics | None = None,
 ) -> DistanceResult:
-    # Routing not implemented: always use straight-line fallback when routing_enabled is False
+    # Routing disabled: straight-line is the only available mode.
     if not routing_enabled:
         distance = haversine_m(origin[0], origin[1], target[0], target[1])
         if metrics:
             metrics.record_routing_fallback()
         return DistanceResult(distance_m=distance, mode="straight_line", fallback_used=True, reason="routing_disabled")
 
-    # Placeholder: no routing provider configured; use straight-line fallback
-    distance = haversine_m(origin[0], origin[1], target[0], target[1])
+    straight = haversine_m(origin[0], origin[1], target[0], target[1])
+    provider = (routing_provider or "").strip().lower()
+    if provider == "mock_road":
+        # Deterministic local approximation for road path distance.
+        return DistanceResult(distance_m=straight * 1.22, mode="road", fallback_used=False, reason=None)
+
     if metrics:
         metrics.record_routing_fallback()
-    return DistanceResult(distance_m=distance, mode="straight_line", fallback_used=True, reason="routing_unavailable")
+    return DistanceResult(distance_m=straight, mode="straight_line", fallback_used=True, reason="routing_unavailable")
