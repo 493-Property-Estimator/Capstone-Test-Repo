@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 from .config import DEFAULT_DB_PATH
+from .enrich_bedbath import EnrichmentConfig, run_bedbath_enrichment
 from .service import IngestionService
 
 
@@ -56,6 +57,35 @@ def _build_parser() -> argparse.ArgumentParser:
 
     db_path_parser = subparsers.add_parser("db-path", help="Show the active SQLite DB path")
     db_path_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
+
+    bedbath_parser = subparsers.add_parser(
+        "ingest-bedbath",
+        help="Ingest listing/permit records for bed/bath enrichment and optionally backfill property location fields",
+    )
+    bedbath_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
+    bedbath_parser.add_argument("--trigger", default="on_demand", help="manual|scheduled|on_demand")
+    bedbath_parser.add_argument("--listings-json", help="Optional JSON file containing listing/API records.")
+    bedbath_parser.add_argument("--listings-csv", help="Optional CSV file containing listing/API records.")
+    bedbath_parser.add_argument("--listings-map", help="Optional JSON field map for listing records.")
+    bedbath_parser.add_argument("--permits-json", help="Optional JSON file containing permit text records.")
+    bedbath_parser.add_argument("--permits-csv", help="Optional CSV file containing permit text records.")
+    bedbath_parser.add_argument("--permits-map", help="Optional JSON field map for permit records.")
+    bedbath_parser.add_argument("--ambiguous-csv", default="reports/bedbath_ambiguous_matches.csv")
+    bedbath_parser.add_argument("--review-export-dir", default="reports/bedbath_review_exports")
+    bedbath_parser.add_argument("--min-training-rows", type=int, default=25)
+    bedbath_parser.add_argument("--shadow-mode", action="store_true", help="Run in review-only shadow mode.")
+    bedbath_parser.add_argument("--disable-promotion", action="store_true", help="Do not promote staging rows to prod.")
+    bedbath_parser.add_argument("--shadow-table-name", help="Optional isolated table for shadow promotion output.")
+    bedbath_parser.add_argument(
+        "--backfill-location-fields",
+        action="store_true",
+        help="Backfill matched property_locations_prod rows with suite/house/street/lat/lon from observed listings.",
+    )
+    bedbath_parser.add_argument(
+        "--overwrite-location-fields",
+        action="store_true",
+        help="When backfilling, overwrite existing non-null location fields instead of only filling missing values.",
+    )
 
     return parser
 
@@ -114,6 +144,30 @@ def main() -> None:
         out = service.database_summary()
     elif args.command == "db-path":
         out = service.database_path()
+    elif args.command == "ingest-bedbath":
+        promotion_target = "prod"
+        if args.shadow_table_name:
+            promotion_target = "shadow"
+        if args.disable_promotion or (args.shadow_mode and not args.shadow_table_name):
+            promotion_target = "disabled"
+        out = run_bedbath_enrichment(
+            args.db,
+            trigger=args.trigger,
+            listing_json_path=args.listings_json or args.listings_csv,
+            permit_json_path=args.permits_json or args.permits_csv,
+            listing_field_map_path=args.listings_map,
+            permit_field_map_path=args.permits_map,
+            config=EnrichmentConfig(
+                ambiguous_export_path=args.ambiguous_csv,
+                review_export_dir=args.review_export_dir,
+                min_training_rows=args.min_training_rows,
+                shadow_mode=args.shadow_mode,
+                promotion_target=promotion_target,
+                shadow_table_name=args.shadow_table_name or "property_attributes_shadow",
+                backfill_property_locations_from_observed=args.backfill_location_fields,
+                backfill_overwrite_existing_values=args.overwrite_location_fields,
+            ),
+        )
     else:
         raise ValueError(f"unsupported command: {args.command}")
 

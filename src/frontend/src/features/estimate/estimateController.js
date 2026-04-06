@@ -76,7 +76,9 @@ export function createEstimateController({
       location: {
         canonical_location_id: state.selectedLocation?.canonical_location_id,
         coordinates,
-        address: state.selectedLocation?.canonical_address
+        ...(latitude === undefined || longitude === undefined
+          ? { address: state.selectedLocation?.canonical_address }
+          : {})
       },
       property_details: {
         ...(bedrooms !== undefined ? { bedrooms } : {}),
@@ -114,33 +116,40 @@ export function createEstimateController({
     });
     estimatePanel.appendChild(metrics);
 
-    const factorsHeading = createElement("h3", null, "Top Factors");
-    estimatePanel.appendChild(factorsHeading);
+    const factorsSection = createElement("details", "collapsible-section");
+    factorsSection.open = false;
 
+    const factorsSummary = createElement("summary", "collapsible-summary");
+    factorsSummary.appendChild(createElement("h3", null, "Top Factors"));
+    factorsSection.appendChild(factorsSummary);
+
+    const factorsBody = createElement("div", "collapsible-body");
     if (!estimate.factor_breakdown?.length) {
-      estimatePanel.appendChild(
+      factorsBody.appendChild(
         createElement("p", "empty-state", "No factor breakdown returned.")
       );
-      return;
+    } else {
+      estimate.factor_breakdown.forEach((factor) => {
+        const item = createElement("article", "factor-item");
+        item.appendChild(
+          createElement(
+            "div",
+            "suggestion-title",
+            `${factor.label} · ${formatCurrency(factor.value)}`
+          )
+        );
+        item.appendChild(
+          createElement("div", "factor-meta", `Status: ${factor.status}`)
+        );
+        item.appendChild(
+          createElement("p", "factor-summary", factor.summary || "No summary provided.")
+        );
+        factorsBody.appendChild(item);
+      });
     }
 
-    estimate.factor_breakdown.forEach((factor) => {
-      const item = createElement("article", "factor-item");
-      item.appendChild(
-        createElement(
-          "div",
-          "suggestion-title",
-          `${factor.label} · ${formatCurrency(factor.value)}`
-        )
-      );
-      item.appendChild(
-        createElement("div", "factor-meta", `Status: ${factor.status}`)
-      );
-      item.appendChild(
-        createElement("p", "factor-summary", factor.summary || "No summary provided.")
-      );
-      estimatePanel.appendChild(item);
-    });
+    factorsSection.appendChild(factorsBody);
+    estimatePanel.appendChild(factorsSection);
   }
   /* node:coverage enable */
 
@@ -152,7 +161,7 @@ export function createEstimateController({
       const payload = buildPayload();
       const response = await apiClient.getEstimate(payload);
 
-      store.setState({ estimate: response, warningsCollapsed: false });
+      store.setState({ estimate: response, warningsCollapsed: true });
       setText(statusElement, response.status === "partial" ? "Partial" : "Ready");
     } catch (error) {
       setText(statusElement, "Error");
@@ -187,7 +196,7 @@ export function createEstimateController({
     store.setState({
       selectedLocation: null,
       estimate: null,
-      warningsCollapsed: false
+      warningsCollapsed: true
     });
     setText(statusElement, "Waiting");
   });

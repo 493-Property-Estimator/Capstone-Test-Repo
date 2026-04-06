@@ -3,6 +3,7 @@ const DEFAULT_ENV = {
   PREFER_LIVE_API: "1",
   ALLOW_MOCK_FALLBACK: "1",
   SEARCH_PROVIDER: "db",
+  ESTIMATE_API_TOKEN: "dev-local-token",
   ENABLED_LAYERS:
     "schools,parks,playgrounds,police_stations,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries,assessment_zones,assessment_properties"
 };
@@ -48,6 +49,7 @@ function parseList(value) {
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
 export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
 export const ALLOW_MOCK_FALLBACK = String(RUNTIME_ENV.ALLOW_MOCK_FALLBACK) !== "0";
+export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN || "");
 /* node:coverage ignore next */
 export const SEARCH_PROVIDER = ["db", "osrm"].includes(String(RUNTIME_ENV.SEARCH_PROVIDER || "db").toLowerCase()) ? String(RUNTIME_ENV.SEARCH_PROVIDER).toLowerCase() : "db";
 

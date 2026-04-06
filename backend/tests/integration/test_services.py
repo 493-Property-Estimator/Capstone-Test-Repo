@@ -21,6 +21,16 @@ def test_validation_functions():
     assert not coords_in_bounds({"lat": 0.0, "lng": 0.0})
     issues = validate_location_payload({"location": {"coordinates": {"lat": 200, "lng": 0}}})
     assert issues
+    # Address format should not block requests when coordinates are provided.
+    issues = validate_location_payload(
+        {
+            "location": {
+                "coordinates": {"lat": 53.5461, "lng": -113.4938},
+                "address": "Edmonton, AB",
+            }
+        }
+    )
+    assert issues == []
 
 
 def test_error_builders():

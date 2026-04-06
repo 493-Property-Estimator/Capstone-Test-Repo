@@ -31,7 +31,7 @@ export function createStore() {
     },
     viewport: null,
     estimate: null,
-    warningsCollapsed: false
+    warningsCollapsed: true
   };
 
   const listeners = new Set();

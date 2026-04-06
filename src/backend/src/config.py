@@ -14,6 +14,13 @@ class Settings:
     ingestion_freshness_days: int
     search_provider: str
     enabled_layers: tuple[str, ...]
+    estimate_time_budget_seconds: float
+    estimate_auth_required: bool
+    estimate_api_token: str
+    routing_provider: str
+    health_rate_limit_per_minute: int
+    refresh_scheduler_enabled: bool
+    refresh_schedule_seconds: int
 
 
 def _parse_env_file(path: Path) -> dict[str, str]:
@@ -79,6 +86,13 @@ def load_settings() -> Settings:
         ingestion_freshness_days=int(_get_setting(env, shared, "INGESTION_FRESHNESS_DAYS", "30")),
         search_provider=search_provider,
         enabled_layers=enabled_layers,
+        estimate_time_budget_seconds=float(_get_setting(env, shared, "ESTIMATE_TIME_BUDGET_SECONDS", "60.0")),
+        estimate_auth_required=str(_get_setting(env, shared, "ESTIMATE_AUTH_REQUIRED", "1")) == "1",
+        estimate_api_token=str(_get_setting(env, shared, "ESTIMATE_API_TOKEN", "dev-local-token")),
+        routing_provider=str(_get_setting(env, shared, "ROUTING_PROVIDER", "mock_road")).strip().lower(),
+        health_rate_limit_per_minute=int(_get_setting(env, shared, "HEALTH_RATE_LIMIT_PER_MINUTE", "120")),
+        refresh_scheduler_enabled=str(_get_setting(env, shared, "REFRESH_SCHEDULER_ENABLED", "0")) == "1",
+        refresh_schedule_seconds=int(_get_setting(env, shared, "REFRESH_SCHEDULE_SECONDS", "3600")),
     )
 
 

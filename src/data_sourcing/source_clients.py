@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any, Iterable
@@ -14,12 +15,13 @@ from .address_normalization import parse_address_components
 
 LISTING_FIELD_ALIASES = {
     "address": ["address", "full_address", "property_address"],
+    "neighbourhood": ["neighbourhood", "neighborhood", "community"],
     "suite": ["suite", "unit", "unit_number", "suite_number"],
     "house_number": ["house_number", "street_number", "civic_number"],
     "street_name": ["street_name", "street", "street_address"],
     "legal_description": ["legal_description", "legal", "legal_desc"],
     "lat": ["lat", "latitude"],
-    "lon": ["lon", "lng", "longitude"],
+    "lon": ["lon", "lng", "longitude", "long"],
     "bedrooms": ["bedrooms", "beds", "bedroom_count"],
     "bathrooms": ["bathrooms", "baths", "bathroom_count"],
     "source_record_id": ["source_record_id", "record_id", "listing_id", "id"],
@@ -92,13 +94,28 @@ def _normalize_record(
                 break
         normalized[canonical_field] = value
 
-    parsed = parse_address_components(normalized.get("address"))
+    address_value = normalized.get("address")
+    suite_from_prefix, adjusted_address = _extract_suite_prefixed_address(address_value)
+    parsed = parse_address_components(adjusted_address)
+    normalized["address"] = adjusted_address or address_value
+    normalized["suite"] = normalized.get("suite") or suite_from_prefix
     normalized["suite"] = normalized.get("suite") or parsed.get("suite")
     normalized["house_number"] = normalized.get("house_number") or parsed.get("house_number")
     normalized["street_name"] = normalized.get("street_name") or parsed.get("street_name")
     normalized["source_record_id"] = normalized.get("source_record_id") or row.get("id")
     normalized["raw_payload_json"] = dict(row)
     return normalized
+
+
+def _extract_suite_prefixed_address(address: Any) -> tuple[str | None, str | None]:
+    if address in (None, ""):
+        return None, None
+    text = str(address).strip()
+    match = re.match(r"^\s*#\s*([A-Za-z0-9-]+)\s+(.+)$", text)
+    if not match:
+        return None, text
+    suite, remainder = match.group(1).strip(), match.group(2).strip()
+    return (suite or None), (remainder or None)
 
 
 class SourceClients:

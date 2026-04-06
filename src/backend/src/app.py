@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -26,8 +27,12 @@ from backend.src.api.estimates import router as estimates_router
 from backend.src.api.layers import router as layers_router
 from backend.src.api.properties import router as properties_router
 from backend.src.api.health import router as health_router
+from backend.src.api.refresh_jobs import router as refresh_jobs_router
 from backend.src.jobs.precompute_grid import router as jobs_router
+from backend.src.services.auth import require_estimate_access
 from data_sourcing.database import connect as connect_data_db, init_db as init_data_db
+from data_sourcing.service import IngestionService
+from estimator import warm_estimator
 
 settings = load_settings()
 metrics = Metrics()
@@ -55,6 +60,25 @@ async def initialize_database() -> None:
         init_data_db(conn)
     finally:
         conn.close()
+    # Build heavy estimator dependencies once at startup so estimate requests
+    # do not repeatedly pay initialization cost and hit time-budget failures.
+    await asyncio.to_thread(warm_estimator, settings.data_db_path)
+    app.state.refresh_scheduler_task = None
+    app.state.refresh_scheduler_active = False
+    app.state.last_refresh_run = None
+    if settings.refresh_scheduler_enabled:
+        app.state.refresh_scheduler_task = asyncio.create_task(_refresh_scheduler_loop())
+
+
+@app.on_event("shutdown")
+async def shutdown_background_tasks() -> None:
+    task = getattr(app.state, "refresh_scheduler_task", None)
+    if task:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 @app.middleware("http")
@@ -93,13 +117,28 @@ async def value_error_handler(request: Request, exc: ValueError):
 
 app.include_router(search_router, prefix="/api/v1")
 app.include_router(locations_router, prefix="/api/v1")
-app.include_router(estimates_router, prefix="/api/v1", dependencies=[])
+app.include_router(estimates_router, prefix="/api/v1", dependencies=[Depends(require_estimate_access)])
 app.include_router(layers_router, prefix="/api/v1")
 app.include_router(properties_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(refresh_jobs_router, prefix="/api/v1")
 app.include_router(health_router)
 
 # Shared objects for routers
 app.state.settings = settings
 app.state.metrics = metrics
 app.state.cache = cache
+
+
+async def _refresh_scheduler_loop() -> None:
+    while True:
+        app.state.refresh_scheduler_active = True
+        try:
+            service = IngestionService(db_path=app.state.settings.data_db_path)
+            run_result = await asyncio.to_thread(service.run_refresh, "scheduled", None)
+            app.state.last_refresh_run = run_result
+        except Exception as exc:
+            app.state.last_refresh_run = {"status": "failed", "error": str(exc)}
+        finally:
+            app.state.refresh_scheduler_active = False
+        await asyncio.sleep(max(app.state.settings.refresh_schedule_seconds, 30))

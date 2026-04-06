@@ -123,7 +123,8 @@ export function createSearchController({
 
       item.addEventListener("click", () => {
         onLocationResolved({
-          canonical_location_id: candidate.candidate_id || null,
+          canonical_location_id:
+            candidate.canonical_location_id || candidate.candidate_id || null,
           canonical_address: candidate.display_text,
           coordinates: candidate.coordinates,
           region: "Edmonton",

@@ -1,13 +1,15 @@
 import {
   ALLOW_MOCK_FALLBACK,
   API_BASE_URL,
+  ESTIMATE_API_TOKEN,
   PREFER_LIVE_API,
   SEARCH_PROVIDER
 } from "../../config.js";
 import { mockApi } from "./mockData.js";
 
 async function request(path, options = {}) {
-  const headers = { ...(options.headers || {}) };
+  const optionHeaders = { ...(options.headers || {}) };
+  const headers = { ...optionHeaders };
   if (options.body !== undefined && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
@@ -16,8 +18,8 @@ async function request(path, options = {}) {
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      headers,
-      ...options
+      ...options,
+      headers
     });
   } catch (error) {
     /* node:coverage ignore next */
@@ -27,7 +29,16 @@ async function request(path, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = data?.error?.message || "Request failed";
+    const firstValidationError = data?.error?.details?.errors?.[0];
+    const message = data?.error?.message
+      || (
+        firstValidationError
+          ? `${firstValidationError.field}: ${firstValidationError.correction}`
+          : null
+      )
+      || data?.detail?.[0]?.msg
+      || data?.detail?.msg
+      || "Request failed";
     const requestError = new Error(message);
     requestError.status = response.status;
     requestError.response = data;
@@ -146,9 +157,13 @@ export const apiClient = {
   },
 
   getEstimate(payload) {
+    const headers = ESTIMATE_API_TOKEN
+      ? { Authorization: `Bearer ${ESTIMATE_API_TOKEN}` }
+      : {};
     return requestWithFallback(
       () => request("/estimates", {
         method: "POST",
+        headers,
         body: JSON.stringify(payload)
       }),
       () => mockApi.getEstimate(payload)
