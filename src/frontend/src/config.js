@@ -96,6 +96,14 @@ function parseWeight(value, fallback = 50) {
   if (!Number.isFinite(parsed)) {
     return fallback;
   }
+  return Math.max(0, Math.min(100, parsed));
+}
+
+function parseNumber(value, fallback, { min = null, max = null } = {}) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
   if (min !== null && parsed < min) {
     return min;
   }
@@ -108,9 +116,8 @@ function parseWeight(value, fallback = 50) {
 export const API_BASE_URL = RUNTIME_ENV.API_BASE_URL;
 export const PREFER_LIVE_API = String(RUNTIME_ENV.PREFER_LIVE_API) !== "0";
 export const ALLOW_MOCK_FALLBACK = String(RUNTIME_ENV.ALLOW_MOCK_FALLBACK) !== "0";
-export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN || "");
-/* node:coverage ignore next */
-export const SEARCH_PROVIDER = ["db", "osrm"].includes(String(RUNTIME_ENV.SEARCH_PROVIDER || "db").toLowerCase()) ? String(RUNTIME_ENV.SEARCH_PROVIDER).toLowerCase() : "db";
+export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN ?? "");
+export const SEARCH_PROVIDER = normalizeSearchProvider(RUNTIME_ENV.SEARCH_PROVIDER);
 export const SEARCH_QUERY_MIN_CHARS = parseNumber(RUNTIME_ENV.SEARCH_QUERY_MIN_CHARS, 3, { min: 1 });
 export const SEARCH_SUGGESTIONS_DEFAULT_LIMIT = parseNumber(RUNTIME_ENV.SEARCH_SUGGESTIONS_DEFAULT_LIMIT, 5, { min: 1 });
 export const PROPERTY_CACHE_TTL_MS = parseNumber(RUNTIME_ENV.PROPERTY_CACHE_TTL_MS, 30000, { min: 1 });
@@ -121,8 +128,6 @@ export const PROPERTY_PREFETCH_VIEWPORTS = parseNumber(RUNTIME_ENV.PROPERTY_PREF
 export const LAYERS_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.LAYERS_REFRESH_DEBOUNCE_MS, 300, { min: 1 });
 export const PROPERTY_REFRESH_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.PROPERTY_REFRESH_DEBOUNCE_MS, 180, { min: 1 });
 export const SEARCH_INPUT_DEBOUNCE_MS = parseNumber(RUNTIME_ENV.SEARCH_INPUT_DEBOUNCE_MS, 300, { min: 1 });
-export const ESTIMATE_API_TOKEN = String(RUNTIME_ENV.ESTIMATE_API_TOKEN ?? "");
-export const SEARCH_PROVIDER = normalizeSearchProvider(RUNTIME_ENV.SEARCH_PROVIDER);
 export const ESTIMATE_REQUESTED_FACTORS = parseList(RUNTIME_ENV.ESTIMATE_REQUESTED_FACTORS);
 export const ESTIMATE_OPTIONS_DEFAULTS = {
   includeBreakdown: parseBooleanFlag(RUNTIME_ENV.ESTIMATE_INCLUDE_BREAKDOWN, true),
@@ -182,6 +187,7 @@ export const __configInternals = {
   parseList,
   normalizeSearchProvider,
   parseBooleanFlag,
+  parseNumber,
   parseWeight
 };
 /* node:coverage enable */

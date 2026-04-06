@@ -10,8 +10,16 @@ from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-# Ensure repo root and src/ are importable
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# Ensure repo root and src/ are importable regardless of which backend tree this file lives in.
+_THIS_FILE = Path(__file__).resolve()
+REPO_ROOT = next(
+    (
+        parent
+        for parent in _THIS_FILE.parents
+        if (parent / "src").exists() and (parent / "backend").exists()
+    ),
+    _THIS_FILE.parents[2],
+)
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 SRC_ROOT = REPO_ROOT / "src"
