@@ -1,7 +1,0 @@
-property_address,unit_number,street_number,street,legal,latitude,longitude,beds,baths,listing_id,listed_at
-5713 141 Avenue NW,,5713,141 Avenue NW,,53.6032195424752,-113.429775140059,4,2.5,listing-001,2026-03-31T12:00:00+00:00
-5151 Windermere Boulevard SW Suite 123,123,5151,Windermere Boulevard SW,Plan: 1520328 Unit: 120,53.4337816782126,-113.60028744742,2,2.0,listing-002,2026-03-31T12:05:00+00:00
-11631 94 Street NW,,11631,94 Street NW,Plan: RN43 Block: 35 Lot: 10,53.5682882353144,-113.485282450913,3,1.5,listing-003,2026-03-31T12:10:00+00:00
-7218 Armour Crescent SW,,7218,Armour Crescent SW,Plan: 1322997 Block: 2 Lot: 30,53.4228580625748,-113.611776536316,5,3.5,listing-004,2026-03-31T12:15:00+00:00
-7611 130 Avenue NW,,7611,130 Avenue NW,Plan: 731MC Block: 5 Lot: 16,53.5888980934095,-113.458078070473,4,2.0,listing-005,2026-03-31T12:20:00+00:00
-4211 120 Street NW,,4211,120 Street NW,Plan: 6773MC Block: 17 Lot: 37,53.480205414101,-113.544728874794,4,3.0,listing-006,2026-03-31T12:25:00+00:00
