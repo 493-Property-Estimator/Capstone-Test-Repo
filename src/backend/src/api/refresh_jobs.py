@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
-from backend.src.db.connection import connect
+from src.backend.src.db.connection import connect
 
 router = APIRouter()
 

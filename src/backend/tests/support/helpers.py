@@ -1,4 +1,4 @@
-from backend.src.services.validation import ValidationIssue
+from src.backend.src.services.validation import ValidationIssue
 
 
 def assert_error_envelope(data):

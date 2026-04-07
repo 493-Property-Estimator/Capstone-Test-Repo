@@ -3,8 +3,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.db.queries import decode_geometry, fetch_geospatial_features
-from backend.src.services.errors import error_response
+from src.backend.src.db.queries import decode_geometry, fetch_geospatial_features
+from src.backend.src.services.errors import error_response
 
 router = APIRouter()
 

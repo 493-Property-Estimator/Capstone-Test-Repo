@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from backend.src.services.metrics import Metrics
+from src.backend.src.services.metrics import Metrics
 
 EARTH_RADIUS_M = 6_371_000.0
 

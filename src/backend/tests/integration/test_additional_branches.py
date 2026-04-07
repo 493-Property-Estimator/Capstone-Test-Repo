@@ -1,7 +1,7 @@
 import sqlite3
 
-from backend.src.services import features
-from backend.src.jobs import precompute_grid
+from src.backend.src.services import features
+from src.backend.src.jobs import precompute_grid
 
 
 def test_distance_factor_branches():
@@ -13,7 +13,7 @@ def test_distance_factor_branches():
 
 
 def test_validate_location_payload_polygon():
-    from backend.src.services.validation import validate_location_payload
+    from src.backend.src.services.validation import validate_location_payload
 
     issues = validate_location_payload({"location": {"polygon": "bad"}})
     assert any(issue.field == "location.polygon" for issue in issues)

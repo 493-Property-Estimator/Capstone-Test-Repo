@@ -25,7 +25,7 @@ def test_uc26_warning_arrays_present(client):
 
 
 def test_uc28_baseline_missing_returns_424(client, monkeypatch):
-    from backend.src.api import estimates as estimate_api
+    from src.backend.src.api import estimates as estimate_api
 
     def no_baseline(*args, **kwargs):
         return None
@@ -40,8 +40,8 @@ def test_uc28_baseline_missing_returns_424(client, monkeypatch):
 
 
 def test_uc28_strict_mode_missing_factor(client, monkeypatch):
-    from backend.src.api import estimates as estimate_api
-    from backend.src.services.features import FactorResult
+    from src.backend.src.api import estimates as estimate_api
+    from src.backend.src.services.features import FactorResult
 
     def fake_compute(point, db_path):
         return [
@@ -62,7 +62,7 @@ def test_uc28_strict_mode_missing_factor(client, monkeypatch):
 
 
 def test_confidence_percentage_and_completeness_mapping(client, monkeypatch):
-    from backend.src.api import estimates as estimate_api
+    from src.backend.src.api import estimates as estimate_api
 
     def fake_estimate_property_value(*args, **kwargs):
         return {
@@ -109,7 +109,7 @@ def test_confidence_percentage_and_completeness_mapping(client, monkeypatch):
 
 
 def test_factor_breakdown_preserves_negative_values(client, monkeypatch):
-    from backend.src.api import estimates as estimate_api
+    from src.backend.src.api import estimates as estimate_api
 
     def fake_estimate_property_value(*args, **kwargs):
         return {

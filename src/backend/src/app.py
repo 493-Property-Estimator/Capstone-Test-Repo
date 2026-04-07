@@ -26,18 +26,18 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.append(str(SRC_ROOT))
 
-from backend.src.config import load_settings
-from backend.src.services.metrics import Metrics
-from backend.src.services.cache import MemoryCache
-from backend.src.api.search import router as search_router
-from backend.src.api.locations import router as locations_router
-from backend.src.api.estimates import router as estimates_router
-from backend.src.api.layers import router as layers_router
-from backend.src.api.properties import router as properties_router
-from backend.src.api.health import router as health_router
-from backend.src.api.refresh_jobs import router as refresh_jobs_router
-from backend.src.jobs.precompute_grid import router as jobs_router
-from backend.src.services.auth import require_estimate_access
+from src.backend.src.config import load_settings
+from src.backend.src.services.metrics import Metrics
+from src.backend.src.services.cache import MemoryCache
+from src.backend.src.api.search import router as search_router
+from src.backend.src.api.locations import router as locations_router
+from src.backend.src.api.estimates import router as estimates_router
+from src.backend.src.api.layers import router as layers_router
+from src.backend.src.api.properties import router as properties_router
+from src.backend.src.api.health import router as health_router
+from src.backend.src.api.refresh_jobs import router as refresh_jobs_router
+from src.backend.src.jobs.precompute_grid import router as jobs_router
+from src.backend.src.services.auth import require_estimate_access
 from data_sourcing.database import connect as connect_data_db, init_db as init_data_db
 from data_sourcing.service import IngestionService
 from estimator import warm_estimator

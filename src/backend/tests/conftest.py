@@ -12,13 +12,13 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from backend.src.app import app
-from backend.src.config import Settings
-from backend.src.services.cache import MemoryCache
-from backend.src.services.metrics import Metrics
+from src.backend.src.app import app
+from src.backend.src.config import Settings
+from src.backend.src.services.cache import MemoryCache
+from src.backend.src.services.metrics import Metrics
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def test_db_path(tmp_path_factory):
     db_path = tmp_path_factory.mktemp("db") / "test.db"
     _init_db(db_path)
@@ -31,11 +31,24 @@ def _init_db(db_path: Path):
         """
         CREATE TABLE property_locations_prod (
             canonical_location_id TEXT PRIMARY KEY,
+            assessment_year INTEGER,
             assessment_value REAL,
+            suite TEXT,
             house_number TEXT,
             street_name TEXT,
+            neighbourhood_id TEXT,
             neighbourhood TEXT,
             ward TEXT,
+            zoning TEXT,
+            lot_size REAL,
+            total_gross_area REAL,
+            year_built INTEGER,
+            tax_class TEXT,
+            garage TEXT,
+            assessment_class_1 TEXT,
+            assessment_class_2 TEXT,
+            assessment_class_3 TEXT,
+            point_location TEXT,
             lat REAL,
             lon REAL
         )
@@ -58,6 +71,61 @@ def _init_db(db_path: Path):
     )
     conn.execute(
         """
+        CREATE TABLE property_attributes_prod (
+            canonical_location_id TEXT PRIMARY KEY,
+            bedrooms REAL,
+            bathrooms REAL,
+            bedrooms_estimated REAL,
+            bathrooms_estimated REAL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE assessments_prod (
+            canonical_location_id TEXT PRIMARY KEY,
+            assessment_year INTEGER,
+            assessment_value REAL,
+            chosen_record_id TEXT,
+            confidence REAL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE poi_prod (
+            canonical_poi_id TEXT PRIMARY KEY,
+            name TEXT,
+            raw_category TEXT,
+            raw_subcategory TEXT,
+            address TEXT,
+            lon REAL,
+            lat REAL,
+            neighbourhood TEXT,
+            source_dataset TEXT,
+            source_provider TEXT,
+            source_ids_json TEXT,
+            source_entity_ids_json TEXT,
+            metadata_json TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE census_prod (
+            area_id TEXT,
+            geography_level TEXT,
+            population INTEGER,
+            households INTEGER,
+            median_income REAL,
+            area_sq_km REAL,
+            population_density REAL,
+            limited_accuracy INTEGER
+        )
+        """
+    )
+    conn.execute(
+        """
         CREATE TABLE dataset_versions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             dataset_type TEXT,
@@ -70,11 +138,30 @@ def _init_db(db_path: Path):
     conn.execute(
         """
         INSERT INTO property_locations_prod (
-            canonical_location_id, assessment_value, house_number, street_name,
-            neighbourhood, ward, lat, lon
+            canonical_location_id, assessment_year, assessment_value, suite, house_number, street_name,
+            neighbourhood_id, neighbourhood, ward, zoning, lot_size, total_gross_area,
+            year_built, tax_class, garage, assessment_class_1, assessment_class_2, assessment_class_3,
+            point_location, lat, lon
         ) VALUES (
-            'loc_001', 410000, '123', 'Main St', 'Downtown', 'Ward 1', 53.5461, -113.4938
+            'loc_001', 2026, 410000, NULL, '123', 'Main St',
+            'N1090', 'Downtown', 'Ward 1', 'DC1', 300.0, 175.0,
+            2005, 'Residential', 'Y', 'Residential', NULL, NULL,
+            NULL, 53.5461, -113.4938
         )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO property_attributes_prod (
+            canonical_location_id, bedrooms, bathrooms, bedrooms_estimated, bathrooms_estimated
+        ) VALUES ('loc_001', 3, 2, NULL, NULL)
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO assessments_prod (
+            canonical_location_id, assessment_year, assessment_value, chosen_record_id, confidence
+        ) VALUES ('loc_001', 2026, 410000, 'assess_001', 1.0)
         """
     )
     conn.execute(
@@ -90,8 +177,28 @@ def _init_db(db_path: Path):
     )
     conn.execute(
         """
+        INSERT INTO poi_prod (
+            canonical_poi_id, name, raw_category, raw_subcategory, address, lon, lat, neighbourhood,
+            source_dataset, source_provider, source_ids_json, source_entity_ids_json, metadata_json
+        ) VALUES (
+            'library_001', 'Test Library', 'Business', 'library', '1 Test Ave', -113.4937, 53.54615, 'Downtown',
+            'osm', 'osm', '[]', '[]', '{}'
+        )
+        """
+    )
+    conn.execute(
+        """
         INSERT INTO dataset_versions (dataset_type, version_id, promoted_at, run_id)
         VALUES ('assessments', 'v1', '2026-03-17T00:00:00Z', 'run-1')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO census_prod (
+            area_id, geography_level, population, households, median_income, area_sq_km, population_density, limited_accuracy
+        ) VALUES (
+            'N1090', 'neighbourhood', 25000, 10000, 75000, 5.0, 5000.0, 0
+        )
         """
     )
     conn.commit()
@@ -108,7 +215,6 @@ def client(test_db_path, monkeypatch):
         enable_strict_mode_default=False,
         ingestion_freshness_days=30,
         search_provider="db",
-        enabled_layers=(),
         estimate_time_budget_seconds=5.0,
         estimate_auth_required=False,
         estimate_api_token="test-token",
@@ -130,6 +236,14 @@ def client(test_db_path, monkeypatch):
         properties_zoom_min=0.0,
         properties_zoom_max=25.0,
         properties_cluster_zoom_threshold=17.0,
+        enabled_layers=(
+            "schools",
+            "parks",
+            "playgrounds",
+            "police_stations",
+            "transit_stops",
+            "unknown",
+        ),
     )
     app.state.settings = settings
     app.state.cache = MemoryCache(settings.cache_ttl_seconds)

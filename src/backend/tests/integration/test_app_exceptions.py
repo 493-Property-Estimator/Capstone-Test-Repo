@@ -3,7 +3,7 @@ from starlette.datastructures import Headers
 
 import asyncio
 
-from backend.src.app import value_error_handler
+from src.backend.src.app import value_error_handler
 
 
 def test_value_error_handler():

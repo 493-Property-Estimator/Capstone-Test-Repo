@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
-from backend.src.config import EDMONTON_BOUNDS
-from backend.src.db.queries import get_location_by_id
+from src.backend.src.config import EDMONTON_BOUNDS
+from src.backend.src.db.queries import get_location_by_id
 from estimator import proximity
 
 router = APIRouter()

@@ -20,8 +20,8 @@ There are duplicate backend trees:
 - `backend/`
 - `src/backend/`
 
-The active runtime path is `backend.src...` (for example `backend.src.app:app`).
-Treat `backend/` as canonical unless a task explicitly says otherwise.
+The active runtime path is `src.backend.src...` (for example `src.backend.src.app:app`).
+Treat `src/backend/` as canonical. The legacy `backend/` tree should be considered transitional only.
 
 ## 3) High-level architecture
 
@@ -41,14 +41,14 @@ Treat `backend/` as canonical unless a task explicitly says otherwise.
 - `src/frontend/src/map/mapAdapter.js`: map abstraction and map event integration.
 - `src/frontend/src/state/store.js`: app state store.
 
-### 3.2 Backend (`backend/src/`)
+### 3.2 Backend (`src/backend/src/`)
 
-- `backend/src/app.py`: FastAPI app bootstrap, middleware, router mounting, startup/shutdown hooks.
-- `backend/src/config.py`: environment-driven settings and defaults.
-- `backend/src/api/*`: HTTP endpoints.
-- `backend/src/services/*`: auth, validation, cache, routing, metrics, feature helpers.
-- `backend/src/db/queries.py`: SQL query layer over SQLite.
-- `backend/src/jobs/precompute_grid.py`: compute grid-level aggregate features.
+- `src/backend/src/app.py`: FastAPI app bootstrap, middleware, router mounting, startup/shutdown hooks.
+- `src/backend/src/config.py`: environment-driven settings and defaults.
+- `src/backend/src/api/*`: HTTP endpoints.
+- `src/backend/src/services/*`: auth, validation, cache, routing, metrics, feature helpers.
+- `src/backend/src/db/queries.py`: SQL query layer over SQLite.
+- `src/backend/src/jobs/precompute_grid.py`: compute grid-level aggregate features.
 
 ### 3.3 Data sourcing (`src/data_sourcing/`)
 
@@ -67,7 +67,7 @@ Treat `backend/` as canonical unless a task explicitly says otherwise.
 
 ## 4) Runtime boot sequence
 
-When backend starts (`backend/src/app.py`):
+When backend starts (`src/backend/src/app.py`):
 
 1. Loads settings from environment + `.env`.
 2. Connects to SQLite (`data_db_path`) and ensures schema exists.
@@ -135,7 +135,7 @@ All routes are mounted under `/api/v1` except health routes.
 
 ## 6) Core config and environment variables
 
-Primary settings live in `backend/src/config.py`. Most important:
+Primary settings live in `src/backend/src/config.py`. Most important:
 
 - `DATA_DB_PATH` (default `src/data_sourcing/open_data.db`)
 - `CACHE_TTL_SECONDS`
@@ -164,10 +164,10 @@ Run from repo root unless specified.
 ### 7.1 Setup and run
 
 ```bash
-pip install -r backend/requirements.txt
-pip install -r backend/requirements-dev.txt
+pip install -r src/backend/requirements.txt
+pip install -r src/backend/requirements-dev.txt
 ./ingest init-db
-python3 -m uvicorn backend.src.app:app --reload --port 8000
+python3 -m uvicorn src.backend.src.app:app --reload --port 8000
 python3 -m http.server 8080 --directory src/frontend
 ```
 
@@ -241,10 +241,10 @@ Estimator flow:
 Primary test locations:
 
 - Backend acceptance/integration/contract/support:
-  - `backend/tests/acceptance/`
-  - `backend/tests/integration/`
-  - `backend/tests/contract/`
-  - `backend/tests/support/`
+  - `src/backend/tests/acceptance/`
+  - `src/backend/tests/integration/`
+  - `src/backend/tests/contract/`
+  - `src/backend/tests/support/`
 - Frontend tests:
   - `src/frontend/tests/`
   - traceability notes in `src/frontend/tests/README.md`
@@ -289,9 +289,9 @@ When changing API payloads:
 
 ### 12.1 Add/modify endpoint
 
-1. Update `backend/src/api/<module>.py`.
-2. Add/update DB query helpers in `backend/src/db/queries.py` if needed.
-3. Add validation/auth changes in `backend/src/services/`.
+1. Update `src/backend/src/api/<module>.py`.
+2. Add/update DB query helpers in `src/backend/src/db/queries.py` if needed.
+3. Add validation/auth changes in `src/backend/src/services/`.
 4. Add/update backend tests.
 5. Update frontend API client + feature controller + frontend tests.
 
@@ -305,7 +305,7 @@ When changing API payloads:
 ### 12.3 Estimation logic changes
 
 1. Update `src/estimator/property_estimator.py` (and helpers).
-2. Preserve response adapter expectations in `backend/src/api/estimates.py`.
+2. Preserve response adapter expectations in `src/backend/src/api/estimates.py`.
 3. Run backend tests targeting estimate-related coverage.
 
 ## 13) Operational notes
