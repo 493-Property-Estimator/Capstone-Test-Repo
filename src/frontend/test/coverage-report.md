@@ -12,13 +12,13 @@ The latest verified frontend coverage run passes and meets the `100%` line-cover
 
 | Scope | Lines | Branches | Functions |
 |---|---:|---:|---:|
-| All included frontend files | 100.00% | 100.00% | 99.50% |
+| All included frontend files | 100.00% | 100.00% | 99.53% |
 
 ## File-Level Summary
 
 | File | Lines | Branches | Functions |
 |---|---:|---:|---:|
-| `src/frontend/src/app.js` | 100.00% | 100.00% | 88.89% |
+| `src/frontend/src/app.js` | 100.00% | 100.00% | 90.00% |
 | `src/frontend/src/config.js` | 100.00% | 100.00% | 100.00% |
 | `src/frontend/src/features/estimate/estimateController.js` | 100.00% | 100.00% | 100.00% |
 | `src/frontend/src/features/layers/layerController.js` | 100.00% | 100.00% | 100.00% |
@@ -44,7 +44,7 @@ The latest verified frontend coverage run passes and meets the `100%` line-cover
 ```text
 file                             | line % | branch % | funcs %
 --------------------------------------------------------------
-app.js                           | 100.00 |   100.00 |   88.89
+app.js                           | 100.00 |   100.00 |   90.00
 config.js                        | 100.00 |   100.00 |  100.00
 estimateController.js            | 100.00 |   100.00 |  100.00
 layerController.js               | 100.00 |   100.00 |  100.00
@@ -58,7 +58,7 @@ store.js                         | 100.00 |   100.00 |  100.00
 debounce.js                      | 100.00 |   100.00 |  100.00
 dom.js                           | 100.00 |   100.00 |  100.00
 --------------------------------------------------------------
-all files                        | 100.00 |   100.00 |   99.50
+all files                        | 100.00 |   100.00 |   99.53
 ```
 
 ## Notes

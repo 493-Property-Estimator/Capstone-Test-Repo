@@ -49,6 +49,8 @@ function ids() {
     { id: "warning-panel" },
     { id: "warning-indicator", tagName: "button" },
     { id: "environment-badge" },
+    { id: "layer-side-panel" },
+    { id: "layer-panel-toggle", tagName: "button" },
     { id: "property-detail-panel" },
     { id: "property-detail-title" },
     { id: "property-detail-subtitle" },

@@ -21,7 +21,7 @@ Latest verified coverage outcome:
 
 - Global lines: `100.00%`
 - Global branches: `100.00%`
-- Global functions: `99.50%`
+- Global functions: `99.53%`
 
 Important status note:
 - The automated suite is green.
