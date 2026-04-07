@@ -445,7 +445,7 @@ p {
 
 .map-side-panel {
   position: absolute;
-  top: 102px;
+  top: 20px;
   right: 20px;
   z-index: 820;
   width: min(380px, calc(100% - 40px));
@@ -705,7 +705,8 @@ p {
 
 .lab-page {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(320px, 420px) 1fr;
   background:
@@ -721,6 +722,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -730,12 +732,14 @@ p {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow: hidden;
 }
 
 .lab-map-root {
   position: relative;
   flex: 1 1 auto;
-  min-height: 560px;
+  min-height: 0;
+  height: 100%;
   border: 1px solid rgba(17, 69, 54, 0.18);
   border-radius: 24px;
   overflow: hidden;
@@ -812,7 +816,7 @@ p {
   }
 
   .map-side-panel {
-    top: 78px;
+    top: 16px;
     right: 12px;
     width: calc(100% - 24px);
   }
@@ -820,6 +824,9 @@ p {
   .lab-page {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
   }
 
   .lab-sidebar,
@@ -829,6 +836,7 @@ p {
 
   .lab-map-root {
     min-height: 420px;
+    height: auto;
   }
 
   .detail-grid {

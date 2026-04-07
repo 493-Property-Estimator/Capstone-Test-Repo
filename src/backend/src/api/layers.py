@@ -21,6 +21,7 @@ LAYER_LEGENDS = {
     "provincial_districts": {"title": "Provincial Districts", "items": [{"label": "Provincial District", "color": "#7c3aed", "shape": "polygon"}]},
     "federal_districts": {"title": "Federal Districts", "items": [{"label": "Federal District", "color": "#be123c", "shape": "polygon"}]},
     "census_subdivisions": {"title": "Census Subdivisions", "items": [{"label": "Census Subdivision", "color": "#334155", "shape": "polygon"}]},
+    "census_boundaries": {"title": "Census Boundaries", "items": [{"label": "Census Boundary", "color": "#475569", "shape": "polygon"}]},
 }
 
 

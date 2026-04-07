@@ -8,6 +8,18 @@ This matrix is intended to drive the final implementation phase under a flow-bas
 - `Partial`: core pieces exist, but one or more important flows, datasets, or acceptance expectations are incomplete
 - `Not Evidenced`: insufficient implementation or verification evidence in the current codebase
 
+## Current Snapshot
+
+- Date: `2026-04-07` America/Edmonton
+- Commit: `d152a7e`
+- Frontend automated suite: `19/19` passing
+- Frontend coverage:
+  - lines: `100.00%`
+  - branches: `100.00%`
+  - functions: `99.53%`
+- Backend canonical tree: `src/backend/`
+- Backend runtime path: `src.backend.src.app:app`
+
 ## Matrix
 
 | UC | User Story Summary | Status | Main Reason |
