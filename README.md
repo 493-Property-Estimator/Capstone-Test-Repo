@@ -8,19 +8,23 @@ This repository currently contains:
 
 - the full user-story and per-feature spec structure under `specs/`
 - a shared frontend/backend API contract in `frontend_api_contract.md`
-- a modular frontend scaffold in `src/frontend/`
-- a FastAPI backend scaffold in `src/backend/`
+- a MapLibre-based modular frontend in `src/frontend/`
+- a FastAPI backend in `src/backend/`
+- a local SQLite feature store in `src/data_sourcing/open_data.db`
 
 ## Frontend Status
 
-The frontend currently implements the UI-side skeleton for the stories that fall within frontend scope:
+The frontend currently implements the main user-facing application for the frontend-owned stories:
 
-- address search and suggestion handling
-- map click selection
-- OpenStreetMap rendering for the Edmonton area
+- address search, resolution, and ambiguous-candidate handling
+- map click selection with drag guards
+- MapLibre + OpenStreetMap rendering for the Edmonton area
+- DB-backed assessment property clustering and individual property rendering
+- simplified property hover card and right-side detail panel
 - open-data layer toggles and viewport refresh handling
 - estimate request form with minimal and standard property details
-- estimate rendering, confidence display, and warning UI
+- estimate criteria controls for factor inclusion, response detail options, and weighting sliders
+- estimate rendering, confidence display, top-factor rendering, and warning UI
 - client-side validation and invalid-input messaging
 
 The current frontend is organized as:
@@ -28,8 +32,25 @@ The current frontend is organized as:
 - `src/frontend/index.html`
 - `src/frontend/styles/app.css`
 - `src/frontend/src/app.js`
+- `src/frontend/app.env`
 - feature modules under `src/frontend/src/features/`
+- map integration under `src/frontend/src/map/`
 - backend integration client under `src/frontend/src/services/api/apiClient.js`
+- frontend tests under `src/frontend/tests/`
+
+## Frontend Runtime Behavior
+
+The frontend is environment-driven through `src/frontend/app.env` and `src/frontend/src/config.js`.
+
+Important runtime behavior:
+
+- the frontend targets `http://localhost:8000/api/v1` by default
+- live API mode is preferred unless overridden by env settings
+- assessment properties are requested from the backend `/api/v1/properties` endpoint, not from a CSV file
+- property clustering is handled by the backend response mode and rendered by MapLibre in the browser
+- the main map UI uses a collapsible map-side layer panel rather than a left-column layer list
+- selecting a property by map click or search can open the right-side property detail panel
+- the estimate request includes optional factor criteria and output-detail options when enabled in the UI
 
 ## How To Run
 
@@ -77,7 +98,7 @@ export DATA_DB_PATH=src/data_sourcing/open_data.db
 Run directly from repo root:
 
 ```bash
-python3 -m uvicorn backend.src.app:app --reload --port 8000
+python3 -m uvicorn src.backend.src.app:app --reload --port 8000
 ```
 
 Or use the package script:
@@ -95,7 +116,7 @@ http://localhost:8000/api/v1
 Recommended startup flow from the repo root:
 
 1. `./ingest init-db`
-2. `python3 -m uvicorn backend.src.app:app --reload --port 8000`
+2. `python3 -m uvicorn src.backend.src.app:app --reload --port 8000`
 3. `python3 -m http.server 8080 --directory src/frontend`
 4. Open `http://localhost:8080`
 
@@ -137,7 +158,7 @@ If you want to ingest recognized local files from `src/data_sourcing/data`, use:
 python3 scripts/init_and_ingest_open_data.py
 ```
 
-The root property assessment CSV is treated as an ingestion/bootstrap source when needed. The running app does not read that CSV directly. In live mode, the frontend requests property and layer data from the backend, and the backend serves those responses from the SQLite feature store.
+The root property assessment CSV, when present, is treated as an ingestion/bootstrap source only. The running app does not read that CSV directly. In live mode, the frontend requests property and layer data from the backend, and the backend serves those responses from the SQLite feature store.
 
 ### TestingStage Test Page
 
@@ -158,13 +179,15 @@ http://127.0.0.1:8010
 ## Runtime Notes
 
 - The frontend expects the backend API at `http://localhost:8000/api/v1`.
-- That value is configured in `src/frontend/src/config.js`.
+- That value is configured through `src/frontend/app.env` and `src/frontend/src/config.js`.
 - The backend defaults to `src/data_sourcing/open_data.db` unless `DATA_DB_PATH` is set.
 - In live mode, assessment properties are served from the SQLite database through backend endpoints such as `/api/v1/properties`; the frontend does not read the root assessment CSV directly.
 - The browser needs internet access for:
   - MapLibre/OpenStreetMap tile loading
 - Map clicks send coordinate payloads to the backend through the map-click resolution endpoint.
 - A guard is in place so hold-and-drag map movement does not send click payloads.
+- Search behavior, property viewport cache timing, property limits, and layer refresh debounce values are configurable from frontend env settings.
+- The estimate endpoint expects a valid API token when backend auth is enabled; the frontend token must match the backend token.
 
 ## Test Commands
 
@@ -182,7 +205,7 @@ Run all new Python suites together (`scripts/Tests`, `src/estimator/Tests`, `src
 npm run test:python:new
 ```
 
-Run all Python tests in the repository (existing + new, including `tests/` and `backend/tests/`):
+Run all Python tests in the repository (existing + new, including `tests/` and `src/backend/tests/`):
 
 ```bash
 npm run test:python:all
@@ -192,6 +215,12 @@ Run frontend tests:
 
 ```bash
 npm run test:frontend
+```
+
+Run frontend coverage:
+
+```bash
+npm run test:frontend:coverage
 ```
 
 Run full test sweep (Python + frontend):
@@ -226,13 +255,15 @@ Full Python coverage output:
 - HTML report: `coverage/html/all/index.html`
 - XML report: `coverage/coverage.xml`
 
-Generate frontend coverage:
+Latest verified frontend automated result:
 
-```bash
-npm run test:frontend:coverage
-```
+- tests: `19/19` passing
+- line coverage: `100.00%`
+- branch coverage: `100.00%`
+- function coverage: `99.53%`
 
 ## Next Integration Steps
 
-- connect the Python backend to the contract in `frontend_api_contract.md`
-- test the frontend against live backend responses for search, estimate, and layer data
+- continue aligning backend response payloads with `frontend_api_contract.md`
+- verify all enabled layers against the latest database contents and backend query support
+- extend frontend acceptance-flow evidence as new UI features are added

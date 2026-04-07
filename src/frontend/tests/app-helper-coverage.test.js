@@ -49,6 +49,8 @@ function ids() {
     { id: "warning-panel" },
     { id: "warning-indicator", tagName: "button" },
     { id: "environment-badge" },
+    { id: "layer-side-panel" },
+    { id: "layer-panel-toggle", tagName: "button" },
     { id: "property-detail-panel" },
     { id: "property-detail-title" },
     { id: "property-detail-subtitle" },
@@ -119,4 +121,47 @@ test("app helper matches properties by id, by coordinates, and handles missing i
     }),
     null
   );
+});
+
+test("app toggles the layer side panel and updates button state", () => {
+  const layerSidePanel = document.getElementById("layer-side-panel");
+  const layerPanelToggle = document.getElementById("layer-panel-toggle");
+
+  assert.equal(layerSidePanel.classList.contains("is-collapsed"), false);
+  assert.equal(layerPanelToggle.getAttribute("aria-expanded"), null);
+
+  layerPanelToggle.click();
+  assert.equal(layerSidePanel.classList.contains("is-collapsed"), true);
+  assert.equal(layerPanelToggle.getAttribute("aria-expanded"), "false");
+  assert.equal(layerPanelToggle.textContent, "Show Layers");
+
+  layerPanelToggle.click();
+  assert.equal(layerSidePanel.classList.contains("is-collapsed"), false);
+  assert.equal(layerPanelToggle.getAttribute("aria-expanded"), "true");
+  assert.equal(layerPanelToggle.textContent, "Hide Layers");
+});
+
+test("app reset handler restores default selection state", () => {
+  __app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-1",
+      canonical_address: "Changed",
+      coordinates: { lat: 53.5, lng: -113.4 }
+    },
+    selectedPropertyDetails: {
+      canonical_location_id: "loc-1"
+    },
+    propertyDetailsDismissed: true,
+    estimate: { estimate: { value: 123456 } },
+    warningsCollapsed: true
+  });
+
+  document.getElementById("reset-selection").click();
+
+  const state = __app.store.getState();
+  assert.equal(state.selectedPropertyDetails, null);
+  assert.equal(state.propertyDetailsDismissed, false);
+  assert.equal(state.estimate, null);
+  assert.equal(state.warningsCollapsed, false);
+  assert.equal(state.selectedLocation.canonical_address, "Edmonton, AB");
 });
