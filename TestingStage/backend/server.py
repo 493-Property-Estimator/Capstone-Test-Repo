@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
+import threading
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -299,6 +301,17 @@ class TestingStageHandler(SimpleHTTPRequestHandler):
 def run(host: str = "127.0.0.1", port: int = 8010) -> None:
     server = ThreadingHTTPServer((host, port), TestingStageHandler)
     print(f"TestingStage server running at http://{host}:{port}")
+    prewarm_flag = os.getenv("TESTING_STAGE_TRANSIT_PREWARM", "1").strip().lower()
+    prewarm_enabled = prewarm_flag not in {"0", "false", "no", "off"}
+    if prewarm_enabled:
+        def _prewarm_transit() -> None:
+            try:
+                TestingStageHandler.data_service.prewarm_transit_graph()
+                print("Transit graph prewarm complete.")
+            except Exception as error:
+                print(f"Transit graph prewarm failed: {error}")
+
+        threading.Thread(target=_prewarm_transit, daemon=True).start()
     server.serve_forever()
 
 

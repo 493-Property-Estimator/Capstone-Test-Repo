@@ -4,6 +4,7 @@ import heapq
 import json
 import math
 import os
+import pickle
 import sqlite3
 import urllib.error
 import urllib.parse
@@ -316,14 +317,18 @@ class RoadGraph:
 
 
 class TransitNetwork:
+    GRAPH_CACHE_VERSION = 1
+
     def __init__(self, db_path: Path) -> None:
         self._db_path = db_path
-        self._loaded = False
+        self._graph_cache_path = self._db_path.with_suffix(".transit_graph_cache.pkl")
+        self._base_loaded = False
+        self._graph_loaded = False
         self._stops: dict[str, TransitStop] = {}
         self._routes: dict[str, dict[str, Any]] = {}
         self._adjacency: dict[str, list[TransitEdge]] = defaultdict(list)
-        self._route_shapes: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self._route_stop_ids: dict[str, set[str]] = defaultdict(set)
+        self._route_shapes_cache: dict[str, list[dict[str, Any]]] = {}
         self._stop_grid: dict[tuple[int, int], list[TransitStop]] = defaultdict(list)
         self._trip_count = 0
 
@@ -349,8 +354,24 @@ class TransitNetwork:
             points.append((lon, lat))
         return points
 
-    def ensure_loaded(self) -> None:
-        if self._loaded:
+    @staticmethod
+    def _split_grouped_values(raw_value: str | None) -> list[str]:
+        if not raw_value:
+            return []
+        return sorted({item.strip() for item in str(raw_value).split(",") if item and item.strip()})
+
+    @staticmethod
+    def _split_grouped_ints(raw_value: str | None) -> list[int]:
+        values: list[int] = []
+        for item in TransitNetwork._split_grouped_values(raw_value):
+            try:
+                values.append(int(item))
+            except ValueError:
+                continue
+        return sorted(set(values))
+
+    def ensure_base_loaded(self) -> None:
+        if self._base_loaded:
             return
 
         with self._connect() as connection:
@@ -364,13 +385,17 @@ class TransitNetwork:
                   AND lon IS NOT NULL
                 """
             ).fetchall()
-            trip_rows = connection.execute(
+            route_rows = connection.execute(
                 """
-                SELECT route_id, trip_id, trip_headsign, direction_id, shape_id, geometry_json
+                SELECT
+                    route_id,
+                    COUNT(*) AS trip_count,
+                    GROUP_CONCAT(DISTINCT trip_headsign) AS headsigns_csv,
+                    GROUP_CONCAT(DISTINCT direction_id) AS direction_ids_csv
                 FROM transit_prod
                 WHERE transit_type='trips'
                   AND route_id IS NOT NULL
-                  AND trip_id IS NOT NULL
+                GROUP BY route_id
                 """
             ).fetchall()
 
@@ -386,10 +411,218 @@ class TransitNetwork:
             self._stops[stop.stop_id] = stop
             self._stop_grid[self._grid_cell(stop.lat, stop.lon)].append(stop)
 
-        edge_index: dict[tuple[str, str, str], TransitEdge] = {}
-        route_shape_seen: set[tuple[str, str, str]] = set()
+        for row in route_rows:
+            route_id = safe_text(row["route_id"])
+            if not route_id:
+                continue
+            self._routes[route_id] = {
+                "route_id": route_id,
+                "headsigns": self._split_grouped_values(row["headsigns_csv"]),
+                "direction_ids": self._split_grouped_ints(row["direction_ids_csv"]),
+                "trip_count": int(row["trip_count"] or 0),
+                "shape_count": 0,
+                "stop_count": 0,
+            }
 
-        for row in trip_rows:
+        self._trip_count = sum(int(item["trip_count"] or 0) for item in self._routes.values())
+        self._base_loaded = True
+
+    def _load_route_shapes(self, route_id: str) -> list[dict[str, Any]]:
+        if route_id in self._route_shapes_cache:
+            return self._route_shapes_cache[route_id]
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT route_id, trip_id, trip_headsign, direction_id, shape_id, geometry_json
+                FROM transit_prod
+                WHERE transit_type='trips'
+                  AND route_id = ?
+                  AND trip_id IS NOT NULL
+                """,
+                (route_id,),
+            ).fetchall()
+
+        shape_seen: set[tuple[str, str]] = set()
+        shapes: list[dict[str, Any]] = []
+        for row in rows:
+            trip_id = safe_text(row["trip_id"])
+            if not trip_id:
+                continue
+            points = self._parse_points(row["geometry_json"])
+            if len(points) < 2:
+                continue
+            shape_id = safe_text(row["shape_id"]) or trip_id
+            shape_fingerprint = json.dumps(points)
+            shape_key = (shape_id, shape_fingerprint)
+            if shape_key in shape_seen:
+                continue
+            shape_seen.add(shape_key)
+            shapes.append(
+                {
+                    "shape_id": shape_id,
+                    "trip_id": trip_id,
+                    "direction_id": row["direction_id"],
+                    "trip_headsign": safe_text(row["trip_headsign"]),
+                    "points": [[lon, lat] for lon, lat in points],
+                }
+            )
+
+        self._route_shapes_cache[route_id] = shapes
+        summary = self._routes.get(route_id)
+        if summary is not None:
+            summary["shape_count"] = len(shapes)
+        return shapes
+
+    def _compute_route_stop_ids(self, route_id: str) -> set[str]:
+        stop_ids = self._route_stop_ids.get(route_id)
+        if stop_ids:
+            return stop_ids
+
+        shapes = self._load_route_shapes(route_id)
+        computed: set[str] = set()
+        for shape in shapes:
+            points = [(float(lon), float(lat)) for lon, lat in shape.get("points", [])]
+            matched_stops = self._match_stops_to_trip(points)
+            for item in matched_stops:
+                computed.add(item["stop_id"])
+
+        self._route_stop_ids[route_id] = computed
+        summary = self._routes.get(route_id)
+        if summary is not None:
+            summary["stop_count"] = len(computed)
+        return computed
+
+    def _graph_cache_meta(self) -> dict[str, Any]:
+        stat = self._db_path.stat()
+        return {
+            "version": self.GRAPH_CACHE_VERSION,
+            "db_size": int(stat.st_size),
+            "db_mtime_ns": int(stat.st_mtime_ns),
+        }
+
+    def _load_graph_cache(self) -> bool:
+        if not self._graph_cache_path.exists():
+            return False
+        try:
+            with self._graph_cache_path.open("rb") as handle:
+                payload = pickle.load(handle)
+            if not isinstance(payload, dict):
+                return False
+            if payload.get("meta") != self._graph_cache_meta():
+                return False
+
+            raw_route_stop_ids = payload.get("route_stop_ids", {})
+            raw_adjacency = payload.get("adjacency", {})
+            if not isinstance(raw_route_stop_ids, dict) or not isinstance(raw_adjacency, dict):
+                return False
+
+            self._route_stop_ids = defaultdict(
+                set,
+                {str(route_id): set(stop_ids or []) for route_id, stop_ids in raw_route_stop_ids.items()},
+            )
+            self._adjacency = defaultdict(list)
+            for from_stop_id, edge_items in raw_adjacency.items():
+                reconstructed: list[TransitEdge] = []
+                for edge in edge_items or []:
+                    if not isinstance(edge, dict):
+                        continue
+                    try:
+                        reconstructed.append(
+                            TransitEdge(
+                                from_stop_id=str(edge["from_stop_id"]),
+                                to_stop_id=str(edge["to_stop_id"]),
+                                route_id=str(edge["route_id"]),
+                                trip_id=str(edge["trip_id"]),
+                                headsign=safe_text(edge.get("headsign")),
+                                distance_m=float(edge["distance_m"]),
+                                stop_count=int(edge.get("stop_count") or 1),
+                            )
+                        )
+                    except Exception:
+                        continue
+                if reconstructed:
+                    self._adjacency[str(from_stop_id)] = reconstructed
+
+            for route_id, summary in self._routes.items():
+                summary["stop_count"] = len(self._route_stop_ids.get(route_id, set()))
+
+            self._graph_loaded = True
+            return True
+        except Exception:
+            return False
+
+    def _save_graph_cache(self) -> None:
+        try:
+            adjacency_payload: dict[str, list[dict[str, Any]]] = {}
+            for from_stop_id, edges in self._adjacency.items():
+                adjacency_payload[from_stop_id] = [
+                    {
+                        "from_stop_id": edge.from_stop_id,
+                        "to_stop_id": edge.to_stop_id,
+                        "route_id": edge.route_id,
+                        "trip_id": edge.trip_id,
+                        "headsign": edge.headsign,
+                        "distance_m": edge.distance_m,
+                        "stop_count": edge.stop_count,
+                    }
+                    for edge in edges
+                ]
+            payload = {
+                "meta": self._graph_cache_meta(),
+                "route_stop_ids": {route_id: sorted(stop_ids) for route_id, stop_ids in self._route_stop_ids.items()},
+                "adjacency": adjacency_payload,
+            }
+            with self._graph_cache_path.open("wb") as handle:
+                pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception:
+            return
+
+    def ensure_graph_loaded(self) -> None:
+        if self._graph_loaded:
+            return
+        self.ensure_base_loaded()
+        if self._load_graph_cache():
+            return
+
+        with self._connect() as connection:
+            raw_trip_rows = connection.execute(
+                """
+                SELECT
+                    route_id,
+                    trip_id,
+                    trip_headsign,
+                    direction_id,
+                    line_length,
+                    geometry_json
+                FROM transit_prod
+                WHERE transit_type='trips'
+                  AND route_id IS NOT NULL
+                  AND trip_id IS NOT NULL
+                  AND geometry_json IS NOT NULL
+                """
+            ).fetchall()
+
+        # Use a representative trip shape per (route, direction) so the journey graph
+        # builds quickly while preserving transfer connectivity for planning.
+        representative_rows: dict[tuple[str, int], sqlite3.Row] = {}
+        representative_scores: dict[tuple[str, int], tuple[float, int]] = {}
+        for row in raw_trip_rows:
+            route_id = safe_text(row["route_id"])
+            trip_id = safe_text(row["trip_id"])
+            if route_id is None or trip_id is None:
+                continue
+            direction_value = int(row["direction_id"]) if row["direction_id"] is not None else -1
+            key = (route_id, direction_value)
+            geometry_text = str(row["geometry_json"] or "")
+            score = (float(row["line_length"] or 0.0), len(geometry_text))
+            previous_score = representative_scores.get(key)
+            if previous_score is None or score > previous_score:
+                representative_scores[key] = score
+                representative_rows[key] = row
+
+        edge_index: dict[tuple[str, str, str], TransitEdge] = {}
+        for row in representative_rows.values():
             route_id = safe_text(row["route_id"])
             trip_id = safe_text(row["trip_id"])
             if route_id is None or trip_id is None:
@@ -397,38 +630,6 @@ class TransitNetwork:
             points = self._parse_points(row["geometry_json"])
             if len(points) < 2:
                 continue
-
-            self._trip_count += 1
-            route_summary = self._routes.setdefault(
-                route_id,
-                {
-                    "route_id": route_id,
-                    "headsigns": set(),
-                    "direction_ids": set(),
-                    "trip_count": 0,
-                    "shape_count": 0,
-                },
-            )
-            route_summary["trip_count"] += 1
-            if safe_text(row["trip_headsign"]):
-                route_summary["headsigns"].add(safe_text(row["trip_headsign"]))
-            if row["direction_id"] is not None:
-                route_summary["direction_ids"].add(int(row["direction_id"]))
-
-            shape_id = safe_text(row["shape_id"]) or trip_id
-            shape_key = (route_id, shape_id, json.dumps(points))
-            if shape_key not in route_shape_seen:
-                route_shape_seen.add(shape_key)
-                route_summary["shape_count"] += 1
-                self._route_shapes[route_id].append(
-                    {
-                        "shape_id": shape_id,
-                        "trip_id": trip_id,
-                        "direction_id": row["direction_id"],
-                        "trip_headsign": safe_text(row["trip_headsign"]),
-                        "points": [[lon, lat] for lon, lat in points],
-                    }
-                )
 
             matched_stops = self._match_stops_to_trip(points)
             if len(matched_stops) < 2:
@@ -455,18 +656,18 @@ class TransitNetwork:
                 self._route_stop_ids[route_id].add(edge.from_stop_id)
                 self._route_stop_ids[route_id].add(edge.to_stop_id)
 
+        self._adjacency.clear()
         for edge in edge_index.values():
             self._adjacency[edge.from_stop_id].append(edge)
 
         for route_id, summary in self._routes.items():
-            summary["headsigns"] = sorted(summary["headsigns"])
-            summary["direction_ids"] = sorted(summary["direction_ids"])
             summary["stop_count"] = len(self._route_stop_ids.get(route_id, set()))
 
-        self._loaded = True
+        self._graph_loaded = True
+        self._save_graph_cache()
 
     def has_data(self) -> bool:
-        self.ensure_loaded()
+        self.ensure_base_loaded()
         return bool(self._stops) and bool(self._routes)
 
     def _match_stops_to_trip(self, points: list[tuple[float, float]]) -> list[dict[str, Any]]:
@@ -534,13 +735,13 @@ class TransitNetwork:
         return best_distance_m, best_progress_m
 
     def list_routes(self) -> list[dict[str, Any]]:
-        self.ensure_loaded()
+        self.ensure_base_loaded()
         return sorted(self._routes.values(), key=lambda row: row["route_id"])
 
     def get_stops(self, route_id: str | None = None) -> list[dict[str, Any]]:
-        self.ensure_loaded()
+        self.ensure_base_loaded()
         if route_id:
-            allowed_ids = self._route_stop_ids.get(route_id, set())
+            allowed_ids = self._compute_route_stop_ids(route_id)
             stops = [self._stops[stop_id] for stop_id in sorted(allowed_ids) if stop_id in self._stops]
         else:
             stops = list(self._stops.values())
@@ -558,18 +759,21 @@ class TransitNetwork:
         ]
 
     def get_route_details(self, route_id: str) -> dict[str, Any]:
-        self.ensure_loaded()
+        self.ensure_base_loaded()
         summary = self._routes.get(route_id)
         if not summary:
             raise ValueError("Transit route not found.")
+        shapes = self._load_route_shapes(route_id)
+        stops = self.get_stops(route_id=route_id)
+        summary = {**summary, "shape_count": len(shapes), "stop_count": len(stops)}
         return {
             **summary,
-            "stops": self.get_stops(route_id=route_id),
-            "shapes": self._route_shapes.get(route_id, []),
+            "stops": stops,
+            "shapes": shapes,
         }
 
     def _nearest_stops(self, lat: float, lon: float, limit: int = 8, max_distance_m: float = 1_000.0) -> list[dict[str, Any]]:
-        self.ensure_loaded()
+        self.ensure_base_loaded()
         candidates = [
             {
                 "stop_id": stop.stop_id,
@@ -589,7 +793,7 @@ class TransitNetwork:
         origin: dict[str, Any],
         destination: dict[str, Any],
     ) -> dict[str, Any]:
-        self.ensure_loaded()
+        self.ensure_graph_loaded()
         if not self._stops or not self._adjacency:
             raise ValueError("Transit data is not available in the database yet.")
 
@@ -1590,6 +1794,9 @@ class DataService:
         origin = self._resolve_location_input(origin_input, "origin")
         destination = self._resolve_location_input(destination_input, "destination")
         return self._transit.plan_journey(origin, destination)
+
+    def prewarm_transit_graph(self) -> None:
+        self._transit.ensure_graph_loaded()
 
     def get_crime_summary(
         self,

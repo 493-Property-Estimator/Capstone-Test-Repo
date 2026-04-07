@@ -19,6 +19,16 @@ const map = createBaseMap("transit-map-root");
 const stopLayer = window.L.layerGroup().addTo(map);
 const routeLayer = window.L.layerGroup().addTo(map);
 const journeyLayer = window.L.layerGroup().addTo(map);
+const TRANSIT_ROUTE_COLORS = [
+  "#1d4ed8",
+  "#7c3aed",
+  "#be123c",
+  "#b45309",
+  "#0f766e",
+  "#166534",
+  "#4338ca",
+  "#0e7490",
+];
 
 function clearLayers() {
   stopLayer.clearLayers();
@@ -44,6 +54,15 @@ function fitMapToLayers(layers) {
   if (group.getLayers().length > 0) {
     map.fitBounds(group.getBounds().pad(0.15));
   }
+}
+
+function colorForRoute(routeId) {
+  const text = String(routeId || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return TRANSIT_ROUTE_COLORS[hash % TRANSIT_ROUTE_COLORS.length];
 }
 
 function drawStops(stops, { clearExisting = false } = {}) {
@@ -124,8 +143,9 @@ function renderJourney(payload) {
 }
 
 function drawJourney(payload) {
-  journeyLayer.clearLayers();
+  clearLayers();
   const layers = [];
+  const plottedStops = new Set();
 
   const originMarker = makeMarker(payload.origin.lat, payload.origin.lon, "#0f766e", `Origin: ${escapeHtml(payload.origin.label)}`).addTo(journeyLayer);
   const destinationMarker = makeMarker(payload.destination.lat, payload.destination.lon, "#c1121f", `Destination: ${escapeHtml(payload.destination.label)}`).addTo(journeyLayer);
@@ -138,21 +158,48 @@ function drawJourney(payload) {
           [leg.from.lat, leg.from.lon],
           [leg.to.lat, leg.to.lon],
         ],
-        { color: "#6b7280", weight: 3, dashArray: "6 6" },
-      ).addTo(journeyLayer);
+        { color: "#4b5563", weight: 4, dashArray: "8 8", opacity: 0.9 },
+      ).bindPopup("Walking leg").addTo(journeyLayer);
       layers.push(line);
       continue;
     }
 
     if (leg.from_lat != null && leg.from_lon != null && leg.to_lat != null && leg.to_lon != null) {
+      const routeColor = colorForRoute(leg.route_id);
       const line = window.L.polyline(
         [
           [leg.from_lat, leg.from_lon],
           [leg.to_lat, leg.to_lon],
         ],
-        { color: "#1d4ed8", weight: 5, opacity: 0.85 },
+        { color: routeColor, weight: 6, opacity: 0.9 },
       ).bindPopup(`Route ${escapeHtml(leg.route_id)}`).addTo(journeyLayer);
       layers.push(line);
+
+      const fromStopKey = `from:${leg.from_stop_id}`;
+      if (leg.from_stop_id && !plottedStops.has(fromStopKey)) {
+        plottedStops.add(fromStopKey);
+        layers.push(
+          makeMarker(
+            leg.from_lat,
+            leg.from_lon,
+            routeColor,
+            `Board route ${escapeHtml(leg.route_id)} at ${escapeHtml(leg.from_stop_name || leg.from_stop_id)}`,
+          ).addTo(journeyLayer),
+        );
+      }
+
+      const toStopKey = `to:${leg.to_stop_id}`;
+      if (leg.to_stop_id && !plottedStops.has(toStopKey)) {
+        plottedStops.add(toStopKey);
+        layers.push(
+          makeMarker(
+            leg.to_lat,
+            leg.to_lon,
+            routeColor,
+            `Exit route ${escapeHtml(leg.route_id)} at ${escapeHtml(leg.to_stop_name || leg.to_stop_id)}`,
+          ).addTo(journeyLayer),
+        );
+      }
     }
   }
 
@@ -253,9 +300,10 @@ document.getElementById("plan-journey-button").addEventListener("click", async (
         destination: parseLocationInput(destination),
       }),
     });
+    clearLayers();
     renderJourney(payload);
     drawJourney(payload);
-    setStatus(statusElement, "Transit journey loaded.");
+    setStatus(statusElement, "Transit journey loaded. Map cleared and redrawn with walking + transit routes.");
   } catch (error) {
     setStatus(statusElement, error.message);
   }
