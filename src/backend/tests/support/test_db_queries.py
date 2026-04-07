@@ -1,6 +1,6 @@
 import sqlite3
 
-from backend.src.db.queries import (
+from src.backend.src.db.queries import (
     search_address_suggestions,
     resolve_address,
     get_location_by_id,

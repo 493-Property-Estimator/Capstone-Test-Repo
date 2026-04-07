@@ -1,6 +1,6 @@
 import os
 
-from backend.src.config import load_settings
+from src.backend.src.config import load_settings
 
 
 def test_load_settings_env(monkeypatch, tmp_path):

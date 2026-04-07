@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
 
-from backend.src.config import EDMONTON_BOUNDS
+from src.backend.src.config import EDMONTON_BOUNDS
 
 
 @dataclass(frozen=True)

@@ -10,15 +10,15 @@ from typing import Any
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.config import EDMONTON_BOUNDS
-from backend.src.db.queries import (
+from src.backend.src.config import EDMONTON_BOUNDS
+from src.backend.src.db.queries import (
     get_latest_dataset_version,
     get_location_by_id,
     resolve_address,
     resolve_coordinates_to_location,
 )
-from backend.src.services.errors import error_response, validation_error_response
-from backend.src.services.validation import (
+from src.backend.src.services.errors import error_response, validation_error_response
+from src.backend.src.services.validation import (
     coords_in_bounds,
     validate_location_payload,
     validate_property_details,

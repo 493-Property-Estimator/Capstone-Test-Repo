@@ -7,7 +7,7 @@ from statistics import median
 
 from fastapi import APIRouter, Request
 
-from backend.src.db.connection import connect
+from src.backend.src.db.connection import connect
 
 router = APIRouter()
 

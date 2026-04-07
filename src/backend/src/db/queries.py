@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 from typing import Any, Iterable
 
-from backend.src.db.connection import connect
+from src.backend.src.db.connection import connect
 
 
 @dataclass(frozen=True)

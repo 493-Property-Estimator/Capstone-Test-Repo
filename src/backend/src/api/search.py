@@ -3,9 +3,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.db.queries import search_address_suggestions, resolve_address
-from backend.src.services.errors import error_response
-from backend.src.config import EDMONTON_BOUNDS
+from src.backend.src.db.queries import search_address_suggestions, resolve_address
+from src.backend.src.services.errors import error_response
+from src.backend.src.config import EDMONTON_BOUNDS
 
 router = APIRouter()
 

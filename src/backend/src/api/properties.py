@@ -3,8 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.db.queries import fetch_property_locations_bbox
-from backend.src.services.errors import error_response
+from src.backend.src.db.queries import fetch_property_locations_bbox
+from src.backend.src.services.errors import error_response
+from src.backend.src.services.property_viewport import (
+    ensure_property_indexes,
+    fetch_property_viewport,
+)
 
 router = APIRouter()
 
@@ -175,6 +179,26 @@ async def get_properties(
     requested_limit = default_limit if limit is None else limit
     bounded_limit = max(min_limit, min(requested_limit, max_limit))
     offset = _parse_cursor(cursor)
+    render_mode = "cluster" if zoom < settings.properties_cluster_zoom_threshold else "property"
+
+    # Use the optimized SQL-based viewport path for clustered map views.
+    # High-zoom property mode stays on the richer joined query so the frontend
+    # right-side detail panel keeps receiving full property metadata.
+    if render_mode == "cluster":
+        optimized = fetch_property_viewport(
+            settings.data_db_path,
+            west=west,
+            south=south,
+            east=east,
+            north=north,
+            zoom=zoom,
+            limit=bounded_limit,
+            cursor=cursor,
+        )
+        optimized["request_id"] = request_id
+        return optimized
+
+    ensure_property_indexes(settings.data_db_path)
 
     rows = fetch_property_locations_bbox(
         settings.data_db_path,
@@ -213,9 +237,8 @@ async def get_properties(
             }
         )
 
-    render_mode = "cluster" if zoom < settings.properties_cluster_zoom_threshold else "property"
-    clusters = _cluster_properties(properties, zoom) if render_mode == "cluster" else []
-    response_properties = properties if render_mode == "property" else []
+    clusters = []
+    response_properties = properties
 
     return {
         "request_id": request_id,

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from backend.src.config import Settings
+from src.backend.src.config import Settings
 
 
 def test_health_feature_store_down(client):

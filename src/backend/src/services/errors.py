@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.src.services.validation import ValidationIssue
+from src.backend.src.services.validation import ValidationIssue
 
 
 def error_response(request_id: str, code: str, message: str, details: dict[str, Any] | None = None, retryable: bool = False):

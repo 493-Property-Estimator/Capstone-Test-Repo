@@ -1,15 +1,15 @@
-from backend.src.services.validation import (
+from src.backend.src.services.validation import (
     validate_coordinates,
     validate_address,
     coords_in_bounds,
     validate_location_payload,
 )
-from backend.src.services.errors import error_response, validation_error_response
-from backend.src.services.cache import MemoryCache
-from backend.src.services.metrics import Metrics
-from backend.src.services.routing import compute_distance
-from backend.src.services.warnings import build_missing_data_warning, build_routing_warning
-from backend.src.services.features import compute_proximity_factors, compute_comparable_adjustment, FactorResult
+from src.backend.src.services.errors import error_response, validation_error_response
+from src.backend.src.services.cache import MemoryCache
+from src.backend.src.services.metrics import Metrics
+from src.backend.src.services.routing import compute_distance
+from src.backend.src.services.warnings import build_missing_data_warning, build_routing_warning
+from src.backend.src.services.features import compute_proximity_factors, compute_comparable_adjustment, FactorResult
 
 
 def test_validation_functions():

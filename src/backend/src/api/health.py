@@ -8,8 +8,8 @@ import time
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.db.connection import connect
-from backend.src.services.errors import error_response
+from src.backend.src.db.connection import connect
+from src.backend.src.services.errors import error_response
 from estimator import estimate_property_value
 
 router = APIRouter()

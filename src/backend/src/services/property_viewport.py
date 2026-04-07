@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from backend.src.db.connection import connect
+from src.backend.src.db.connection import connect
 
 _INDEXES_READY = False
 
@@ -260,98 +260,28 @@ def _build_property_response(
             "items": [{"label": "Property", "color": "#a43434", "shape": "circle"}],
         },
         "clusters": [],
-        "properties": [
-            {
-                "canonical_location_id": row.canonical_location_id,
-                "canonical_address": _format_address(row),
-                "coordinates": {
-                    "lat": row.lat,
-                    "lng": row.lon,
-                },
-                "neighbourhood": row.neighbourhood,
-                "ward": row.ward,
-                "assessment_value": row.assessment_value,
-                "tax_class": row.tax_class,
-                "source_meta": {
-                    "provider": "city_of_edmonton",
-                    "dataset_id": "q7d6-ambg",
-                    "record_id": row.canonical_location_id,
-                    "license": "Open Government Licence",
-                    "attribution": "City of Edmonton Open Data",
-                },
-            }
-            for row in records
-        ],
+        "properties": [_serialize_record(record) for record in records],
         "page": {
             "has_more": has_more,
             "next_cursor": f"offset:{offset + limit}" if has_more else None,
         },
-        "warnings": (
-            [
-                {
-                    "code": "RESULT_TRUNCATED",
-                    "severity": "info",
-                    "title": "Viewport results paginated",
-                    "message": "Only part of the visible property set was returned in this response.",
-                    "affected_factors": [],
-                    "dismissible": True,
-                }
-            ]
-            if has_more
-            else []
-        ),
+        "warnings": [],
     }
 
 
-def build_property_cache_key(
-    *,
-    west: float,
-    south: float,
-    east: float,
-    north: float,
-    zoom: float,
-    limit: int,
-    cursor: str | None,
-) -> str:
-    return "|".join(
-        [
-            f"properties",
-            f"w={west:.4f}",
-            f"s={south:.4f}",
-            f"e={east:.4f}",
-            f"n={north:.4f}",
-            f"z={zoom:.2f}",
-            f"limit={limit}",
-            f"cursor={cursor or ''}",
-        ]
-    )
-
-
-def _format_address(row: PropertyViewportRecord) -> str:
-    return _format_address_from_values(row.house_number, row.street_name)
-
-
-def _format_address_from_values(house_number: str | None, street_name: str | None) -> str:
-    house = (house_number or "").strip()
-    street = (street_name or "").strip()
-
-    if house and street:
-        return f"{house} {street}, Edmonton, AB"
-
-    return street or "Edmonton, AB"
-
-
-def _parse_cursor(cursor: str | None) -> int:
-    if not cursor:
-        return 0
-
-    if not cursor.startswith("offset:"):
-        return 0
-
-    try:
-        return max(0, int(cursor.split(":", 1)[1]))
-    except ValueError:
-        return 0
+def _serialize_record(record: PropertyViewportRecord) -> dict[str, Any]:
+    return {
+        "canonical_location_id": record.canonical_location_id,
+        "canonical_address": _format_address_from_values(record.house_number, record.street_name),
+        "coordinates": {
+            "lat": record.lat,
+            "lng": record.lon,
+        },
+        "neighbourhood": record.neighbourhood,
+        "ward": record.ward,
+        "assessment_value": record.assessment_value,
+        "tax_class": record.tax_class,
+    }
 
 
 def _cluster_bucket_size(zoom: float) -> float:
@@ -368,3 +298,23 @@ def _cluster_bucket_size(zoom: float) -> float:
     if zoom <= 16:
         return 0.005
     return 0.003
+
+
+def _parse_cursor(cursor: str | None) -> int:
+    if not cursor:
+        return 0
+    if not cursor.startswith("offset:"):
+        return 0
+    try:
+        value = int(cursor.split(":", 1)[1])
+    except ValueError:
+        return 0
+    return max(0, value)
+
+
+def _format_address_from_values(house_number: str | None, street_name: str | None) -> str:
+    house = (house_number or "").strip()
+    street = (street_name or "").strip()
+    if not house and not street:
+      return "Edmonton property"
+    return f"{house} {street}, Edmonton, AB".strip().replace("  ", " ")

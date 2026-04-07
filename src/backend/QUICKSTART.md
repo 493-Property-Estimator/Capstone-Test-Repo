@@ -7,7 +7,7 @@ From repo root:
 ```bash
 pip install -r src/backend/requirements.txt
 export DATA_DB_PATH=src/data_sourcing/open_data.db
-uvicorn backend.src.app:app --reload --port 8000
+uvicorn src.backend.src.app:app --reload --port 8000
 ```
 
 Optional: if you generated a sample DB
