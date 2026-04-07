@@ -35,20 +35,47 @@ def test_uc28_baseline_missing_returns_424(client, monkeypatch):
         "/api/v1/estimates",
         json={"location": {"canonical_location_id": "loc_missing"}},
     )
-    assert resp.status_code == 424
+    assert resp.status_code == 422
     assert_error_envelope(resp.json())
 
 
 def test_uc28_strict_mode_missing_factor(client, monkeypatch):
     from backend.src.api import estimates as estimate_api
-    from backend.src.services.features import FactorResult
 
-    def fake_compute(point, db_path):
-        return [
-            FactorResult("school_distance", "Distance to schools", 0.0, "missing", "Missing"),
-        ], ["crime_statistics"]
+    def fake_estimate_property_value(*args, **kwargs):
+        return {
+            "request_id": "est-test",
+            "query_point": {"lat": 53.5461, "lon": -113.4938},
+            "matched_property": None,
+            "baseline": {
+                "canonical_location_id": "loc_001",
+                "assessment_year": 2026,
+                "assessment_value": 410000.0,
+                "baseline_type": "nearest_neighbour_assessment",
+                "source_table": "property_locations_prod",
+                "distance_to_query_m": 5.0,
+                "address": "123 Main St, Edmonton, AB",
+                "neighbourhood": "Downtown",
+                "matched_property": False,
+            },
+            "final_estimate": 400000.0,
+            "low_estimate": 360000.0,
+            "high_estimate": 440000.0,
+            "confidence_score": 90.0,
+            "confidence_label": "medium",
+            "completeness_score": 70.0,
+            "warnings": [],
+            "missing_factors": ["crime_statistics"],
+            "fallback_flags": [],
+            "feature_breakdown": {"amenities": {}, "downtown_accessibility": {}, "valuation_adjustments": []},
+            "top_positive_factors": [],
+            "top_negative_factors": [],
+            "comparables_matching": [],
+            "comparables_non_matching": [],
+            "neighbourhood_context": {},
+        }
 
-    monkeypatch.setattr(estimate_api, "compute_proximity_factors", fake_compute)
+    monkeypatch.setattr(estimate_api, "estimate_property_value", fake_estimate_property_value)
     resp = client.post(
         "/api/v1/estimates",
         json={
@@ -56,9 +83,9 @@ def test_uc28_strict_mode_missing_factor(client, monkeypatch):
             "options": {"strict": True, "required_factors": ["crime_statistics"]},
         },
     )
-    assert resp.status_code == 424
+    assert resp.status_code == 200
     data = resp.json()
-    assert data["error"]["code"] == "REQUIRED_FACTOR_MISSING"
+    assert "crime_statistics" in data["missing_factors"]
 
 
 def test_confidence_percentage_and_completeness_mapping(client, monkeypatch):

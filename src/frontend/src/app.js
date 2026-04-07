@@ -186,6 +186,16 @@ document.getElementById("reset-selection").addEventListener("click", () => {
   searchController.clear();
 });
 
+const layerSidePanel = document.getElementById("layer-side-panel");
+const layerPanelToggle = document.getElementById("layer-panel-toggle");
+if (layerSidePanel && layerPanelToggle) {
+  layerPanelToggle.addEventListener("click", () => {
+    const isCollapsed = layerSidePanel.classList.toggle("is-collapsed");
+    layerPanelToggle.setAttribute("aria-expanded", String(!isCollapsed));
+    layerPanelToggle.textContent = isCollapsed ? "Show Layers" : "Hide Layers";
+  });
+}
+
 export const __app = {
   store,
   mapAdapter,

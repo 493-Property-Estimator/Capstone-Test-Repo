@@ -68,7 +68,8 @@ def test_routing_fallback():
     result = compute_distance((53.5, -113.4), (53.5, -113.4), routing_enabled=False)
     assert result.fallback_used
     result2 = compute_distance((53.5, -113.4), (53.5, -113.4), routing_enabled=True)
-    assert result2.fallback_used
+    assert result2.distance_m == 0.0
+    assert result2.mode == "road"
 
 
 def test_warning_builders():

@@ -51,15 +51,6 @@
           <div id="candidate-results" class="candidate-results"></div>
         </section>
 
-        <section class="panel" aria-labelledby="layers-heading">
-          <div class="panel-heading">
-            <h2 id="layers-heading">Layers</h2>
-            <span id="layer-status" class="status-pill">Ready</span>
-          </div>
-          <div id="layer-controls" class="layer-list"></div>
-          <div id="layer-legend" class="legend"></div>
-        </section>
-
         <section class="panel" aria-labelledby="estimate-heading">
           <div class="panel-heading">
             <h2 id="estimate-heading">Estimate</h2>
@@ -182,6 +173,29 @@
           </div>
           <div id="map-message" class="map-message">Map ready.</div>
         </div>
+        <aside id="layer-side-panel" class="map-side-panel is-collapsed" aria-label="Layer Controls">
+          <button
+            id="layer-panel-toggle"
+            class="map-side-toggle button button-secondary"
+            type="button"
+            aria-expanded="false"
+            aria-controls="layer-panel-body"
+          >
+            Show Layers
+          </button>
+          <div id="layer-panel-body" class="map-side-body">
+            <div class="panel-heading">
+              <h2>Layers</h2>
+              <span id="layer-status" class="status-pill">Ready</span>
+            </div>
+            <p class="helper-text">Toggle visible overlays for the current map view.</p>
+            <div id="layer-controls" class="layer-list"></div>
+            <div id="layer-legend" class="legend"></div>
+            <a class="button button-primary layer-lab-link" href="./layer-visualization.html">
+              Open Layer Visualization Lab
+            </a>
+          </div>
+        </aside>
         <div id="map-root" class="map-root" aria-label="Property map">
           <aside id="property-hover-card" class="property-hover-card is-hidden"></aside>
           <aside id="property-detail-panel" class="property-detail-panel is-hidden">

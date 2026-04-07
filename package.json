@@ -5,6 +5,15 @@
   "scripts": {
     "backend": "python3 -m uvicorn backend.src.app:app --reload --port 8000",
     "frontend": "python3 -m http.server 8080 --directory src/frontend",
+    "test:python:scripts": "python3 -m pytest scripts/Tests",
+    "test:python:estimator": "python3 -m pytest src/estimator/Tests",
+    "test:python:data-sourcing": "python3 -m pytest src/data_sourcing/Tests",
+    "test:python:new": "python3 -m pytest scripts/Tests src/estimator/Tests src/data_sourcing/Tests",
+    "test:python:all": "python3 -m pytest tests backend/tests scripts/Tests src/estimator/Tests src/data_sourcing/Tests",
+    "test:python:coverage:scripts": "python3 -m pytest scripts/Tests --cov=scripts.ingest_data_folder --cov-branch --cov-report=term-missing --cov-report=html:coverage/html/scripts",
+    "test:python:coverage:estimator": "python3 -m pytest src/estimator/Tests --cov=estimator.property_estimator --cov=src.estimator.proximity --cov=src.estimator.simple_estimator --cov-branch --cov-report=term-missing --cov-report=html:coverage/html/estimator",
+    "test:python:coverage:data-sourcing": "python3 -m pytest src/data_sourcing/Tests --cov=data_sourcing.source_loader --cov=data_sourcing.source_registry --cov=data_sourcing.cli --cov-branch --cov-report=term-missing --cov-report=html:coverage/html/data-sourcing",
+    "test:python:coverage:all": "python3 -m pytest tests backend/tests scripts/Tests src/estimator/Tests src/data_sourcing/Tests --cov=backend/src --cov=src --cov=scripts --cov-branch --cov-report=term-missing --cov-report=html:coverage/html/all --cov-report=xml:coverage/coverage.xml",
     "test:frontend": "node --test src/frontend/tests/*.test.js",
     "test:frontend:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/frontend/src/**/*.js --test-coverage-exclude=src/frontend/src/services/api/mockData.js src/frontend/tests/*.test.js"
   }
