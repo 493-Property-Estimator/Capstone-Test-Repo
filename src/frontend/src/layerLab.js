@@ -1,30 +1,51 @@
 import {
   EDMONTON_BOUNDS,
   EDMONTON_CENTER,
+  LAYER_LAB_DEFINITIONS,
+  LAYERS_REFRESH_DEBOUNCE_MS,
   OSM_ATTRIBUTION,
-  OSM_TILE_URL
+  OSM_TILE_URL,
+  PROPERTY_CACHE_TTL_MS
 } from "./config.js";
 import { apiClient } from "./services/api/apiClient.js";
 import { debounce } from "./utils/debounce.js";
 import { clearElement, createElement, setText } from "./utils/dom.js";
 
-const LAB_LAYERS = [
-  { id: "assessment_properties", label: "Assessment Properties", color: "#a43434" },
-  { id: "schools", label: "Schools", color: "#1d4ed8" },
-  { id: "parks", label: "Parks", color: "#15803d" },
-  { id: "playgrounds", label: "Playgrounds", color: "#ea580c" },
-  { id: "transit_stops", label: "Transit Stops", color: "#0891b2" }
-];
+const LAB_LAYERS = LAYER_LAB_DEFINITIONS;
+const POINT_ONLY_LAYERS = new Set([
+  "schools",
+  "parks",
+  "playgrounds",
+  "police_stations",
+  "transit_stops",
+  "businesses",
+  "green_space"
+]);
+const HEAVY_GEOMETRY_LAYERS = new Set([
+  "roads",
+  "municipal_wards",
+  "provincial_districts",
+  "federal_districts",
+  "census_subdivisions",
+  "census_boundaries"
+]);
+const STATIC_LAYER_IDS = new Set([
+  "municipal_wards",
+  "provincial_districts",
+  "federal_districts",
+  "census_subdivisions",
+  "census_boundaries"
+]);
 
 const layerState = Object.fromEntries(
   LAB_LAYERS.map((layer) => [
     layer.id,
     {
-      enabled: layer.id === "assessment_properties",
-      mode: "collective",
-      pointLimit: 1000,
+      enabled: false,
+      mode: "individual",
       status: "idle",
-      pointsInView: 0
+      featureCount: 0,
+      geometrySummary: ""
     }
   ])
 );
@@ -35,9 +56,12 @@ const mapMessage = document.getElementById("lab-map-message");
 const mapRoot = document.getElementById("layer-lab-map");
 
 let map = null;
-const renderedLayerIds = new Map();
+const renderedEntries = new Map();
 const interactionRegistry = new Set();
 const requestSeqByLayer = new Map();
+const abortControllerByLayer = new Map();
+const responseCacheByLayer = new Map();
+let activePopup = null;
 
 function createRasterStyle() {
   const tileUrls = ["a", "b", "c"].map((subdomain) => OSM_TILE_URL.replace("{s}", subdomain));
@@ -92,10 +116,16 @@ function formatStatusText(entry) {
   if (entry.status === "unavailable") {
     return "Unavailable";
   }
-  if (entry.pointsInView > 0) {
-    return `${entry.pointsInView} points`;
+  if (entry.featureCount > 0) {
+    return entry.geometrySummary
+      ? `${entry.featureCount} features · ${entry.geometrySummary}`
+      : `${entry.featureCount} features`;
   }
-  return "No points";
+  return "No features";
+}
+
+function supportsHeatMode(layerId) {
+  return POINT_ONLY_LAYERS.has(layerId);
 }
 
 function renderControls() {
@@ -114,7 +144,8 @@ function renderControls() {
       state.enabled = enableToggle.checked;
       if (!state.enabled) {
         state.status = "idle";
-        state.pointsInView = 0;
+        state.featureCount = 0;
+        state.geometrySummary = "";
         removeRenderedLayer(layer.id);
         setGlobalStatus();
         renderControls();
@@ -135,11 +166,15 @@ function renderControls() {
     const modeRow = createElement("div", "layer-lab-row");
     modeRow.appendChild(createElement("label", null, "Mode"));
     const modeSelect = document.createElement("select");
-    [
-      { value: "individual", label: "Individual" },
-      { value: "collective", label: "Collective" },
-      { value: "heat", label: "Heat Map" }
-    ].forEach((optionData) => {
+    const modeOptions = supportsHeatMode(layer.id)
+      ? [
+          { value: "individual", label: "Individual" },
+          { value: "heat", label: "Heat Map" }
+        ]
+      : [
+          { value: "individual", label: "Individual Geometry" }
+        ];
+    modeOptions.forEach((optionData) => {
       const option = document.createElement("option");
       option.value = optionData.value;
       option.textContent = optionData.label;
@@ -154,89 +189,115 @@ function renderControls() {
     modeRow.appendChild(modeSelect);
     card.appendChild(modeRow);
 
-    const limitRow = createElement("div", "layer-lab-row");
-    limitRow.appendChild(createElement("label", null, "Point Limit (Individual)"));
-    const limitInput = document.createElement("input");
-    limitInput.type = "number";
-    limitInput.min = "1";
-    limitInput.max = "10000";
-    limitInput.value = String(state.pointLimit);
-    limitInput.disabled = state.mode !== "individual";
-    limitInput.addEventListener("change", () => {
-      const parsed = Number(limitInput.value);
-      state.pointLimit = Number.isFinite(parsed) ? Math.max(1, Math.min(10000, Math.round(parsed))) : 1000;
-      limitInput.value = String(state.pointLimit);
-      if (state.mode === "individual") {
-        refreshLayer(layer.id);
-      }
-    });
-    limitRow.appendChild(limitInput);
-    card.appendChild(limitRow);
-
     controlsRoot.appendChild(card);
   });
 
   setGlobalStatus();
 }
 
-function buildClusterPoints(points, zoom) {
-  const bucketSize =
-    zoom <= 11
-      ? 0.03
-      : zoom <= 12
-      ? 0.024
-      : zoom <= 13
-      ? 0.018
-      : zoom <= 14
-      ? 0.012
-      : zoom <= 15
-      ? 0.008
-      : zoom <= 16
-      ? 0.005
-      : 0.003;
-  const buckets = new Map();
-  points.forEach((point) => {
-    const key = `${Math.floor(point.lng / bucketSize)}_${Math.floor(point.lat / bucketSize)}`;
-    if (!buckets.has(key)) {
-      buckets.set(key, []);
-    }
-    buckets.get(key).push(point);
-  });
+function buildViewportKey(viewport = {}) {
+  return [
+    Number(viewport.west || 0).toFixed(3),
+    Number(viewport.south || 0).toFixed(3),
+    Number(viewport.east || 0).toFixed(3),
+    Number(viewport.north || 0).toFixed(3),
+    Number(viewport.zoom || 0).toFixed(2)
+  ].join("|");
+}
 
-  return [...buckets.entries()].map(([bucketId, bucket]) => {
-    const lng = bucket.reduce((sum, item) => sum + item.lng, 0) / bucket.length;
-    const lat = bucket.reduce((sum, item) => sum + item.lat, 0) / bucket.length;
-    return {
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [lng, lat] },
-      properties: {
-        bucket_id: bucketId,
-        point_count: bucket.length,
-        point_count_abbreviated: String(bucket.length)
-      }
-    };
+function buildCacheKey(layerId, viewport, mode) {
+  return [layerId, mode, buildViewportKey(viewport)].join("|");
+}
+
+function getCachedResponse(layerId, cacheKey) {
+  const layerCache = responseCacheByLayer.get(layerId);
+  if (!layerCache) {
+    return null;
+  }
+  const entry = layerCache.get(cacheKey);
+  if (!entry) {
+    return null;
+  }
+  if (Date.now() - entry.cachedAt > PROPERTY_CACHE_TTL_MS) {
+    layerCache.delete(cacheKey);
+    return null;
+  }
+  return entry.data;
+}
+
+function cacheResponse(layerId, cacheKey, data) {
+  if (!responseCacheByLayer.has(layerId)) {
+    responseCacheByLayer.set(layerId, new Map());
+  }
+  responseCacheByLayer.get(layerId).set(cacheKey, {
+    cachedAt: Date.now(),
+    data
   });
+}
+
+function geometryTypeSummary(features) {
+  const types = new Set(features.map((feature) => feature?.geometry?.type).filter(Boolean));
+  if (!types.size) {
+    return "";
+  }
+  return [...types].join(", ");
+}
+
+function geometryCenter(geometry) {
+  if (!geometry?.type || geometry.coordinates == null) {
+    return null;
+  }
+  if (geometry.type === "Point" && Array.isArray(geometry.coordinates) && geometry.coordinates.length >= 2) {
+    return { lng: Number(geometry.coordinates[0]), lat: Number(geometry.coordinates[1]) };
+  }
+
+  const points = [];
+  const collect = (value) => {
+    if (!Array.isArray(value)) {
+      return;
+    }
+    if (value.length >= 2 && typeof value[0] === "number" && typeof value[1] === "number") {
+      points.push([Number(value[0]), Number(value[1])]);
+      return;
+    }
+    value.forEach(collect);
+  };
+  collect(geometry.coordinates);
+  if (!points.length) {
+    return null;
+  }
+  const lng = points.reduce((sum, item) => sum + item[0], 0) / points.length;
+  const lat = points.reduce((sum, item) => sum + item[1], 0) / points.length;
+  return { lng, lat };
+}
+
+function closePopup() {
+  if (activePopup) {
+    activePopup.remove();
+    activePopup = null;
+  }
 }
 
 function removeRenderedLayer(layerId) {
   if (!map) {
     return;
   }
-  const layerIds = renderedLayerIds.get(layerId) || [];
-  [...layerIds].reverse().forEach((id) => {
+  closePopup();
+  const entry = renderedEntries.get(layerId) || { sourceIds: [], layerIds: [] };
+  [...entry.layerIds].reverse().forEach((id) => {
     if (map.getLayer(id)) {
       map.removeLayer(id);
     }
   });
-  const sourceId = `lab-source-${layerId}`;
-  if (map.getSource(sourceId)) {
-    map.removeSource(sourceId);
-  }
-  renderedLayerIds.delete(layerId);
+  [...entry.sourceIds].reverse().forEach((id) => {
+    if (map.getSource(id)) {
+      map.removeSource(id);
+    }
+  });
+  renderedEntries.delete(layerId);
 }
 
-function upsertSource(layerId, features) {
-  const sourceId = `lab-source-${layerId}`;
+function upsertSource(sourceId, features) {
   const sourceData = {
     type: "FeatureCollection",
     features
@@ -249,132 +310,82 @@ function upsertSource(layerId, features) {
   return sourceId;
 }
 
-function registerLayerInteractions(layerId, mode) {
-  const sourcePointLayerId =
-    mode === "individual"
-      ? `lab-${layerId}-individual`
-      : mode === "collective"
-      ? `lab-${layerId}-cluster-circle`
-      : `lab-${layerId}-heat-points`;
+function formatPopupContent(feature, fallbackLabel) {
+  const properties = feature?.properties || {};
+  const title =
+    properties.name ||
+    properties.address ||
+    properties.ward_name ||
+    properties.district_name ||
+    properties.csdname ||
+    fallbackLabel;
+  const secondary =
+    properties.address ||
+    properties.neighbourhood ||
+    properties.category ||
+    properties.zone_name ||
+    properties.route_name ||
+    "";
+  return secondary && secondary !== title
+    ? `<strong>${title}</strong><br>${secondary}`
+    : `<strong>${title}</strong>`;
+}
 
-  if (mode === "collective" && !interactionRegistry.has(sourcePointLayerId)) {
-    interactionRegistry.add(sourcePointLayerId);
-    map.on("click", sourcePointLayerId, (event) => {
-      const feature = event.features?.[0];
-      if (!feature) {
-        return;
-      }
-      map.easeTo({
-        center: feature.geometry.coordinates,
-        zoom: Math.min(map.getZoom() + 2, 18)
-      });
-    });
-  }
-
-  if (mode !== "heat" && !interactionRegistry.has(`click-${sourcePointLayerId}`)) {
-    interactionRegistry.add(`click-${sourcePointLayerId}`);
-    map.on("mouseenter", sourcePointLayerId, () => {
+function registerPointer(layerId, mapLayerId) {
+  const enterKey = `enter-${mapLayerId}`;
+  const leaveKey = `leave-${mapLayerId}`;
+  if (!interactionRegistry.has(enterKey)) {
+    interactionRegistry.add(enterKey);
+    map.on("mouseenter", mapLayerId, () => {
       map.getCanvas().style.cursor = "pointer";
     });
-    map.on("mouseleave", sourcePointLayerId, () => {
+  }
+  if (!interactionRegistry.has(leaveKey)) {
+    interactionRegistry.add(leaveKey);
+    map.on("mouseleave", mapLayerId, () => {
       map.getCanvas().style.cursor = "";
-    });
-    map.on("click", sourcePointLayerId, (event) => {
-      const feature = event.features?.[0];
-      const name = feature?.properties?.name || feature?.properties?.address || null;
-      if (!name || mode === "collective") {
-        return;
-      }
-      new window.maplibregl.Popup({ offset: 10 })
-        .setLngLat(event.lngLat)
-        .setHTML(`<strong>${name}</strong>`)
-        .addTo(map);
     });
   }
 }
 
-function renderLayer(layer, points, mode) {
+function registerPopupInteraction(layerId, mapLayerId, fallbackLabel) {
+  registerPointer(layerId, mapLayerId);
+  const clickKey = `click-${mapLayerId}`;
+  if (interactionRegistry.has(clickKey)) {
+    return;
+  }
+  interactionRegistry.add(clickKey);
+  map.on("click", mapLayerId, (event) => {
+    const feature = event.features?.[0];
+    if (!feature) {
+      return;
+    }
+    closePopup();
+    activePopup = new window.maplibregl.Popup({ offset: 10 })
+      .setLngLat(event.lngLat)
+      .setHTML(formatPopupContent(feature, fallbackLabel))
+      .addTo(map);
+  });
+}
+
+function renderHeatLayer(layer, points) {
   removeRenderedLayer(layer.id);
   if (!points.length) {
-    renderedLayerIds.set(layer.id, []);
+    renderedEntries.set(layer.id, { sourceIds: [], layerIds: [] });
     return;
   }
 
-  const sourceId =
-    mode === "collective"
-      ? upsertSource(layer.id, buildClusterPoints(points, map.getZoom()))
-      : upsertSource(
-          layer.id,
-          points.map((point) => ({
-            type: "Feature",
-            geometry: { type: "Point", coordinates: [point.lng, point.lat] },
-            properties: {
-              name: point.name || layer.label,
-              address: point.address || point.name || "",
-              value: point.value ?? null
-            }
-          }))
-        );
-
-  if (mode === "individual") {
-    const pointLayerId = `lab-${layer.id}-individual`;
-    map.addLayer({
-      id: pointLayerId,
-      type: "circle",
-      source: sourceId,
-      paint: {
-        "circle-color": layer.color,
-        "circle-radius": 5.5,
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.2
-      }
-    });
-    renderedLayerIds.set(layer.id, [pointLayerId]);
-    registerLayerInteractions(layer.id, mode);
-    return;
-  }
-
-  if (mode === "collective") {
-    const circleLayerId = `lab-${layer.id}-cluster-circle`;
-    const countLayerId = `lab-${layer.id}-cluster-count`;
-    map.addLayer({
-      id: circleLayerId,
-      type: "circle",
-      source: sourceId,
-      paint: {
-        "circle-color": layer.color,
-        "circle-radius": [
-          "step",
-          ["get", "point_count"],
-          13,
-          12,
-          17,
-          35,
-          21
-        ],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 2
-      }
-    });
-    map.addLayer({
-      id: countLayerId,
-      type: "symbol",
-      source: sourceId,
-      layout: {
-        "text-field": ["get", "point_count_abbreviated"],
-        "text-size": 12,
-        "text-font": ["Noto Sans Regular"],
-        "text-allow-overlap": true,
-        "text-ignore-placement": true
-      },
-      paint: {
-        "text-color": "#ffffff"
-      }
-    });
-    renderedLayerIds.set(layer.id, [circleLayerId, countLayerId]);
-    registerLayerInteractions(layer.id, mode);
-    return;
-  }
+  const sourceId = `lab-source-${layer.id}`;
+  const heatFeatures = points.map((point) => ({
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [point.lng, point.lat] },
+    properties: {
+      name: point.name || layer.label,
+      address: point.address || point.name || "",
+      value: point.value ?? null
+    }
+  }));
+  upsertSource(sourceId, heatFeatures);
 
   const heatLayerId = `lab-${layer.id}-heat`;
   const pointLayerId = `lab-${layer.id}-heat-points`;
@@ -433,50 +444,160 @@ function renderLayer(layer, points, mode) {
       "circle-opacity": 0.8
     }
   });
-  renderedLayerIds.set(layer.id, [heatLayerId, pointLayerId]);
-  registerLayerInteractions(layer.id, mode);
+  registerPopupInteraction(layer.id, pointLayerId, layer.label);
+  renderedEntries.set(layer.id, { sourceIds: [sourceId], layerIds: [heatLayerId, pointLayerId] });
 }
 
-function normalizeGenericLayerPoints(data) {
-  return (data.features || [])
-    .filter((feature) => feature?.geometry?.type === "Point" && Array.isArray(feature.geometry.coordinates))
-    .map((feature) => ({
-      lng: Number(feature.geometry.coordinates[0]),
-      lat: Number(feature.geometry.coordinates[1]),
-      name: feature.properties?.name || null,
-      address: feature.properties?.address || null
-    }))
-    .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+function splitGeometryFeatures(features) {
+  const points = [];
+  const lines = [];
+  const polygons = [];
+  features.forEach((feature) => {
+    const type = feature?.geometry?.type;
+    if (type === "Point" || type === "MultiPoint") {
+      points.push(feature);
+      return;
+    }
+    if (type === "LineString" || type === "MultiLineString") {
+      lines.push(feature);
+      return;
+    }
+    if (type === "Polygon" || type === "MultiPolygon") {
+      polygons.push(feature);
+    }
+  });
+  return { points, lines, polygons };
 }
 
-function normalizeAssessmentPoints(data) {
-  return (data.properties || [])
-    .filter((row) => row?.coordinates?.lat != null && row?.coordinates?.lng != null)
-    .map((row) => ({
-      lng: Number(row.coordinates.lng),
-      lat: Number(row.coordinates.lat),
-      name: row.canonical_address || row.name || "Assessment Property",
-      address: row.canonical_address || "",
-      value: row.assessment_value ?? null
-    }))
-    .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
-}
-
-async function fetchLayerPoints(layer) {
-  const viewport = getViewport();
-  const state = layerState[layer.id];
-
-  if (layer.id === "assessment_properties") {
-    const response = await apiClient.getProperties({
-      west: viewport.west,
-      south: viewport.south,
-      east: viewport.east,
-      north: viewport.north,
-      zoom: Math.max(viewport.zoom, 18),
-      limit: Math.max(200, state.pointLimit)
-    });
-    return normalizeAssessmentPoints(response);
+function renderGeometryLayer(layer, features) {
+  removeRenderedLayer(layer.id);
+  if (!features.length) {
+    renderedEntries.set(layer.id, { sourceIds: [], layerIds: [] });
+    return;
   }
+
+  const { points, lines, polygons } = splitGeometryFeatures(features);
+  const sourceIds = [];
+  const layerIds = [];
+
+  if (polygons.length) {
+    const fillSourceId = `lab-source-${layer.id}-fills`;
+    upsertSource(fillSourceId, polygons);
+    sourceIds.push(fillSourceId);
+
+    const fillLayerId = `lab-${layer.id}-fills`;
+    const fillOutlineLayerId = `lab-${layer.id}-fill-outlines`;
+    map.addLayer({
+      id: fillLayerId,
+      type: "fill",
+      source: fillSourceId,
+      paint: {
+        "fill-color": layer.color,
+        "fill-opacity": 0.18
+      }
+    });
+    map.addLayer({
+      id: fillOutlineLayerId,
+      type: "line",
+      source: fillSourceId,
+      paint: {
+        "line-color": layer.color,
+        "line-width": 1.8,
+        "line-opacity": 0.95
+      }
+    });
+    registerPopupInteraction(layer.id, fillLayerId, layer.label);
+    layerIds.push(fillLayerId, fillOutlineLayerId);
+  }
+
+  if (lines.length) {
+    const lineSourceId = `lab-source-${layer.id}-lines`;
+    upsertSource(lineSourceId, lines);
+    sourceIds.push(lineSourceId);
+
+    const lineLayerId = `lab-${layer.id}-lines`;
+    map.addLayer({
+      id: lineLayerId,
+      type: "line",
+      source: lineSourceId,
+      paint: {
+        "line-color": layer.color,
+        "line-width": 2.4,
+        "line-opacity": 0.95
+      }
+    });
+    registerPopupInteraction(layer.id, lineLayerId, layer.label);
+    layerIds.push(lineLayerId);
+  }
+
+  if (points.length) {
+    const pointSourceId = `lab-source-${layer.id}-points`;
+    upsertSource(pointSourceId, points);
+    sourceIds.push(pointSourceId);
+
+    const pointLayerId = `lab-${layer.id}-points`;
+    map.addLayer({
+      id: pointLayerId,
+      type: "circle",
+      source: pointSourceId,
+      paint: {
+        "circle-color": layer.color,
+        "circle-radius": 5.5,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.2
+      }
+    });
+    registerPopupInteraction(layer.id, pointLayerId, layer.label);
+    layerIds.push(pointLayerId);
+  }
+
+  renderedEntries.set(layer.id, { sourceIds, layerIds });
+}
+
+function normalizeGenericLayerFeatures(data) {
+  return (data.features || [])
+    .map((feature) => {
+      const center = geometryCenter(feature?.geometry);
+      return {
+        type: "Feature",
+        geometry: feature?.geometry,
+        properties: {
+          ...(feature?.properties || {}),
+          name:
+            feature?.properties?.name ||
+            feature?.properties?.ward_name ||
+            feature?.properties?.district_name ||
+            feature?.properties?.csdname ||
+            null,
+          address: feature?.properties?.address || null,
+          center_lng: center?.lng ?? null,
+          center_lat: center?.lat ?? null
+        }
+      };
+    })
+    .filter(
+      (feature) =>
+        feature.geometry?.type &&
+        feature.properties.center_lat != null &&
+        feature.properties.center_lng != null
+    );
+}
+
+function getLayerViewport(layerId) {
+  if (STATIC_LAYER_IDS.has(layerId)) {
+    return {
+      west: EDMONTON_BOUNDS[0][1],
+      south: EDMONTON_BOUNDS[0][0],
+      east: EDMONTON_BOUNDS[1][1],
+      north: EDMONTON_BOUNDS[1][0],
+      zoom: 11
+    };
+  }
+  return getViewport();
+}
+
+async function fetchLayerFeatures(layer, signal) {
+  const viewport = getLayerViewport(layer.id);
 
   const response = await apiClient.getLayerData({
     layerId: layer.id,
@@ -484,9 +605,10 @@ async function fetchLayerPoints(layer) {
     south: viewport.south,
     east: viewport.east,
     north: viewport.north,
-    zoom: viewport.zoom
+    zoom: viewport.zoom,
+    signal
   });
-  return normalizeGenericLayerPoints(response);
+  return normalizeGenericLayerFeatures(response);
 }
 
 function updateMapMessage() {
@@ -496,7 +618,12 @@ function updateMapMessage() {
     return;
   }
   const summary = enabled
-    .map((layer) => `${layer.label}: ${layerState[layer.id].pointsInView}`)
+    .map((layer) => {
+      const state = layerState[layer.id];
+      return state.geometrySummary
+        ? `${layer.label}: ${state.featureCount} (${state.geometrySummary})`
+        : `${layer.label}: ${state.featureCount}`;
+    })
     .join(" | ");
   setText(mapMessage, summary);
 }
@@ -504,80 +631,132 @@ function updateMapMessage() {
 async function refreshLayer(layerId) {
   const layer = LAB_LAYERS.find((item) => item.id === layerId);
   const state = layerState[layerId];
+  const viewport = getLayerViewport(layerId);
   const requestSeq = Number(requestSeqByLayer.get(layerId) || 0) + 1;
   requestSeqByLayer.set(layerId, requestSeq);
+  const cacheKey = buildCacheKey(layerId, viewport, state.mode);
 
   if (!state.enabled) {
+    const existingController = abortControllerByLayer.get(layerId);
+    if (existingController) {
+      existingController.abort();
+      abortControllerByLayer.delete(layerId);
+    }
     removeRenderedLayer(layerId);
     renderControls();
     return;
   }
 
+  const cachedFeatures = getCachedResponse(layerId, cacheKey);
+  if (cachedFeatures) {
+    state.featureCount = cachedFeatures.length;
+    state.geometrySummary = geometryTypeSummary(cachedFeatures);
+    state.status = "ready";
+
+    if (state.mode === "individual") {
+      renderGeometryLayer(layer, cachedFeatures);
+    } else {
+      const centroidPoints = cachedFeatures.map((feature) => ({
+        lng: Number(feature.properties.center_lng),
+        lat: Number(feature.properties.center_lat),
+        name: feature.properties.name,
+        address: feature.properties.address,
+        value: feature.properties.value ?? null
+      }));
+      renderHeatLayer(layer, centroidPoints);
+    }
+    renderControls();
+    updateMapMessage();
+    return;
+  }
+
+  const existingController = abortControllerByLayer.get(layerId);
+  if (existingController) {
+    existingController.abort();
+  }
+  const abortController = new AbortController();
+  abortControllerByLayer.set(layerId, abortController);
+
   state.status = "loading";
   renderControls();
 
   try {
-    const points = await fetchLayerPoints(layer);
+    const features = await fetchLayerFeatures(layer, abortController.signal);
     if (requestSeqByLayer.get(layerId) !== requestSeq) {
       return;
     }
-
-    const filteredPoints =
-      state.mode === "individual"
-        ? points.slice(0, state.pointLimit)
-        : points;
-
-    renderLayer(layer, filteredPoints, state.mode);
+    cacheResponse(layerId, cacheKey, features);
+    state.featureCount = features.length;
+    state.geometrySummary = geometryTypeSummary(features);
     state.status = "ready";
-    state.pointsInView = filteredPoints.length;
-    renderControls();
-    updateMapMessage();
-  } catch {
+
+    if (state.mode === "individual") {
+      renderGeometryLayer(layer, features);
+    } else {
+      const centroidPoints = features.map((feature) => ({
+        lng: Number(feature.properties.center_lng),
+        lat: Number(feature.properties.center_lat),
+        name: feature.properties.name,
+        address: feature.properties.address,
+        value: feature.properties.value ?? null
+      }));
+      renderHeatLayer(layer, centroidPoints);
+    }
+  } catch (error) {
     if (requestSeqByLayer.get(layerId) !== requestSeq) {
+      return;
+    }
+    if (error?.name === "AbortError") {
       return;
     }
     state.status = "unavailable";
-    state.pointsInView = 0;
+    state.featureCount = 0;
+    state.geometrySummary = "";
     removeRenderedLayer(layerId);
+  } finally {
+    if (abortControllerByLayer.get(layerId) === abortController) {
+      abortControllerByLayer.delete(layerId);
+    }
     renderControls();
     updateMapMessage();
   }
 }
 
-async function refreshEnabledLayers() {
-  await Promise.all(
-    LAB_LAYERS
-      .filter((layer) => layerState[layer.id].enabled)
-      .map((layer) => refreshLayer(layer.id))
-  );
-  setGlobalStatus();
-}
+const refreshAllLayers = debounce(() => {
+  LAB_LAYERS.filter((layer) => layerState[layer.id].enabled).forEach((layer) => {
+    refreshLayer(layer.id);
+  });
+}, LAYERS_REFRESH_DEBOUNCE_MS);
 
-function initMap() {
+function initializeMap() {
   map = new window.maplibregl.Map({
     container: mapRoot,
     style: createRasterStyle(),
     center: [EDMONTON_CENTER[1], EDMONTON_CENTER[0]],
     zoom: 11,
-    minZoom: 10,
-    maxZoom: 19,
     maxBounds: [
       [EDMONTON_BOUNDS[0][1], EDMONTON_BOUNDS[0][0]],
       [EDMONTON_BOUNDS[1][1], EDMONTON_BOUNDS[1][0]]
     ]
   });
+
   map.addControl(new window.maplibregl.NavigationControl(), "top-right");
 
-  const onViewportChange = debounce(() => {
-    refreshEnabledLayers();
-  }, 220);
-
   map.on("load", () => {
-    refreshEnabledLayers();
+    map.resize();
+    setText(mapMessage, "Layer lab ready.");
+    renderControls();
+    refreshAllLayers();
   });
-  map.on("moveend", onViewportChange);
-  map.on("zoomend", onViewportChange);
+
+  window.addEventListener("resize", () => {
+    if (map) {
+      map.resize();
+    }
+  });
+
+  map.on("moveend", refreshAllLayers);
+  map.on("zoomend", refreshAllLayers);
 }
 
-renderControls();
-initMap();
+initializeMap();

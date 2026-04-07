@@ -184,7 +184,7 @@ export const apiClient = {
     );
   },
 
-  getLayerData({ layerId, west, south, east, north, zoom }) {
+  getLayerData({ layerId, west, south, east, north, zoom, signal } = {}) {
     const params = new URLSearchParams({
       west: String(west),
       south: String(south),
@@ -193,9 +193,9 @@ export const apiClient = {
       zoom: String(zoom)
     });
     return requestWithFallback(
-      () => request(`/layers/${layerId}?${params.toString()}`),
+      () => request(`/layers/${layerId}?${params.toString()}`, { signal }),
       () => mockApi.getLayerData({ layerId, west, south, east, north, zoom }),
-      { fallbackOnAnyError: true }
+      { signal, fallbackOnAnyError: true }
     );
   },
 

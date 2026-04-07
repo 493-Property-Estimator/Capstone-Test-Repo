@@ -24,8 +24,10 @@ const DEFAULT_ENV = {
   ESTIMATE_WEIGHT_SCHOOLS: "50",
   ESTIMATE_WEIGHT_GREEN_SPACE: "50",
   ESTIMATE_WEIGHT_COMMUTE: "50",
+  LAYER_LAB_LAYER_IDS:
+    "schools,parks,playgrounds,police_stations,transit_stops,businesses,green_space,roads,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries",
   ENABLED_LAYERS:
-    "schools,parks,playgrounds,police_stations,transit_stops,assessment_properties"
+    "schools,parks,playgrounds,police_stations,transit_stops,businesses,green_space,roads,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries,assessment_properties"
 };
 
 async function loadEnvFile() {
@@ -143,6 +145,7 @@ export const ESTIMATE_WEIGHT_DEFAULTS = {
 };
 
 const ENABLED_LAYER_IDS = new Set(parseList(RUNTIME_ENV.ENABLED_LAYERS));
+const LAYER_LAB_LAYER_ID_SET = new Set(parseList(RUNTIME_ENV.LAYER_LAB_LAYER_IDS));
 
 export const OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 export const OSM_ATTRIBUTION =
@@ -160,6 +163,14 @@ const ALL_LAYER_DEFINITIONS = [
   { id: "playgrounds", label: "Playgrounds", color: "#ea580c" },
   { id: "police_stations", label: "Police Stations", color: "#b91c1c" },
   { id: "transit_stops", label: "Transit Stops", color: "#0891b2" },
+  { id: "businesses", label: "Businesses", color: "#7c3aed" },
+  { id: "green_space", label: "Green Space", color: "#0f766e" },
+  { id: "roads", label: "Roads", color: "#4b5563" },
+  { id: "municipal_wards", label: "Municipal Wards", color: "#d97706" },
+  { id: "provincial_districts", label: "Provincial Districts", color: "#7c3aed" },
+  { id: "federal_districts", label: "Federal Districts", color: "#be123c" },
+  { id: "census_subdivisions", label: "Census Subdivisions", color: "#334155" },
+  { id: "census_boundaries", label: "Census Boundaries", color: "#475569" },
   {
     id: "assessment_properties",
     label: "Assessment Properties",
@@ -170,6 +181,9 @@ const ALL_LAYER_DEFINITIONS = [
 
 export const LAYER_DEFINITIONS = ALL_LAYER_DEFINITIONS.filter((layer) =>
   ENABLED_LAYER_IDS.has(layer.id)
+);
+export const LAYER_LAB_DEFINITIONS = ALL_LAYER_DEFINITIONS.filter((layer) =>
+  LAYER_LAB_LAYER_ID_SET.has(layer.id)
 );
 export const PROPERTY_LAYER_ENABLED = ENABLED_LAYER_IDS.has("assessment_properties");
 
