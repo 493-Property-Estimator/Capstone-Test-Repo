@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Layer Visualization Lab</title>
+    <link rel="icon" href="data:," />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+    />
+    <link rel="stylesheet" href="./styles/app.css" />
+  </head>
+  <body class="lab-page">
+    <aside class="lab-sidebar">
+      <header class="panel panel-brand">
+        <p class="eyebrow">Layer Visualization Lab</p>
+        <h1>Map Layer Rendering Modes</h1>
+        <p class="panel-copy">
+          Choose per-layer display mode: individual points, collective clusters, or heat map.
+        </p>
+        <a class="button button-secondary" href="./index.html">Back to Estimator Map</a>
+      </header>
+
+      <section class="panel" aria-labelledby="lab-controls-heading">
+        <div class="panel-heading">
+          <h2 id="lab-controls-heading">Layer Controls</h2>
+          <span id="lab-status" class="status-pill">Ready</span>
+        </div>
+        <p class="helper-text">
+          For Individual mode, use the point limit field to cap visible points.
+        </p>
+        <div id="layer-lab-controls" class="layer-lab-controls"></div>
+      </section>
+    </aside>
+
+    <main class="lab-map-shell">
+      <div class="map-toolbar">
+        <div class="toolbar-copy">
+          <p class="eyebrow">Interactive Map</p>
+          <h2>Layer Mode Preview</h2>
+          <p class="map-note">
+            Move or zoom the map to refresh enabled layers with current settings.
+          </p>
+        </div>
+        <div id="lab-map-message" class="map-message">Map ready.</div>
+      </div>
+      <div id="layer-lab-map" class="lab-map-root"></div>
+    </main>
+
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script type="module" src="./src/layerLab.js"></script>
+  </body>
+</html>

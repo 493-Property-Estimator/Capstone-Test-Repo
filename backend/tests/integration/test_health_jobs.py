@@ -2,14 +2,10 @@ import sqlite3
 
 
 def test_health_routing_disabled(client):
-    client.app.state.settings = client.app.state.settings.__class__(
-        data_db_path=client.app.state.settings.data_db_path,
-        cache_ttl_seconds=client.app.state.settings.cache_ttl_seconds,
-        grid_cell_size_deg=client.app.state.settings.grid_cell_size_deg,
-        enable_routing=False,
-        enable_strict_mode_default=client.app.state.settings.enable_strict_mode_default,
-        ingestion_freshness_days=client.app.state.settings.ingestion_freshness_days,
-    )
+    current = client.app.state.settings
+    updated = dict(vars(current))
+    updated["enable_routing"] = False
+    client.app.state.settings = current.__class__(**updated)
     resp = client.get("/health")
     assert resp.status_code == 200
     data = resp.json()

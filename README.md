@@ -1,5 +1,7 @@
 # Group 14 Capstone Repo
 
+For AI-agent onboarding, read `AGENTS.md` first.
+
 ## Current Status
 
 This repository currently contains:
@@ -163,6 +165,72 @@ http://127.0.0.1:8010
   - MapLibre/OpenStreetMap tile loading
 - Map clicks send coordinate payloads to the backend through the map-click resolution endpoint.
 - A guard is in place so hold-and-drag map movement does not send click payloads.
+
+## Test Commands
+
+Run the folder-specific Python suites:
+
+```bash
+npm run test:python:scripts
+npm run test:python:estimator
+npm run test:python:data-sourcing
+```
+
+Run all new Python suites together (`scripts/Tests`, `src/estimator/Tests`, `src/data_sourcing/Tests`):
+
+```bash
+npm run test:python:new
+```
+
+Run all Python tests in the repository (existing + new, including `tests/` and `backend/tests/`):
+
+```bash
+npm run test:python:all
+```
+
+Run frontend tests:
+
+```bash
+npm run test:frontend
+```
+
+Run full test sweep (Python + frontend):
+
+```bash
+npm run test:python:all
+npm run test:frontend
+```
+
+Generate coverage reports for each new suite:
+
+```bash
+npm run test:python:coverage:scripts
+npm run test:python:coverage:estimator
+npm run test:python:coverage:data-sourcing
+```
+
+Coverage report output directories:
+
+- `coverage/html/scripts`
+- `coverage/html/estimator`
+- `coverage/html/data-sourcing`
+
+Generate full Python coverage across all Python tests:
+
+```bash
+npm run test:python:coverage:all
+```
+
+Full Python coverage output:
+
+- HTML report: `coverage/html/all/index.html`
+- XML report: `coverage/coverage.xml`
+
+Generate frontend coverage:
+
+```bash
+npm run test:frontend:coverage
+```
 
 ## Next Integration Steps
 

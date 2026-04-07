@@ -547,10 +547,8 @@ def _rank_rows(
             enriched["distance_mode"] = mode
             ranked.append(enriched)
 
-    if not ranked:
-        if mode == "road":
-            raise RoadNetworkError("could not route to any matching rows on the current road graph")
-        return []
+    if mode == "road" and not ranked:
+        raise RoadNetworkError("could not route to any matching rows on the current road graph")
 
     ranked.sort(
         key=lambda item: (
