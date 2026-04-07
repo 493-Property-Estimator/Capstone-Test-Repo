@@ -49,7 +49,7 @@ Latest verified results at the time this document was updated:
 - measured global coverage:
   - lines: `100.00%`
   - branches: `100.00%`
-  - functions: `99.50%`
+  - functions: `99.53%`
 
 ## Reproduction Notes
 
