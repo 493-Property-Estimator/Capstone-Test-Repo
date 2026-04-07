@@ -45,9 +45,9 @@ class PropertyEstimator:
 
     @staticmethod
     def _load_testingstage_services():
-        from TestingStage.backend import services as testingstage_services
+        from src.estimator import runtime_services
 
-        return testingstage_services
+        return runtime_services
 
     def _connect(self) -> sqlite3.Connection:
         return connect(self._db_path)

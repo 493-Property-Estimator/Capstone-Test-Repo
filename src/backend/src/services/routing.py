@@ -30,7 +30,7 @@ def compute_distance(
     origin: tuple[float, float],
     target: tuple[float, float],
     routing_enabled: bool,
-    routing_provider: str = "mock_road",
+    routing_provider: str = "",
     metrics: Metrics | None = None,
 ) -> DistanceResult:
     # Routing disabled: straight-line is the only available mode.

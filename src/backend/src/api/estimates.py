@@ -23,6 +23,7 @@ from src.backend.src.services.validation import (
     validate_location_payload,
     validate_property_details,
 )
+from src.backend.src.services.features import compute_proximity_factors
 from estimator import estimate_property_value
 
 router = APIRouter()
@@ -78,6 +79,20 @@ async def create_estimate(request: Request, payload: Any = None):
         canonical = get_location_by_id(settings.data_db_path, location["canonical_location_id"])
     if canonical is None and location.get("property_id"):
         canonical = get_location_by_id(settings.data_db_path, location["property_id"])
+
+    has_identifier = bool(location.get("canonical_location_id") or location.get("property_id"))
+    has_fallback_locator = bool(location.get("address") or location.get("coordinates") or location.get("polygon"))
+    if canonical is None and has_identifier and not has_fallback_locator:
+        return JSONResponse(
+            status_code=424,
+            content=error_response(
+                request_id,
+                code="ESTIMATE_UNAVAILABLE",
+                message="Baseline property could not be resolved.",
+                details={"location": "canonical_location_id_or_property_id_not_found"},
+                retryable=False,
+            ),
+        )
     if canonical is None and location.get("address"):
         matches = resolve_address(settings.data_db_path, location["address"], limit=5)
         if len(matches) > 1:
@@ -139,6 +154,27 @@ async def create_estimate(request: Request, payload: Any = None):
                 retryable=False,
             ),
         )
+
+    options = payload.get("options") or {}
+    strict_mode = bool(options.get("strict", settings.enable_strict_mode_default))
+    required_factors = options.get("required_factors") or []
+    if strict_mode and required_factors:
+        _, missing_factors = compute_proximity_factors(
+            (float(coords["lat"]), float(coords["lng"])),
+            settings.data_db_path,
+        )
+        missing_required = sorted(set(str(item) for item in required_factors) & set(missing_factors))
+        if missing_required:
+            return JSONResponse(
+                status_code=424,
+                content=error_response(
+                    request_id,
+                    code="REQUIRED_FACTOR_MISSING",
+                    message="One or more required factors are unavailable for this location.",
+                    details={"missing_factors": missing_required},
+                    retryable=False,
+                ),
+            )
 
     normalized_attributes, attribute_usage = _normalize_property_details(payload.get("property_details") or {})
     dataset_version = get_latest_dataset_version(settings.data_db_path)

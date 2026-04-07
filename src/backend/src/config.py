@@ -6,35 +6,35 @@ from typing import Any
 
 @dataclass(frozen=True)
 class Settings:
-    data_db_path: Path
-    cache_ttl_seconds: int
-    grid_cell_size_deg: float
-    enable_routing: bool
-    enable_strict_mode_default: bool
-    ingestion_freshness_days: int
-    search_provider: str
-    enabled_layers: tuple[str, ...]
-    estimate_time_budget_seconds: float
-    estimate_auth_required: bool
-    estimate_api_token: str
-    routing_provider: str
-    health_rate_limit_per_minute: int
-    health_rate_limit_window_seconds: float
-    memory_high_rss_kb: int
-    refresh_scheduler_enabled: bool
-    refresh_schedule_seconds: int
-    refresh_schedule_min_seconds: int
-    search_query_min_chars: int
-    search_suggestions_default_limit: int
-    search_suggestions_limit_min: int
-    search_suggestions_limit_max: int
-    search_resolve_match_limit: int
-    properties_default_limit: int
-    properties_limit_min: int
-    properties_limit_max: int
-    properties_zoom_min: float
-    properties_zoom_max: float
-    properties_cluster_zoom_threshold: float
+    data_db_path: Path = Path("src/data_sourcing/open_data.db")
+    cache_ttl_seconds: int = 900
+    grid_cell_size_deg: float = 0.01
+    enable_routing: bool = True
+    enable_strict_mode_default: bool = False
+    ingestion_freshness_days: int = 30
+    search_provider: str = "db"
+    enabled_layers: tuple[str, ...] = ()
+    estimate_time_budget_seconds: float = 60.0
+    estimate_auth_required: bool = True
+    estimate_api_token: str = "dev-local-token"
+    routing_provider: str = "mock_road"
+    health_rate_limit_per_minute: int = 120
+    health_rate_limit_window_seconds: float = 60.0
+    memory_high_rss_kb: int = 1_200_000
+    refresh_scheduler_enabled: bool = False
+    refresh_schedule_seconds: int = 3600
+    refresh_schedule_min_seconds: int = 30
+    search_query_min_chars: int = 3
+    search_suggestions_default_limit: int = 5
+    search_suggestions_limit_min: int = 1
+    search_suggestions_limit_max: int = 10
+    search_resolve_match_limit: int = 5
+    properties_default_limit: int = 5000
+    properties_limit_min: int = 100
+    properties_limit_max: int = 10000
+    properties_zoom_min: float = 0.0
+    properties_zoom_max: float = 25.0
+    properties_cluster_zoom_threshold: float = 17.0
 
 
 def _parse_env_file(path: Path) -> dict[str, str]:

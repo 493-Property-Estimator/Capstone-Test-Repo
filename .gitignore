@@ -2,6 +2,7 @@ src/data_sourcing/data/
 src/data_sourcing/open_data.db
 src/data_sourcing/open_data.db.xz
 src/data_sourcing/sources/open_data.db.xz
+src/data_sourcing/*.transit_graph_cache.pkl
 src/data_sourcing/__pycache__/
 src/data_sourcing/cache/
 src/data_sourcing/sources/cache/
@@ -14,3 +15,4 @@ Francis/
 .playwright_profile/
 reports/
 Harrison/
+TestingStage/
