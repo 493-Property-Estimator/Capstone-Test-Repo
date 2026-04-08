@@ -123,6 +123,15 @@ def _mk_estimator(tmp_path: Path):
             def summary_by_neighbourhood(self, _n):
                 return None
 
+    svc = Svc.OsrmService()
+    assert svc.route() == {"duration_s": 100.0, "distance_m": 900.0}
+    crime = Svc.SQLiteCrimeProvider(None)
+    assert crime.is_available() is False
+    assert crime.summary_by_neighbourhood("x") is None
+    unavailable = Svc.UnavailableCrimeProvider()
+    assert unavailable.is_available() is False
+    assert unavailable.summary_by_neighbourhood("x") is None
+
     est = pe.PropertyEstimator.__new__(pe.PropertyEstimator)
     est._db_path = db
     est._services_module = Svc
@@ -545,6 +554,7 @@ def test_property_estimator_init_and_error_paths(tmp_path: Path, monkeypatch) ->
     est = pe.PropertyEstimator(tmp_path / "x.db")
     assert est._crime_provider.__class__.__name__ == "SQLiteCrimeProvider"
     assert pe.PropertyEstimator._load_testingstage_services()
+    assert FakeSvc.haversine_meters(0) == 0.0
 
     est2 = _mk_estimator(tmp_path / "second")
     monkeypatch.setattr(est2, "_find_nearest_property", lambda *_a, **_k: None)
