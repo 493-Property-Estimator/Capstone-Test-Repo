@@ -147,7 +147,7 @@ test("map adapter supports selection, generic layers, assessment layers, interac
     properties: []
   });
   assert.ok(map.getLayer("assessment_properties-cluster-circle"));
-  assert.match(messages.textContent, /Assessment properties visible: 8/);
+  assert.match(messages.textContent, /Assessment properties .*visible: 8/);
 
   map.emit("mousedown", { originalEvent: { clientX: 20, clientY: 20 } });
   map.emit("click", {

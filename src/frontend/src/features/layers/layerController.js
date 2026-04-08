@@ -25,6 +25,11 @@ export function createLayerController({
   let propertyAbortController = null;
   const propertyResponseCache = new Map();
   const layerRequestSeqById = new Map();
+  const layerModeOptions = [
+    { value: "points", label: "Points" },
+    { value: "clusters", label: "Clusters" },
+    { value: "heatmap", label: "Heatmap" }
+  ];
 
   /* node:coverage disable */
   function formatStatus(status) {
@@ -132,8 +137,24 @@ export function createLayerController({
         }
       });
 
+      const modeSelect = document.createElement("select");
+      modeSelect.className = "layer-mode-select";
+      modeSelect.disabled = !propertyLayerState.enabled;
+      layerModeOptions.forEach((option) => {
+        const node = document.createElement("option");
+        node.value = option.value;
+        node.textContent = option.label;
+        modeSelect.appendChild(node);
+      });
+      modeSelect.value = propertyLayerState.displayMode || "clusters";
+      modeSelect.addEventListener("change", (event) => {
+        store.updatePropertyLayer({ displayMode: event.target.value });
+        setLayerStatusMessage(`Assessment Properties mode: ${event.target.value}.`);
+      });
+
       row.appendChild(name);
       row.appendChild(toggle);
+      row.appendChild(modeSelect);
       controlsRoot.appendChild(row);
     }
 
@@ -163,8 +184,25 @@ export function createLayerController({
         }
       });
 
+      const modeSelect = document.createElement("select");
+      modeSelect.className = "layer-mode-select";
+      modeSelect.disabled = !layerState.enabled;
+      layerModeOptions.forEach((option) => {
+        const node = document.createElement("option");
+        node.value = option.value;
+        node.textContent = option.label;
+        modeSelect.appendChild(node);
+      });
+      modeSelect.value = layerState.renderMode || "points";
+      modeSelect.addEventListener("change", (event) => {
+        const nextMode = event.target.value;
+        store.updateLayer(layer.id, { renderMode: nextMode });
+        setLayerStatusMessage(`${layer.label} mode: ${nextMode}.`);
+      });
+
       row.appendChild(name);
       row.appendChild(toggle);
+      row.appendChild(modeSelect);
       controlsRoot.appendChild(row);
     });
   }

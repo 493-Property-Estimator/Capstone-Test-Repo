@@ -373,6 +373,7 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .layer-name {
@@ -384,6 +385,15 @@ p {
 .layer-panel-toggle {
   width: 100%;
   margin-bottom: 12px;
+}
+
+.layer-mode-select {
+  min-width: 124px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
 }
 
 #layer-side-panel.is-collapsed #layer-panel-body {
@@ -840,7 +850,9 @@ p {
   background: #fff0f0;
 }
 
+#estimator-page,
 #layer-page,
+#map-page,
 #ingestion-page {
   display: none;
 }
