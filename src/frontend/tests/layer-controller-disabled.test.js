@@ -55,7 +55,7 @@ test("layer controller supports a build with assessment properties disabled", ()
   assert.equal(controlsRoot.children.length, 1);
   assert.equal(legendRoot.children[0].textContent, "No active layer legends.");
   assert.deepEqual(propertyLayerCalls[0], { enabled: false });
-  const schoolsToggle = controlsRoot.children[0].children[1];
+  const schoolsToggle = controlsRoot.children[0].children[1].children[1];
   schoolsToggle.checked = true;
   schoolsToggle.dispatchEvent({ type: "change", target: schoolsToggle });
   assert.equal(layerCalls.length >= 1, true);
