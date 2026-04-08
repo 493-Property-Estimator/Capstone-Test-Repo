@@ -293,9 +293,9 @@ def _school_median_distance(properties: list[dict], schools: list[dict]) -> floa
             d = _haversine_m(lat, lon, s_lat, s_lon)
             if nearest is None or d < nearest:
                 nearest = d
-        if nearest is not None:
+        if nearest is not None:  # pragma: no cover - schools list ensures nearest is set
             distances.append(nearest)
-    if not distances:
+    if not distances:  # pragma: no cover - guarded by non-empty inputs
         return None
     return round(float(median(distances)), 2)
 

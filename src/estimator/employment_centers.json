@@ -1,0 +1,65 @@
+[
+  {
+    "id": "downtown-edmonton",
+    "name": "Downtown Edmonton",
+    "category": "business_district",
+    "lat": 53.546100,
+    "lon": -113.493800,
+    "weight": 1.0,
+    "enabled": true
+  },
+  {
+    "id": "west-edmonton-mall-area",
+    "name": "West Edmonton Mall Area",
+    "category": "business_district",
+    "lat": 53.523000,
+    "lon": -113.622700,
+    "weight": 0.9,
+    "enabled": true
+  },
+  {
+    "id": "strathcona",
+    "name": "Strathcona Area",
+    "category": "business_district",
+    "lat": 53.518200,
+    "lon": -113.497300,
+    "weight": 0.9,
+    "enabled": true
+  },
+  {
+    "id": "university-of-alberta-campus",
+    "name": "University of Alberta Campus",
+    "category": "university_campus",
+    "lat": 53.523200,
+    "lon": -113.526300,
+    "weight": 0.9,
+    "enabled": true
+  },
+  {
+    "id": "kingsway",
+    "name": "Kingsway",
+    "category": "business_district",
+    "lat": 53.556998,
+    "lon": -113.503331,
+    "weight": 0.75,
+    "enabled": true
+  },
+  {
+    "id": "northgate",
+    "name": "Northgate",
+    "category": "business_district",
+    "lat": 53.597900,
+    "lon": -113.488900,
+    "weight": 0.75,
+    "enabled": true
+  },
+  {
+    "id": "south-edmonton-common",
+    "name": "South Edmonton Common",
+    "category": "business_district",
+    "lat": 53.446800,
+    "lon": -113.484900,
+    "weight": 0.8,
+    "enabled": true
+  }
+]

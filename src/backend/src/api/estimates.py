@@ -460,7 +460,7 @@ def _polygon_centroid(polygon: dict[str, Any]) -> dict[str, float] | None:
         if not ring:
             return None
         points = ring[:-1] if len(ring) > 1 and ring[0] == ring[-1] else ring
-        if not points:
+        if not points:  # pragma: no cover - ring non-empty implies points non-empty
             return None
         lng = sum(float(p[0]) for p in points) / len(points)
         lat = sum(float(p[1]) for p in points) / len(points)

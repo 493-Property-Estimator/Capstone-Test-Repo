@@ -1,6 +1,7 @@
 import sys
 import os
 import sqlite3
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,6 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from src.backend.src.app import app
 from src.backend.src.config import Settings
 from src.backend.src.services.cache import MemoryCache
 from src.backend.src.services.metrics import Metrics
@@ -36,6 +36,7 @@ def _init_db(db_path: Path):
             suite TEXT,
             house_number TEXT,
             street_name TEXT,
+            legal_description TEXT,
             neighbourhood_id TEXT,
             neighbourhood TEXT,
             ward TEXT,
@@ -48,7 +49,14 @@ def _init_db(db_path: Path):
             assessment_class_1 TEXT,
             assessment_class_2 TEXT,
             assessment_class_3 TEXT,
+            assessment_class_pct_1 REAL,
+            assessment_class_pct_2 REAL,
+            assessment_class_pct_3 REAL,
             point_location TEXT,
+            source_ids_json TEXT,
+            record_ids_json TEXT,
+            link_method TEXT,
+            confidence REAL,
             lat REAL,
             lon REAL
         )
@@ -76,7 +84,10 @@ def _init_db(db_path: Path):
             bedrooms REAL,
             bathrooms REAL,
             bedrooms_estimated REAL,
-            bathrooms_estimated REAL
+            bathrooms_estimated REAL,
+            source_type TEXT,
+            source_name TEXT,
+            confidence REAL
         )
         """
     )
@@ -139,22 +150,25 @@ def _init_db(db_path: Path):
         """
         INSERT INTO property_locations_prod (
             canonical_location_id, assessment_year, assessment_value, suite, house_number, street_name,
-            neighbourhood_id, neighbourhood, ward, zoning, lot_size, total_gross_area,
+            legal_description, neighbourhood_id, neighbourhood, ward, zoning, lot_size, total_gross_area,
             year_built, tax_class, garage, assessment_class_1, assessment_class_2, assessment_class_3,
-            point_location, lat, lon
+            assessment_class_pct_1, assessment_class_pct_2, assessment_class_pct_3,
+            point_location, source_ids_json, record_ids_json, link_method, confidence, lat, lon
         ) VALUES (
             'loc_001', 2026, 410000, NULL, '123', 'Main St',
-            'N1090', 'Downtown', 'Ward 1', 'DC1', 300.0, 175.0,
+            NULL, 'N1090', 'Downtown', 'Ward 1', 'DC1', 300.0, 175.0,
             2005, 'Residential', 'Y', 'Residential', NULL, NULL,
-            NULL, 53.5461, -113.4938
+            NULL, NULL, NULL,
+            NULL, '[]', '[]', 'auto', 1.0, 53.5461, -113.4938
         )
         """
     )
     conn.execute(
         """
         INSERT INTO property_attributes_prod (
-            canonical_location_id, bedrooms, bathrooms, bedrooms_estimated, bathrooms_estimated
-        ) VALUES ('loc_001', 3, 2, NULL, NULL)
+            canonical_location_id, bedrooms, bathrooms, bedrooms_estimated, bathrooms_estimated,
+            source_type, source_name, confidence
+        ) VALUES ('loc_001', 3, 2, NULL, NULL, 'manual', 'test', 1.0)
         """
     )
     conn.execute(
@@ -207,6 +221,15 @@ def _init_db(db_path: Path):
 
 @pytest.fixture()
 def client(test_db_path, monkeypatch):
+    os.environ["DATA_DB_PATH"] = str(test_db_path)
+    from src.backend.src import app as app_module
+
+    monkeypatch.setattr(app_module, "warm_estimator", lambda *_a, **_k: None)
+    @asynccontextmanager
+    async def _noop_lifespan(_app):
+        yield
+
+    monkeypatch.setattr(app_module.app.router, "lifespan_context", _noop_lifespan)
     settings = Settings(
         data_db_path=test_db_path,
         cache_ttl_seconds=3600,
@@ -245,7 +268,10 @@ def client(test_db_path, monkeypatch):
             "unknown",
         ),
     )
-    app.state.settings = settings
-    app.state.cache = MemoryCache(settings.cache_ttl_seconds)
-    app.state.metrics = Metrics()
-    return TestClient(app)
+    app_module.settings = settings
+    app_module.cache = MemoryCache(settings.cache_ttl_seconds)
+    app_module.metrics = Metrics()
+    app_module.app.state.settings = settings
+    app_module.app.state.cache = app_module.cache
+    app_module.app.state.metrics = app_module.metrics
+    return TestClient(app_module.app)

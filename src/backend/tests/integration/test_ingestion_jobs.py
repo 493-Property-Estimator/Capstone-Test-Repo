@@ -71,6 +71,10 @@ def test_safe_int_and_derive_helpers():
     assert ingested_pipe == 8
     assert skipped_pipe == 5
     assert errors_pipe == 2
+    ingested_with_row_count, _, _ = jobs._derive_counts_from_pipeline_payload(
+        {"row_count": 3, "counts": {"raw": 3, "normalized": 3, "linked": 2}}
+    )
+    assert ingested_with_row_count == 3
 
 
 def test_validate_schema_from_csv_and_json(tmp_path):
@@ -383,6 +387,89 @@ def test_collect_ingestion_stats_missing_runs_and_bad_json(tmp_path):
     assert stats["errors"] >= 2
 
 
+def test_collect_ingestion_stats_pipelines_not_dict(tmp_path):
+    db = tmp_path / "stats_misc.db"
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        """
+        CREATE TABLE run_logs (
+            run_id TEXT PRIMARY KEY,
+            story TEXT,
+            trigger_type TEXT,
+            status TEXT,
+            started_at TEXT,
+            completed_at TEXT,
+            warnings_json TEXT,
+            errors_json TEXT,
+            metadata_json TEXT
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO run_logs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            "run-a",
+            "017",
+            "on_demand",
+            "succeeded",
+            "",
+            "",
+            "[]",
+            "{}",
+            json.dumps({"row_count": 4}),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    stats = jobs._collect_ingestion_stats(db, {"pipelines": ["skip-me"]})
+    assert stats["ingested"] == 0
+    assert stats["errors"] == 0
+
+    stats = jobs._collect_ingestion_stats("/tmp/nowhere.db", {"pipelines": {"geo": "skip"}})
+    assert stats == {"ingested": 0, "skipped": 0, "errors": 0}
+
+
+def test_collect_ingestion_stats_errors_not_list(tmp_path):
+    db = tmp_path / "stats_errors.db"
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        """
+        CREATE TABLE run_logs (
+            run_id TEXT PRIMARY KEY,
+            story TEXT,
+            trigger_type TEXT,
+            status TEXT,
+            started_at TEXT,
+            completed_at TEXT,
+            warnings_json TEXT,
+            errors_json TEXT,
+            metadata_json TEXT
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO run_logs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            "run-x",
+            "017",
+            "on_demand",
+            "succeeded",
+            "",
+            "",
+            "[]",
+            "{}",
+            json.dumps({"row_count": 2}),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    stats = jobs._collect_ingestion_stats(db, {"pipelines": {"geo": {"run_id": "run-x"}}})
+    assert stats["ingested"] == 2
+    assert stats["errors"] == 0
+
+
 def test_collect_ingestion_stats_sqlite_error(monkeypatch):
     def bad_connect(*_args, **_kwargs):
         raise sqlite3.Error("db down")
@@ -405,6 +492,37 @@ def test_extract_record_keys_empty_and_scalar_json(tmp_path):
     list_json = tmp_path / "list.json"
     list_json.write_text("[]", encoding="utf-8")
     assert jobs._extract_record_keys_from_path(list_json, "json") == set()
+
+
+def test_extract_record_keys_geojson_invalid_coords_and_props(tmp_path):
+    geojson_path = tmp_path / "weird.geojson"
+    geojson_path.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "geometry": {"type": "Point", "coordinates": ["x", "y"]},
+                        "properties": [],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    keys = jobs._extract_record_keys_from_path(geojson_path, "geojson")
+    assert "geometry" in keys
+
+
+def test_extract_record_keys_geojson_non_dict_feature(tmp_path):
+    geojson_path = tmp_path / "nondict.geojson"
+    geojson_path.write_text(
+        json.dumps({"type": "FeatureCollection", "features": ["x"]}),
+        encoding="utf-8",
+    )
+    keys = jobs._extract_record_keys_from_path(geojson_path, "geojson")
+    assert keys == set()
 
 
 def test_validate_dataset_schema_no_fields(tmp_path):
