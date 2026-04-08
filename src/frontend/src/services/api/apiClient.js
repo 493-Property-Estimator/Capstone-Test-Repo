@@ -218,6 +218,14 @@ export const apiClient = {
       () => mockApi.getProperties({ west, south, east, north, zoom, limit, cursor, signal }),
       { signal, fallbackOnAnyError: true }
     );
+  },
+
+  getPropertyDetail(canonicalLocationId, { signal } = {}) {
+    return requestWithFallback(
+      () => request(`/properties/${encodeURIComponent(canonicalLocationId)}`, { signal }),
+      async () => ({ property: null }),
+      { signal, fallbackOnAnyError: false }
+    );
   }
 };
 

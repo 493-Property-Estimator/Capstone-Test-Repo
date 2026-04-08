@@ -14,6 +14,7 @@ export function createMapAdapter({
   onMapClick,
   onViewportChange,
   messageElement,
+  layerPanelElement,
   propertyCardElement,
   propertyDetailPanelElement,
   onPropertySelect,
@@ -136,6 +137,10 @@ export function createMapAdapter({
       propertyCardElement.classList.add("is-hidden");
       propertyCardElement.classList.remove("is-visible");
       root.appendChild(propertyCardElement);
+    }
+
+    if (layerPanelElement) {
+      root.appendChild(layerPanelElement);
     }
 
     if (propertyDetailPanelElement) {

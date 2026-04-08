@@ -444,11 +444,11 @@ p {
 }
 
 .map-side-panel {
-  position: absolute;
+  position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 820;
-  width: min(380px, calc(100% - 40px));
+  z-index: 900;
+  width: min(360px, calc(100vw - 40px));
   border: 1px solid rgba(95, 86, 72, 0.2);
   border-radius: 20px;
   background: rgba(255, 250, 241, 0.96);

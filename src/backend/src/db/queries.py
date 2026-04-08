@@ -401,3 +401,66 @@ def fetch_property_locations_bbox(
     with connect(db_path) as conn:
         rows = conn.execute(sql, (west, east, south, north, limit, offset)).fetchall()
     return [dict(row) for row in rows]
+
+
+def fetch_property_location_detail(
+    db_path: Path,
+    canonical_location_id: str,
+) -> dict[str, Any] | None:
+    sql = """
+        SELECT
+            p.canonical_location_id,
+            p.assessment_year,
+            p.assessment_value,
+            p.suite,
+            p.house_number,
+            p.street_name,
+            p.legal_description,
+            p.zoning,
+            p.lot_size,
+            p.total_gross_area,
+            p.year_built,
+            p.neighbourhood_id,
+            p.neighbourhood,
+            p.ward,
+            p.tax_class,
+            p.garage,
+            p.assessment_class_1,
+            p.assessment_class_2,
+            p.assessment_class_3,
+            p.assessment_class_pct_1,
+            p.assessment_class_pct_2,
+            p.assessment_class_pct_3,
+            p.lat,
+            p.lon,
+            p.point_location,
+            p.source_ids_json,
+            p.record_ids_json,
+            p.link_method,
+            p.confidence AS location_confidence,
+            a.bedrooms,
+            a.bathrooms,
+            a.bedrooms_estimated,
+            a.bathrooms_estimated,
+            a.source_type AS attribute_source_type,
+            a.source_name AS attribute_source_name,
+            a.confidence AS attribute_confidence
+        FROM property_locations_prod p
+        LEFT JOIN (
+            SELECT pa1.*
+            FROM property_attributes_prod pa1
+            INNER JOIN (
+                SELECT canonical_location_id, MAX(confidence) AS max_confidence
+                FROM property_attributes_prod
+                GROUP BY canonical_location_id
+            ) best
+              ON best.canonical_location_id = pa1.canonical_location_id
+             AND best.max_confidence = pa1.confidence
+        ) a
+          ON a.canonical_location_id = p.canonical_location_id
+        WHERE p.canonical_location_id = ?
+        LIMIT 1
+    """
+    with connect(db_path) as conn:
+        row = conn.execute(sql, (canonical_location_id,)).fetchone()
+    return dict(row) if row else None

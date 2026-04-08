@@ -3,7 +3,11 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from src.backend.src.db.queries import fetch_property_locations_bbox
+from src.backend.src.db.queries import (
+    fetch_property_location_detail,
+    fetch_property_locations_bbox,
+    get_latest_dataset_version,
+)
 from src.backend.src.services.errors import error_response
 from src.backend.src.services.property_viewport import (
     ensure_property_indexes,
@@ -11,6 +15,30 @@ from src.backend.src.services.property_viewport import (
 )
 
 router = APIRouter()
+
+
+def _viewport_cache_key(
+    *,
+    west: float,
+    south: float,
+    east: float,
+    north: float,
+    zoom: float,
+    limit: int,
+    cursor: str | None,
+) -> str:
+    return "|".join(
+        [
+            "properties",
+            f"{west:.4f}",
+            f"{south:.4f}",
+            f"{east:.4f}",
+            f"{north:.4f}",
+            f"{zoom:.2f}",
+            str(limit),
+            cursor or "",
+        ]
+    )
 
 
 def _parse_cursor(cursor: str | None) -> int:
@@ -78,6 +106,27 @@ def _property_details(row: dict) -> dict:
         "source_ids_json": row.get("source_ids_json"),
         "record_ids_json": row.get("record_ids_json"),
         "link_method": row.get("link_method"),
+    }
+
+
+def _property_summary(row: dict) -> dict:
+    house = (row.get("house_number") or "").strip()
+    street = (row.get("street_name") or "").strip()
+    canonical_address = (
+        f"{house} {street}, Edmonton, AB".strip().replace("  ", " ")
+        if house or street
+        else "Edmonton property"
+    )
+    return {
+        "canonical_location_id": row["canonical_location_id"],
+        "canonical_address": canonical_address,
+        "coordinates": {"lat": row["lat"], "lng": row["lon"]},
+        "neighbourhood": row.get("neighbourhood"),
+        "ward": row.get("ward"),
+        "assessment_value": row.get("assessment_value"),
+        "tax_class": row.get("tax_class"),
+        "name": canonical_address,
+        "description": _format_property_description(row),
     }
 
 
@@ -180,6 +229,21 @@ async def get_properties(
     bounded_limit = max(min_limit, min(requested_limit, max_limit))
     offset = _parse_cursor(cursor)
     render_mode = "cluster" if zoom < settings.properties_cluster_zoom_threshold else "property"
+    dataset_version = get_latest_dataset_version(settings.data_db_path)
+    cache = request.app.state.cache
+    cache_key = _viewport_cache_key(
+        west=west,
+        south=south,
+        east=east,
+        north=north,
+        zoom=zoom,
+        limit=bounded_limit,
+        cursor=cursor,
+    )
+    cached_value, _ = cache.get(cache_key, dataset_version)
+    if cached_value is not None:
+        cached_value["request_id"] = request_id
+        return cached_value
 
     # Use the optimized SQL-based viewport path for clustered map views.
     # High-zoom property mode stays on the richer joined query so the frontend
@@ -196,6 +260,7 @@ async def get_properties(
             cursor=cursor,
         )
         optimized["request_id"] = request_id
+        cache.set(cache_key, {key: value for key, value in optimized.items() if key != "request_id"}, dataset_version)
         return optimized
 
     ensure_property_indexes(settings.data_db_path)
@@ -213,34 +278,12 @@ async def get_properties(
     has_more = len(rows) > bounded_limit
     rows = rows[:bounded_limit]
 
-    properties = []
-    for row in rows:
-        house = (row.get("house_number") or "").strip()
-        street = (row.get("street_name") or "").strip()
-        canonical_address = (
-            f"{house} {street}, Edmonton, AB".strip().replace("  ", " ")
-            if house or street
-            else "Edmonton property"
-        )
-        properties.append(
-            {
-                "canonical_location_id": row["canonical_location_id"],
-                "canonical_address": canonical_address,
-                "coordinates": {"lat": row["lat"], "lng": row["lon"]},
-                "neighbourhood": row.get("neighbourhood"),
-                "ward": row.get("ward"),
-                "assessment_value": row.get("assessment_value"),
-                "tax_class": row.get("tax_class"),
-                "name": canonical_address,
-                "description": _format_property_description(row),
-                "details": _property_details(row),
-            }
-        )
+    properties = [_property_summary(row) for row in rows]
 
     clusters = []
     response_properties = properties
 
-    return {
+    response_payload = {
         "request_id": request_id,
         "status": "partial" if has_more else "ok",
         "coverage_status": "partial" if has_more else "complete",
@@ -267,4 +310,45 @@ async def get_properties(
             "next_cursor": f"offset:{offset + bounded_limit}" if has_more else None,
         },
         "warnings": [],
+    }
+    cache.set(cache_key, {key: value for key, value in response_payload.items() if key != "request_id"}, dataset_version)
+    return response_payload
+
+
+@router.get("/properties/{canonical_location_id}")
+async def get_property_detail(request: Request, canonical_location_id: str):
+    request_id = request.state.request_id
+    settings = request.app.state.settings
+    if "assessment_properties" not in settings.enabled_layers:
+        return JSONResponse(
+            status_code=404,
+            content=error_response(
+                request_id,
+                code="LAYER_DISABLED",
+                message="Layer 'assessment_properties' is disabled by configuration.",
+                details={"layer_id": "assessment_properties"},
+                retryable=False,
+            ),
+        )
+
+    row = fetch_property_location_detail(settings.data_db_path, canonical_location_id)
+    if not row:
+        return JSONResponse(
+            status_code=404,
+            content=error_response(
+                request_id,
+                code="PROPERTY_NOT_FOUND",
+                message="Property details were not found.",
+                details={"canonical_location_id": canonical_location_id},
+                retryable=False,
+            ),
+        )
+
+    payload = _property_summary(row)
+    payload["details"] = _property_details(row)
+
+    return {
+        "request_id": request_id,
+        "status": "ok",
+        "property": payload,
     }

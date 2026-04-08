@@ -12,6 +12,9 @@ import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
+const propertyDetailCache = new Map();
+let propertyDetailAbortController = null;
+let propertyDetailRequestSeq = 0;
 
 function findMatchingProperty(propertyLayer, location) {
   if (!location) {
@@ -37,6 +40,49 @@ function findMatchingProperty(propertyLayer, location) {
   }) || null;
 }
 
+async function hydratePropertyDetails(property) {
+  if (!property?.canonical_location_id) {
+    return property;
+  }
+
+  const hasMeaningfulDetails = property.details && Object.keys(property.details).length > 0;
+  if (hasMeaningfulDetails) {
+    return property;
+  }
+
+  const cachedDetail = propertyDetailCache.get(property.canonical_location_id);
+  if (cachedDetail) {
+    return cachedDetail;
+  }
+
+  if (propertyDetailAbortController) {
+    propertyDetailAbortController.abort();
+  }
+
+  propertyDetailRequestSeq += 1;
+  const requestSeq = propertyDetailRequestSeq;
+  propertyDetailAbortController = new AbortController();
+
+  try {
+    const response = await apiClient.getPropertyDetail(property.canonical_location_id, {
+      signal: propertyDetailAbortController.signal
+    });
+
+    if (requestSeq !== propertyDetailRequestSeq) {
+      return property;
+    }
+
+    const detailed = response?.property || property;
+    propertyDetailCache.set(property.canonical_location_id, detailed);
+    return detailed;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return property;
+    }
+    return property;
+  }
+}
+
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
@@ -44,18 +90,19 @@ const mapAdapter = createMapAdapter({
   onViewportChange: () => {},
   propertyCardElement: document.getElementById("property-hover-card"),
   propertyDetailPanelElement: document.getElementById("property-detail-panel"),
-  onPropertySelect: (property) => {
+  onPropertySelect: async (property) => {
+    const detailedProperty = await hydratePropertyDetails(property);
     const location = {
-      canonical_location_id: property.canonical_location_id,
-      canonical_address: property.canonical_address,
-      coordinates: property.coordinates,
+      canonical_location_id: detailedProperty.canonical_location_id,
+      canonical_address: detailedProperty.canonical_address,
+      coordinates: detailedProperty.coordinates,
       region: "Edmonton",
-      neighbourhood: property.details?.neighbourhood || property.neighbourhood || null,
+      neighbourhood: detailedProperty.details?.neighbourhood || detailedProperty.neighbourhood || null,
       coverage_status: "supported"
     };
     store.setState({
       selectedLocation: location,
-      selectedPropertyDetails: property,
+      selectedPropertyDetails: detailedProperty,
       propertyDetailsDismissed: false
     });
   },
@@ -87,11 +134,12 @@ const searchController = createSearchController({
   candidateResultsRoot: document.getElementById("candidate-results"),
   helperText: document.getElementById("search-helper"),
   statusElement: document.getElementById("search-status"),
-  onLocationResolved(location) {
+  async onLocationResolved(location) {
     const matchedProperty = findMatchingProperty(store.getState().propertyLayer, location);
+    const detailedProperty = matchedProperty ? await hydratePropertyDetails(matchedProperty) : null;
     store.setState({
       selectedLocation: location,
-      selectedPropertyDetails: matchedProperty,
+      selectedPropertyDetails: detailedProperty,
       propertyDetailsDismissed: false
     });
     mapAdapter.setView(location, { zoom: 17 });
