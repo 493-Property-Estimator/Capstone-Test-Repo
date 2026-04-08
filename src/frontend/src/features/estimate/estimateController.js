@@ -165,9 +165,7 @@ export function createEstimateController({
     const summaryGrid = createElement("div", "estimate-grid");
     [
       ["Estimated At", estimate.estimated_at ? new Date(estimate.estimated_at).toLocaleString("en-CA") : "--"],
-      ["Confidence", estimate.confidence?.percentage != null ? `${estimate.confidence.percentage}%` : "--"],
-      ["Completeness", estimate.confidence?.completeness || "--"],
-      ["Cache", estimate.cache?.status || "--"]
+      ["Confidence", estimate.confidence?.percentage != null ? `${estimate.confidence.percentage}%` : "--"]
     ].forEach(([label, value]) => {
       const metric = createElement("article", "estimate-metric");
       metric.appendChild(createElement("span", "estimate-label", label));
@@ -175,30 +173,6 @@ export function createEstimateController({
       summaryGrid.appendChild(metric);
     });
     estimatePanel.appendChild(summaryGrid);
-
-    const baselineSection = createElement("details", "collapsible-section");
-    baselineSection.open = false;
-    const baselineSummary = createElement("summary", "collapsible-summary");
-    baselineSummary.appendChild(createElement("h3", null, "Baseline Metadata"));
-    baselineSection.appendChild(baselineSummary);
-    const baselineBody = createElement("div", "collapsible-body");
-    const baselineGrid = createElement("div", "detail-grid");
-    [
-      ["Baseline Type", estimate.baseline?.type || "--"],
-      ["Baseline Source", estimate.baseline?.source || "--"],
-      ["Assessment Year", estimate.baseline?.assessment_year ?? "--"],
-      ["Distance To Query", estimate.baseline?.distance_to_query_m != null ? `${Math.round(Number(estimate.baseline.distance_to_query_m))} m` : "--"],
-      ["Attribute Use", estimate.property_details_incorporation?.mode || "--"],
-      ["Accepted Fields", estimate.property_details_incorporation?.accepted_fields?.join(", ") || "--"]
-    ].forEach(([label, value]) => {
-      const item = createElement("article", "detail-metric");
-      item.appendChild(createElement("span", "detail-metric-label", label));
-      item.appendChild(createElement("strong", "detail-metric-value", String(value)));
-      baselineGrid.appendChild(item);
-    });
-    baselineBody.appendChild(baselineGrid);
-    baselineSection.appendChild(baselineBody);
-    estimatePanel.appendChild(baselineSection);
 
     const factorsSection = createElement("details", "collapsible-section");
     factorsSection.open = false;
@@ -261,28 +235,6 @@ export function createEstimateController({
     topFactorsSection.appendChild(topFactorsBody);
     estimatePanel.appendChild(topFactorsSection);
 
-    const diagnosticsSection = createElement("details", "collapsible-section");
-    diagnosticsSection.open = false;
-    const diagnosticsSummary = createElement("summary", "collapsible-summary");
-    diagnosticsSummary.appendChild(createElement("h3", null, "Diagnostics"));
-    diagnosticsSection.appendChild(diagnosticsSummary);
-    const diagnosticsBody = createElement("div", "collapsible-body");
-    diagnosticsBody.appendChild(
-      createElement(
-        "p",
-        "factor-summary",
-        `Missing factors: ${(estimate.missing_factors || []).join(", ") || "None"}`
-      )
-    );
-    diagnosticsBody.appendChild(
-      createElement(
-        "p",
-        "factor-summary",
-        `Approximations: ${(estimate.approximations || []).join(", ") || "None"}`
-      )
-    );
-    diagnosticsSection.appendChild(diagnosticsBody);
-    estimatePanel.appendChild(diagnosticsSection);
   }
   /* node:coverage enable */
 
