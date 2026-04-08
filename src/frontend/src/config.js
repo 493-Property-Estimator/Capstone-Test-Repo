@@ -167,7 +167,7 @@ const ALL_LAYER_DEFINITIONS = [
   { id: "green_space", label: "Green Space", color: "#0f766e" },
   { id: "roads", label: "Roads", color: "#4b5563" },
   { id: "municipal_wards", label: "Municipal Wards", color: "#d97706" },
-  { id: "provincial_districts", label: "Provincial Districts", color: "#8b5cf6" },
+  { id: "provincial_districts", label: "Provincial Districts", color: "#7c3aed" },
   { id: "federal_districts", label: "Federal Districts", color: "#be123c" },
   { id: "census_subdivisions", label: "Census Subdivisions", color: "#334155" },
   { id: "census_boundaries", label: "Census Boundaries", color: "#475569" },

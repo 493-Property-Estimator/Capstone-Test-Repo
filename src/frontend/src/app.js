@@ -7,7 +7,6 @@ import { createLayerController } from "./features/layers/layerController.js";
 import { createEstimateController } from "./features/estimate/estimateController.js";
 import { createWarningController } from "./features/warnings/warningController.js";
 import { createPropertyDetailController } from "./features/propertyDetails/propertyDetailController.js";
-import { createIngestionController } from "./features/ingestion/ingestionController.js";
 import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 
 const store = createStore();
@@ -41,60 +40,6 @@ function findMatchingProperty(propertyLayer, location) {
   }) || null;
 }
 
-function setupAppNavigation() {
-  const pageIds = new Set(["estimator", "layer", "ingestion"]);
-  const menuButton = document.getElementById("app-menu-toggle");
-  const sidebar = document.getElementById("app-sidebar-nav");
-  const overlay = document.getElementById("app-sidebar-overlay");
-  const links = typeof document.querySelectorAll === "function"
-    ? Array.from(document.querySelectorAll("[data-page-target]"))
-    : [];
-
-  const setSidebarOpen = (open) => {
-    if (!sidebar || !overlay || !menuButton) {
-      return;
-    }
-
-    sidebar.classList.toggle("is-open", open);
-    overlay.classList.toggle("is-hidden", !open);
-    menuButton.setAttribute("aria-expanded", String(open));
-  };
-
-  const setPage = (pageId) => {
-    if (!pageIds.has(pageId)) {
-      return;
-    }
-
-    if (document.body?.dataset) {
-      document.body.dataset.page = pageId;
-    } else if (typeof document.body?.setAttribute === "function") {
-      document.body.setAttribute("data-page", pageId);
-    }
-    links.forEach((link) => {
-      link.classList.toggle("is-active", link.dataset.pageTarget === pageId);
-    });
-
-    setSidebarOpen(false);
-  };
-
-  menuButton?.addEventListener("click", () => {
-    const isOpen = sidebar?.classList.contains("is-open");
-    setSidebarOpen(!isOpen);
-  });
-
-  overlay?.addEventListener("click", () => setSidebarOpen(false));
-
-  links.forEach((link) => {
-    link.addEventListener("click", () => {
-      setPage(link.dataset.pageTarget);
-    });
-  });
-
-  const initialPage = document.body?.dataset?.page || "estimator";
-  setPage(initialPage);
-}
-
-setupAppNavigation();
 async function hydratePropertyDetails(property) {
   if (!property?.canonical_location_id) {
     return property;
@@ -137,6 +82,7 @@ async function hydratePropertyDetails(property) {
     return property;
   }
 }
+
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
@@ -144,39 +90,20 @@ const mapAdapter = createMapAdapter({
   onViewportChange: () => {},
   propertyCardElement: document.getElementById("property-hover-card"),
   propertyDetailPanelElement: document.getElementById("property-detail-panel"),
-  onPropertySelect: (property) => {
+  onPropertySelect: async (property) => {
+    const detailedProperty = await hydratePropertyDetails(property);
     const location = {
-      canonical_location_id: property.canonical_location_id,
-      canonical_address: property.canonical_address,
-      coordinates: property.coordinates,
+      canonical_location_id: detailedProperty.canonical_location_id,
+      canonical_address: detailedProperty.canonical_address,
+      coordinates: detailedProperty.coordinates,
       region: "Edmonton",
-      neighbourhood: property.details?.neighbourhood || property.neighbourhood || null,
+      neighbourhood: detailedProperty.details?.neighbourhood || detailedProperty.neighbourhood || null,
       coverage_status: "supported"
     };
     store.setState({
       selectedLocation: location,
-      selectedPropertyDetails: property,
+      selectedPropertyDetails: detailedProperty,
       propertyDetailsDismissed: false
-    });
-
-    hydratePropertyDetails(property).then((detailedProperty) => {
-      if (!detailedProperty?.canonical_location_id) {
-        return;
-      }
-
-      const selectedId = store.getState().selectedLocation?.canonical_location_id;
-      if (selectedId !== detailedProperty.canonical_location_id) {
-        return;
-      }
-
-      store.setState({
-        selectedLocation: {
-          ...store.getState().selectedLocation,
-          neighbourhood:
-            detailedProperty.details?.neighbourhood || detailedProperty.neighbourhood || null
-        },
-        selectedPropertyDetails: detailedProperty
-      });
     });
   },
   onSelectionCleared() {
@@ -207,29 +134,15 @@ const searchController = createSearchController({
   candidateResultsRoot: document.getElementById("candidate-results"),
   helperText: document.getElementById("search-helper"),
   statusElement: document.getElementById("search-status"),
-  onLocationResolved(location) {
+  async onLocationResolved(location) {
     const matchedProperty = findMatchingProperty(store.getState().propertyLayer, location);
+    const detailedProperty = matchedProperty ? await hydratePropertyDetails(matchedProperty) : null;
     store.setState({
       selectedLocation: location,
-      selectedPropertyDetails: matchedProperty,
+      selectedPropertyDetails: detailedProperty,
       propertyDetailsDismissed: false
     });
     mapAdapter.setView(location, { zoom: 17 });
-
-    if (matchedProperty) {
-      hydratePropertyDetails(matchedProperty).then((detailedProperty) => {
-        if (!detailedProperty?.canonical_location_id) {
-          return;
-        }
-
-        const selectedId = store.getState().selectedLocation?.canonical_location_id;
-        if (selectedId !== detailedProperty.canonical_location_id) {
-          return;
-        }
-
-        store.setState({ selectedPropertyDetails: detailedProperty });
-      });
-    }
   }
 });
 
@@ -292,25 +205,6 @@ createPropertyDetailController({
   closeButton: document.getElementById("property-detail-close")
 });
 
-createIngestionController({
-  apiClient,
-  form: document.getElementById("ingestion-form"),
-  resetButton: document.getElementById("ingestion-reset"),
-  statusPill: document.getElementById("ingestion-status-pill"),
-  statusLabel: document.getElementById("ingestion-status-label"),
-  feedbackRoot: document.getElementById("ingestion-feedback"),
-  progressRoot: document.getElementById("ingestion-progress"),
-  progressBar: document.getElementById("ingestion-progress-bar"),
-  fields: {
-    sourceNameInput: document.getElementById("ingestion-source-name"),
-    datasetTypeInput: document.getElementById("ingestion-dataset-type"),
-    fileInput: document.getElementById("ingestion-file-input"),
-    triggerInput: document.getElementById("ingestion-trigger"),
-    validateOnlyInput: document.getElementById("ingestion-validate-only"),
-    overwriteInput: document.getElementById("ingestion-overwrite")
-  }
-});
-
 /* node:coverage disable */
 store.subscribe((state) => {
   if (state.selectedPropertyDetails || state.propertyDetailsDismissed || !state.selectedLocation) {
@@ -326,13 +220,9 @@ store.subscribe((state) => {
 /* node:coverage enable */
 
 /* node:coverage ignore next */
-const environmentBadge = document.getElementById("environment-badge");
-if (environmentBadge) {
-  environmentBadge.textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
-}
+document.getElementById("environment-badge").textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
 
-const resetSelectionButton = document.getElementById("reset-selection");
-resetSelectionButton?.addEventListener("click", () => {
+document.getElementById("reset-selection").addEventListener("click", () => {
   store.setState({
     selectedLocation: DEFAULT_LOCATION,
     selectedPropertyDetails: null,

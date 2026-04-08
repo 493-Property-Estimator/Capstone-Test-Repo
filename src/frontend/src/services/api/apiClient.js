@@ -8,14 +8,10 @@ import {
 } from "../../config.js";
 import { mockApi } from "./mockData.js";
 
-function isFormDataBody(body) {
-  return typeof FormData !== "undefined" && body instanceof FormData;
-}
-
 async function request(path, options = {}) {
   const optionHeaders = { ...(options.headers || {}) };
   const headers = { ...optionHeaders };
-  if (options.body !== undefined && !isFormDataBody(options.body) && !headers["Content-Type"]) {
+  if (options.body !== undefined && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
 
@@ -229,42 +225,6 @@ export const apiClient = {
       () => request(`/properties/${encodeURIComponent(canonicalLocationId)}`, { signal }),
       async () => ({ property: null }),
       { signal, fallbackOnAnyError: false }
-    );
-  },
-
-  ingestDataset({
-    source_name,
-    dataset_type,
-    trigger = "on_demand",
-    validate_only = false,
-    overwrite = true,
-    file
-  } = {}) {
-    return requestWithFallback(
-      () => {
-        const formData = new FormData();
-        formData.append("source_name", String(source_name || ""));
-        formData.append("dataset_type", String(dataset_type || ""));
-        formData.append("trigger", String(trigger || "on_demand"));
-        formData.append("validate_only", validate_only ? "1" : "0");
-        formData.append("overwrite", overwrite ? "1" : "0");
-        if (file) {
-          formData.append("file", file);
-        }
-        return request("/jobs/ingest", {
-          method: "POST",
-          body: formData
-        });
-      },
-      () => mockApi.ingestDataset({
-        source_name,
-        dataset_type,
-        trigger,
-        validate_only,
-        overwrite,
-        file
-      }),
-      { fallbackOnAnyError: true }
     );
   }
 };

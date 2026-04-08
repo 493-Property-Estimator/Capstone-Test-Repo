@@ -652,58 +652,6 @@ function buildResolvedLocationFromCoordinates(payload) {
   };
 }
 
-function buildIngestionMockResponse(payload = {}) {
-  const fileName = String(payload.file?.name || "").toLowerCase();
-  const sourceName = String(payload.source_name || "").trim();
-  const datasetType = String(payload.dataset_type || "").trim();
-
-  if (!sourceName || !datasetType) {
-    return {
-      request_id: createRequestId("ingest"),
-      status: "failed",
-      message: "Missing required ingestion inputs."
-    };
-  }
-
-  if (!payload.file) {
-    return {
-      request_id: createRequestId("ingest"),
-      status: "failed",
-      message: "No data file was provided."
-    };
-  }
-
-  if (fileName.includes("partial")) {
-    return {
-      request_id: createRequestId("ingest"),
-      status: "partial",
-      message: "Dataset loaded with partial row-level validation warnings."
-    };
-  }
-
-  if (fileName.includes("invalid") || fileName.includes("wrong")) {
-    return {
-      request_id: createRequestId("ingest"),
-      status: "failed",
-      message: "The file format does not match the selected dataset type."
-    };
-  }
-
-  if (payload.validate_only) {
-    return {
-      request_id: createRequestId("ingest"),
-      status: "success",
-      message: "Validation completed successfully."
-    };
-  }
-
-  return {
-    request_id: createRequestId("ingest"),
-    status: "success",
-    message: "Ingestion completed and promoted successfully."
-  };
-}
-
 export const mockApi = {
   async getAddressSuggestions(query, limit = 5) {
     const q = query.toLowerCase();
@@ -801,9 +749,5 @@ export const mockApi = {
 
   async getProperties(params) {
     return buildPropertyViewportResponse(params, params);
-  },
-
-  async ingestDataset(payload) {
-    return buildIngestionMockResponse(payload);
   }
 };

@@ -11,41 +11,9 @@
     />
     <link rel="stylesheet" href="./styles/app.css" />
   </head>
-  <body data-page="estimator">
-    <button
-      id="app-menu-toggle"
-      class="app-menu-toggle"
-      type="button"
-      aria-expanded="false"
-      aria-controls="app-sidebar-nav"
-      aria-label="Open navigation menu"
-    >
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-
-    <aside id="app-sidebar-nav" class="app-sidebar-nav" aria-label="Primary navigation">
-      <div class="app-nav-header">
-        <p class="eyebrow">Property Intelligence</p>
-        <h2>Workspace Menu</h2>
-      </div>
-      <nav class="app-nav-links" aria-label="App pages">
-        <button class="app-nav-link is-active" type="button" data-page-target="estimator">
-          Estimator Page
-        </button>
-        <button class="app-nav-link" type="button" data-page-target="layer">
-          Layer Page
-        </button>
-        <button class="app-nav-link" type="button" data-page-target="ingestion">
-          Ingestion Page
-        </button>
-      </nav>
-    </aside>
-    <div id="app-sidebar-overlay" class="app-sidebar-overlay is-hidden" aria-hidden="true"></div>
-
+  <body>
     <div class="app-shell">
-      <aside id="estimator-page" class="sidebar page-panel">
+      <aside class="sidebar">
         <header class="panel panel-brand">
           <div class="brand-row">
             <p class="eyebrow">Property Value Estimator</p>
@@ -186,7 +154,7 @@
               Reset
             </button>
           </div>
-          <button id="warning-indicator" class="warning-indicator is-hidden" type="button"></button>
+          <div id="warning-indicator" class="warning-indicator is-hidden"></div>
           <section id="warning-panel" class="warning-panel is-hidden"></section>
           <section id="estimate-panel" class="estimate-panel">
             <p class="empty-state">No estimate loaded.</p>
@@ -194,44 +162,7 @@
         </section>
       </aside>
 
-      <aside id="layer-page" class="sidebar page-panel">
-        <header class="panel panel-brand">
-          <div class="brand-row">
-            <p class="eyebrow">Layer Controls</p>
-            <span class="environment-badge">Map overlays</span>
-          </div>
-          <h1>Layer Menu</h1>
-          <p class="panel-copy">
-            Toggle and inspect every available layer. Use this page to manage map visibility quickly.
-          </p>
-        </header>
-
-        <section id="layer-side-panel" class="panel" aria-label="Layer Controls">
-          <button
-            id="layer-panel-toggle"
-            class="layer-panel-toggle button button-secondary"
-            type="button"
-            aria-expanded="true"
-            aria-controls="layer-panel-body"
-          >
-            Hide Layers
-          </button>
-          <div id="layer-panel-body" class="layer-panel-body">
-            <div class="panel-heading">
-              <h2>Layer Options</h2>
-              <span id="layer-status" class="status-pill">Ready</span>
-            </div>
-            <p class="helper-text">Enable overlays for this map view.</p>
-            <div id="layer-controls" class="layer-list"></div>
-            <div id="layer-legend" class="legend"></div>
-            <a class="button button-primary layer-lab-link" href="./layer-visualization.html">
-              Open Layer Visualization Lab
-            </a>
-          </div>
-        </section>
-      </aside>
-
-      <main id="map-page" class="map-shell page-panel">
+      <main class="map-shell">
         <div class="map-toolbar">
           <div class="toolbar-copy">
             <p class="eyebrow">Interactive Map</p>
@@ -242,7 +173,29 @@
           </div>
           <div id="map-message" class="map-message">Map ready.</div>
         </div>
-
+        <aside id="layer-side-panel" class="map-side-panel is-collapsed" aria-label="Layer Controls">
+          <button
+            id="layer-panel-toggle"
+            class="map-side-toggle button button-secondary"
+            type="button"
+            aria-expanded="false"
+            aria-controls="layer-panel-body"
+          >
+            Show Layers
+          </button>
+          <div id="layer-panel-body" class="map-side-body">
+            <div class="panel-heading">
+              <h2>Layers</h2>
+              <span id="layer-status" class="status-pill">Ready</span>
+            </div>
+            <p class="helper-text">Toggle visible overlays for the current map view.</p>
+            <div id="layer-controls" class="layer-list"></div>
+            <div id="layer-legend" class="legend"></div>
+            <a class="button button-primary layer-lab-link" href="./layer-visualization.html">
+              Open Layer Visualization Lab
+            </a>
+          </div>
+        </aside>
         <div id="map-root" class="map-root" aria-label="Property map">
           <aside id="property-hover-card" class="property-hover-card is-hidden"></aside>
           <aside id="property-detail-panel" class="property-detail-panel is-hidden">
@@ -264,99 +217,6 @@
           </aside>
         </div>
       </main>
-
-      <section id="ingestion-page" class="ingestion-page page-panel" aria-labelledby="ingestion-heading">
-        <header class="ingestion-hero">
-          <p class="eyebrow">Data Ingestion</p>
-          <h1 id="ingestion-heading">Upload Dataset Into SQLite</h1>
-          <p class="panel-copy">
-            Configure a source, submit a file, and track ingestion lifecycle status in real time.
-          </p>
-        </header>
-
-        <div class="ingestion-grid">
-          <form id="ingestion-form" class="panel ingestion-form" novalidate>
-            <div class="panel-heading">
-              <h2>Ingestion Request</h2>
-              <span id="ingestion-status-pill" class="status-pill">Idle</span>
-            </div>
-
-            <div class="form-grid">
-              <div>
-                <label class="field-label" for="ingestion-source-name">Source Name</label>
-                <input
-                  id="ingestion-source-name"
-                  class="text-input"
-                  type="text"
-                  placeholder="example: city_assessment_2026_q2"
-                  required
-                />
-              </div>
-              <div>
-                <label class="field-label" for="ingestion-dataset-type">Dataset Type</label>
-                <select id="ingestion-dataset-type" class="text-input" required>
-                  <option value="assessment_properties">Assessment Properties</option>
-                  <option value="schools">Schools</option>
-                  <option value="parks">Parks</option>
-                  <option value="playgrounds">Playgrounds</option>
-                  <option value="transit_stops">Transit Stops</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="ingestion-file-input">Data File</label>
-                <input
-                  id="ingestion-file-input"
-                  class="text-input"
-                  type="file"
-                  accept=".csv,.json,.geojson,.parquet"
-                  required
-                />
-              </div>
-              <div>
-                <label class="field-label" for="ingestion-trigger">Trigger</label>
-                <select id="ingestion-trigger" class="text-input">
-                  <option value="on_demand">On Demand</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="manual_review">Manual Review</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="ingestion-options">
-              <label class="criteria-toggle">
-                <input id="ingestion-validate-only" type="checkbox" />
-                <span>Validate only (do not promote to production)</span>
-              </label>
-              <label class="criteria-toggle">
-                <input id="ingestion-overwrite" type="checkbox" checked />
-                <span>Overwrite existing staging dataset for this source</span>
-              </label>
-            </div>
-
-            <div class="quick-actions">
-              <button id="ingestion-submit" class="button button-primary" type="submit">
-                Start Ingestion
-              </button>
-              <button id="ingestion-reset" class="button button-secondary" type="button">
-                Clear
-              </button>
-            </div>
-          </form>
-
-          <section class="panel ingestion-status-panel" aria-live="polite">
-            <div class="panel-heading">
-              <h2>Ingestion Feedback</h2>
-              <span id="ingestion-status-label" class="status-pill">Waiting</span>
-            </div>
-            <div id="ingestion-progress" class="ingestion-progress is-hidden">
-              <div id="ingestion-progress-bar" class="ingestion-progress-bar"></div>
-            </div>
-            <div id="ingestion-feedback" class="ingestion-feedback">
-              <p class="empty-state">Submit a file to see ingestion status updates.</p>
-            </div>
-          </section>
-        </div>
-      </section>
     </div>
 
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
