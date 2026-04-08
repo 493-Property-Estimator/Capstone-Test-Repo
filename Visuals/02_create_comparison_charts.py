@@ -55,6 +55,9 @@ def _valid_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         est_high = _parse_float(row.get("estimator_high"))
         if list_price is None or est_low is None or est_final is None or est_high is None:
             continue
+        # if list_price > 10000000 or est_final > 100000000:
+        if list_price > 4000000 or est_final > 20000000:
+            continue
         valid.append(row)
     return valid
 
@@ -80,6 +83,32 @@ def _create_chart_1(valid: list[dict[str, str]], out_path: Path) -> None:
     fig.tight_layout()
     fig.savefig(out_path, dpi=180)
     plt.close(fig)
+    
+def _create_chart_1_subelement(valid: list[dict[str, str]], out_paths: list[Path]) -> None:
+    listed = [_parse_float(r["list_price"]) for r in valid]
+    est_low = [_parse_float(r["estimator_low"]) for r in valid]
+    est_final = [_parse_float(r["estimator_final"]) for r in valid]
+    est_high = [_parse_float(r["estimator_high"]) for r in valid]
+
+    fig_l, ax_l = plt.subplots(figsize=(12, 8))
+    fig_f, ax_f = plt.subplots(figsize=(12, 8))
+    fig_h, ax_h = plt.subplots(figsize=(12, 8))
+    ax_l.scatter(listed, est_low, s=16, alpha=0.5, c="tab:blue", label="Estimator Low")
+    ax_f.scatter(listed, est_final, s=16, alpha=0.5, c="tab:green", label="Estimator Final")
+    ax_h.scatter(listed, est_high, s=16, alpha=0.5, c="tab:red", label="Estimator High")
+    
+    for axis_a in [ax_l, ax_f, ax_h]:
+        axis_a.set_title("Listed Price vs Estimator Values")
+        axis_a.set_xlabel("Listed Price")
+        axis_a.set_ylabel("Estimator Value")
+        axis_a.xaxis.set_major_formatter(FuncFormatter(_currency))
+        axis_a.yaxis.set_major_formatter(FuncFormatter(_currency))
+        axis_a.grid(True, alpha=0.25)
+        axis_a.legend()
+    for idx, fig_a in enumerate([fig_l, fig_f, fig_h]):
+        fig_a.tight_layout()
+        fig_a.savefig(out_paths[idx], dpi=180)
+        plt.close(fig_a)
 
 
 def _create_neighborhood_summary(valid: list[dict[str, str]]) -> list[dict[str, float | str]]:
@@ -209,6 +238,12 @@ def main() -> int:
         raise SystemExit("No valid rows found in comparison CSV (all rows had errors or missing values).")
 
     _create_chart_1(valid, args.chart_1)
+    chart_name = args.chart_1
+    print(type(chart_name))
+    subcharts_names = [Path(str(chart_name).replace("vs_estimator_values", "vs_estimator_values_low")),
+                       Path(str(chart_name).replace("vs_estimator_values", "vs_estimator_values_final")),
+                       Path(str(chart_name).replace("vs_estimator_values", "vs_estimator_values_high"))]
+    _create_chart_1_subelement(valid, subcharts_names)
     summary = _create_neighborhood_summary(valid)
     if not summary:
         raise SystemExit("No neighborhood summary points could be built from valid rows.")
