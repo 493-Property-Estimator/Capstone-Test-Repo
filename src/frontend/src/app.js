@@ -13,6 +13,9 @@ import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
+const propertyDetailCache = new Map();
+let propertyDetailAbortController = null;
+let propertyDetailRequestSeq = 0;
 
 function findMatchingProperty(propertyLayer, location) {
   if (!location) {
@@ -92,7 +95,48 @@ function setupAppNavigation() {
 }
 
 setupAppNavigation();
+async function hydratePropertyDetails(property) {
+  if (!property?.canonical_location_id) {
+    return property;
+  }
 
+  const hasMeaningfulDetails = property.details && Object.keys(property.details).length > 0;
+  if (hasMeaningfulDetails) {
+    return property;
+  }
+
+  const cachedDetail = propertyDetailCache.get(property.canonical_location_id);
+  if (cachedDetail) {
+    return cachedDetail;
+  }
+
+  if (propertyDetailAbortController) {
+    propertyDetailAbortController.abort();
+  }
+
+  propertyDetailRequestSeq += 1;
+  const requestSeq = propertyDetailRequestSeq;
+  propertyDetailAbortController = new AbortController();
+
+  try {
+    const response = await apiClient.getPropertyDetail(property.canonical_location_id, {
+      signal: propertyDetailAbortController.signal
+    });
+
+    if (requestSeq !== propertyDetailRequestSeq) {
+      return property;
+    }
+
+    const detailed = response?.property || property;
+    propertyDetailCache.set(property.canonical_location_id, detailed);
+    return detailed;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return property;
+    }
+    return property;
+  }
+}
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
@@ -113,6 +157,26 @@ const mapAdapter = createMapAdapter({
       selectedLocation: location,
       selectedPropertyDetails: property,
       propertyDetailsDismissed: false
+    });
+
+    hydratePropertyDetails(property).then((detailedProperty) => {
+      if (!detailedProperty?.canonical_location_id) {
+        return;
+      }
+
+      const selectedId = store.getState().selectedLocation?.canonical_location_id;
+      if (selectedId !== detailedProperty.canonical_location_id) {
+        return;
+      }
+
+      store.setState({
+        selectedLocation: {
+          ...store.getState().selectedLocation,
+          neighbourhood:
+            detailedProperty.details?.neighbourhood || detailedProperty.neighbourhood || null
+        },
+        selectedPropertyDetails: detailedProperty
+      });
     });
   },
   onSelectionCleared() {
@@ -151,6 +215,21 @@ const searchController = createSearchController({
       propertyDetailsDismissed: false
     });
     mapAdapter.setView(location, { zoom: 17 });
+
+    if (matchedProperty) {
+      hydratePropertyDetails(matchedProperty).then((detailedProperty) => {
+        if (!detailedProperty?.canonical_location_id) {
+          return;
+        }
+
+        const selectedId = store.getState().selectedLocation?.canonical_location_id;
+        if (selectedId !== detailedProperty.canonical_location_id) {
+          return;
+        }
+
+        store.setState({ selectedPropertyDetails: detailedProperty });
+      });
+    }
   }
 });
 

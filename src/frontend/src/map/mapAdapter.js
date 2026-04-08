@@ -14,6 +14,7 @@ export function createMapAdapter({
   onMapClick,
   onViewportChange,
   messageElement,
+  layerPanelElement,
   propertyCardElement,
   propertyDetailPanelElement,
   onPropertySelect,
@@ -136,6 +137,10 @@ export function createMapAdapter({
       propertyCardElement.classList.add("is-hidden");
       propertyCardElement.classList.remove("is-visible");
       root.appendChild(propertyCardElement);
+    }
+
+    if (layerPanelElement) {
+      root.appendChild(layerPanelElement);
     }
 
     if (propertyDetailPanelElement) {
@@ -639,7 +644,8 @@ export function createMapAdapter({
   function renderAssessmentLayer(layerId, data, definition) {
     const sourceId = `source-${layerId}`;
     const layerColor = getLayerColor(layerId, definition);
-    const displayMode = data.displayMode || "clusters";
+    const displayMode = data.displayMode
+      || (data.renderMode === "property" ? "points" : "clusters");
     const propertyFeatures = (data.properties || [])
       .filter((property) => property?.coordinates?.lat != null && property?.coordinates?.lng != null)
       .map((property) => ({
@@ -1208,14 +1214,15 @@ export function createMapAdapter({
       removeRenderedLayer("assessment_properties");
       renderAssessmentLayer("assessment_properties", propertyLayerState, LAYER_DEFINITIONS.find((layer) => layer.id === "assessment_properties"));
 
-      const displayMode = propertyLayerState.displayMode || "clusters";
-      const itemCount = displayMode === "clusters"
+      const normalizedDisplayMode = propertyLayerState.displayMode
+        || (propertyLayerState.renderMode === "property" ? "points" : "clusters");
+      const itemCount = normalizedDisplayMode === "clusters"
         ? propertyLayerState.clusters?.reduce((sum, cluster) => sum + Number(cluster.count || 0), 0)
         : (propertyLayerState.properties?.length || propertyLayerState.clusters?.length || 0);
 
       setText(
         messageElement,
-        `Assessment properties (${displayMode}) visible: ${itemCount || 0} in current view.`
+        `Assessment properties (${normalizedDisplayMode}) visible: ${itemCount || 0} in current view.`
       );
     },
     getViewport,

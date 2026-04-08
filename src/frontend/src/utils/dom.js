@@ -10,12 +10,18 @@ export function createElement(tagName, className, textContent) {
 }
 
 export function clearElement(element) {
+  if (!element) {
+    return;
+  }
   while (element.firstChild) {
     element.removeChild(element.firstChild);
   }
 }
 
 export function setText(element, value) {
+  if (!element) {
+    return;
+  }
   element.textContent = value;
 }
 

@@ -557,6 +557,40 @@ p {
   box-shadow: var(--shadow);
 }
 
+.map-side-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 900;
+  width: min(360px, calc(100vw - 40px));
+  border: 1px solid rgba(95, 86, 72, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 250, 241, 0.96);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.map-side-toggle {
+  width: 100%;
+  border-radius: 0;
+  border: 0;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.map-side-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+}
+
+.map-side-panel.is-collapsed .map-side-body {
+  display: none;
+}
 .layer-lab-link {
   text-decoration: none;
   text-align: center;

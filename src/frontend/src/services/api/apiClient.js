@@ -224,6 +224,14 @@ export const apiClient = {
     );
   },
 
+  getPropertyDetail(canonicalLocationId, { signal } = {}) {
+    return requestWithFallback(
+      () => request(`/properties/${encodeURIComponent(canonicalLocationId)}`, { signal }),
+      async () => ({ property: null }),
+      { signal, fallbackOnAnyError: false }
+    );
+  },
+
   ingestDataset({
     source_name,
     dataset_type,
