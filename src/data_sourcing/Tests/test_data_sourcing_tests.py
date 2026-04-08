@@ -312,5 +312,6 @@ def test_build_parser_accepts_commands() -> None:
 
 def test_cli_module_main_guard_executes(monkeypatch) -> None:
     monkeypatch.setattr(sys, "argv", ["cli.py"])
+    sys.modules.pop("data_sourcing.cli", None)
     with pytest.raises(SystemExit):
         runpy.run_module("data_sourcing.cli", run_name="__main__")
