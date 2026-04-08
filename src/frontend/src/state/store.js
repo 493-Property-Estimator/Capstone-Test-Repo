@@ -10,6 +10,7 @@ export function createStore() {
         enabled: Boolean(layer.alwaysOn && layer.id !== "assessment_properties"),
         /* node:coverage ignore next */
         status: layer.alwaysOn && layer.id !== "assessment_properties" ? "loading" : "idle",
+        renderMode: "points",
         data: null
       };
       return accumulator;
@@ -19,6 +20,7 @@ export function createStore() {
       status: PROPERTY_LAYER_ENABLED ? "loading" : "disabled",
       requestSeq: 0,
       renderMode: "cluster",
+      displayMode: "clusters",
       clusters: [],
       properties: [],
       nextCursor: null,

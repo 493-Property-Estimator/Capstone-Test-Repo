@@ -12,13 +12,6 @@ import {
 import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
 
-const MAIN_PAGE_LAYER_IDS = new Set([
-  "schools",
-  "parks",
-  "playgrounds",
-  "transit_stops"
-]);
-
 export function createLayerController({
   apiClient,
   store,
@@ -32,6 +25,11 @@ export function createLayerController({
   let propertyAbortController = null;
   const propertyResponseCache = new Map();
   const layerRequestSeqById = new Map();
+  const layerModeOptions = [
+    { value: "points", label: "Points" },
+    { value: "clusters", label: "Clusters" },
+    { value: "heatmap", label: "Heatmap" }
+  ];
 
   /* node:coverage disable */
   function formatStatus(status) {
@@ -142,14 +140,29 @@ export function createLayerController({
         }
       });
 
+      const modeSelect = document.createElement("select");
+      modeSelect.className = "layer-mode-select";
+      modeSelect.disabled = !propertyLayerState.enabled;
+      layerModeOptions.forEach((option) => {
+        const node = document.createElement("option");
+        node.value = option.value;
+        node.textContent = option.label;
+        modeSelect.appendChild(node);
+      });
+      modeSelect.value = propertyLayerState.displayMode || "clusters";
+      modeSelect.addEventListener("change", (event) => {
+        store.updatePropertyLayer({ displayMode: event.target.value });
+        setLayerStatusMessage(`Assessment Properties mode: ${event.target.value}.`);
+      });
+
       row.appendChild(name);
       row.appendChild(toggle);
+      row.appendChild(modeSelect);
       controlsRoot.appendChild(row);
     }
 
     LAYER_DEFINITIONS
       .filter((layer) => !layer.alwaysOn)
-      .filter((layer) => MAIN_PAGE_LAYER_IDS.has(layer.id))
       .forEach((layer) => {
       const layerState = store.getState().activeLayers[layer.id];
       const row = createElement("div", "layer-item");
@@ -174,8 +187,25 @@ export function createLayerController({
         }
       });
 
+      const modeSelect = document.createElement("select");
+      modeSelect.className = "layer-mode-select";
+      modeSelect.disabled = !layerState.enabled;
+      layerModeOptions.forEach((option) => {
+        const node = document.createElement("option");
+        node.value = option.value;
+        node.textContent = option.label;
+        modeSelect.appendChild(node);
+      });
+      modeSelect.value = layerState.renderMode || "points";
+      modeSelect.addEventListener("change", (event) => {
+        const nextMode = event.target.value;
+        store.updateLayer(layer.id, { renderMode: nextMode });
+        setLayerStatusMessage(`${layer.label} mode: ${nextMode}.`);
+      });
+
       row.appendChild(name);
       row.appendChild(toggle);
+      row.appendChild(modeSelect);
       controlsRoot.appendChild(row);
     });
   }
@@ -424,7 +454,6 @@ export function createLayerController({
     const state = store.getState();
     LAYER_DEFINITIONS
       .filter((layer) => layer.id !== "assessment_properties")
-      .filter((layer) => MAIN_PAGE_LAYER_IDS.has(layer.id))
       .filter((layer) => state.activeLayers[layer.id]?.enabled)
       .forEach(
       (layer) => loadLayer(layer.id)
