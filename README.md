@@ -206,7 +206,7 @@ npm run test:python:new
 ```
 
 Run all Python tests in the repository (existing + new, including `tests/` and `src/backend/tests/`):
-
+`
 ```bash
 npm run test:python:all
 ```
