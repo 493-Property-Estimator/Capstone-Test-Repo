@@ -12,13 +12,6 @@ import {
 import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
 
-const MAIN_PAGE_LAYER_IDS = new Set([
-  "schools",
-  "parks",
-  "playgrounds",
-  "transit_stops"
-]);
-
 export function createLayerController({
   apiClient,
   store,
@@ -146,7 +139,6 @@ export function createLayerController({
 
     LAYER_DEFINITIONS
       .filter((layer) => !layer.alwaysOn)
-      .filter((layer) => MAIN_PAGE_LAYER_IDS.has(layer.id))
       .forEach((layer) => {
       const layerState = store.getState().activeLayers[layer.id];
       const row = createElement("div", "layer-item");
@@ -418,7 +410,6 @@ export function createLayerController({
     const state = store.getState();
     LAYER_DEFINITIONS
       .filter((layer) => layer.id !== "assessment_properties")
-      .filter((layer) => MAIN_PAGE_LAYER_IDS.has(layer.id))
       .filter((layer) => state.activeLayers[layer.id]?.enabled)
       .forEach(
       (layer) => loadLayer(layer.id)
