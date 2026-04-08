@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import sys
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from uuid import uuid4
 
@@ -46,7 +47,35 @@ settings = load_settings()
 metrics = Metrics()
 cache = MemoryCache(settings.cache_ttl_seconds)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI):
+    conn = connect_data_db(settings.data_db_path)
+    try:
+        init_data_db(conn)
+    finally:
+        conn.close()
+    # Build heavy estimator dependencies once at startup so estimate requests
+    # do not repeatedly pay initialization cost and hit time-budget failures.
+    await asyncio.to_thread(warm_estimator, settings.data_db_path)
+    app_instance.state.refresh_scheduler_task = None
+    app_instance.state.refresh_scheduler_active = False
+    app_instance.state.last_refresh_run = None
+    if settings.refresh_scheduler_enabled:
+        app_instance.state.refresh_scheduler_task = asyncio.create_task(_refresh_scheduler_loop())
+    try:
+        yield
+    finally:
+        task = getattr(app_instance.state, "refresh_scheduler_task", None)
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,34 +88,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def initialize_database() -> None:
-    conn = connect_data_db(settings.data_db_path)
-    try:
-        init_data_db(conn)
-    finally:
-        conn.close()
-    # Build heavy estimator dependencies once at startup so estimate requests
-    # do not repeatedly pay initialization cost and hit time-budget failures.
-    await asyncio.to_thread(warm_estimator, settings.data_db_path)
-    app.state.refresh_scheduler_task = None
-    app.state.refresh_scheduler_active = False
-    app.state.last_refresh_run = None
-    if settings.refresh_scheduler_enabled:
-        app.state.refresh_scheduler_task = asyncio.create_task(_refresh_scheduler_loop())
-
-
-@app.on_event("shutdown")
-async def shutdown_background_tasks() -> None:
-    task = getattr(app.state, "refresh_scheduler_task", None)
-    if task:
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
 
 
 @app.middleware("http")

@@ -272,6 +272,7 @@ def test_module_bootstrap_inserts_src_path_when_missing(monkeypatch) -> None:
 
 def test_module_main_guard_executes(monkeypatch) -> None:
     monkeypatch.setattr(sys, "argv", ["ingest_data_folder.py", "--dry-run", "--data-dir", "/tmp/does-not-exist"])
+    sys.modules.pop("scripts.ingest_data_folder", None)
     try:
         runpy.run_module("scripts.ingest_data_folder", run_name="__main__")
     except SystemExit:

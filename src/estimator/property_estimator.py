@@ -12,6 +12,7 @@ from statistics import median
 from typing import Any
 
 from src.data_sourcing.database import connect
+from src.estimator import proximity as proximity_module
 from src.estimator.proximity import (
     get_downtown_accessibility,
     get_nearest_libraries,
@@ -27,13 +28,54 @@ MATCH_DISTANCE_THRESHOLD_M = 35.0
 MAX_ROUTE_FALLBACK_DISTANCE_M = 30_000.0
 
 
+class _RoadGraphRouter:
+    def __init__(self, db_path: Path) -> None:
+        self._db_path = Path(db_path)
+        self._graph: dict[str, Any] | None = None
+        self._load_attempted = False
+
+    def route_distance(self, start_lat: float, start_lon: float, end_lat: float, end_lon: float) -> dict[str, float | str]:
+        straight_line_m = proximity_module._geodesic_distance_m((start_lon, start_lat), (end_lon, end_lat))
+        graph = self._ensure_graph()
+        if graph is None:
+            return {
+                "road_distance_m": straight_line_m,
+                "straight_line_m": straight_line_m,
+                "routing_mode": "straight_line_fallback",
+            }
+        try:
+            origin_best = proximity_module._road_distances_from_origin((start_lon, start_lat), graph)
+            road_distance_m = proximity_module._road_distance_to_target((end_lon, end_lat), graph, origin_best)
+            return {
+                "road_distance_m": road_distance_m,
+                "straight_line_m": straight_line_m,
+                "routing_mode": "road",
+            }
+        except Exception:
+            return {
+                "road_distance_m": straight_line_m,
+                "straight_line_m": straight_line_m,
+                "routing_mode": "straight_line_fallback",
+            }
+
+    def _ensure_graph(self) -> dict[str, Any] | None:
+        if self._load_attempted:
+            return self._graph
+        self._load_attempted = True
+        try:
+            self._graph = proximity_module._load_road_graph(Path(self._db_path))
+        except Exception:
+            self._graph = None
+        return self._graph
+
+
 class PropertyEstimator:
     def __init__(self, db_path: Path) -> None:
         self._db_path = Path(db_path)
         self._services_module = self._load_testingstage_services()
         # Fast-path defaults: avoid eager initialization of heavy graph/network
         # structures so estimator requests stay within API time budgets.
-        self._road_graph = None
+        self._road_graph = _RoadGraphRouter(self._db_path)
         self._transit = None
         self._osrm = self._services_module.OsrmService()
         provider = self._services_module.SQLiteCrimeProvider(self._db_path)

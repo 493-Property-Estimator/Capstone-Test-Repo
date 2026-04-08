@@ -421,6 +421,33 @@ def test_property_estimator_distance_bundle_branches(tmp_path: Path) -> None:
     assert bundle["distance_method"] in {"road", "osrm", "straight_line_fallback"}
 
 
+def test_property_estimator_road_graph_router_fallback_branches(tmp_path: Path, monkeypatch) -> None:
+    router = pe._RoadGraphRouter(tmp_path / "router.db")
+
+    monkeypatch.setattr(
+        pe.proximity_module,
+        "_load_road_graph",
+        lambda _p: {"adjacency": {(-113.4, 53.5): []}, "segments": [], "segment_grid": {}, "polylines": []},
+    )
+    monkeypatch.setattr(pe.proximity_module, "_road_distances_from_origin", lambda *_a, **_k: {(-113.4, 53.5): 0.0})
+    monkeypatch.setattr(
+        pe.proximity_module,
+        "_road_distance_to_target",
+        lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("route failed")),
+    )
+    fallback = router.route_distance(53.5, -113.4, 53.6, -113.5)
+    assert fallback["routing_mode"] == "straight_line_fallback"
+
+    router2 = pe._RoadGraphRouter(tmp_path / "router2.db")
+    monkeypatch.setattr(
+        pe.proximity_module,
+        "_load_road_graph",
+        lambda _p: (_ for _ in ()).throw(RuntimeError("graph failed")),
+    )
+    fallback_no_graph = router2.route_distance(53.5, -113.4, 53.6, -113.5)
+    assert fallback_no_graph["routing_mode"] == "straight_line_fallback"
+
+
 def test_proximity_additional_branches(tmp_path: Path, monkeypatch) -> None:
     db = _mk_prox_db(tmp_path)
     prox._table_exists.cache_clear()
