@@ -37,6 +37,7 @@ from src.backend.src.api.layers import router as layers_router
 from src.backend.src.api.properties import router as properties_router
 from src.backend.src.api.health import router as health_router
 from src.backend.src.api.refresh_jobs import router as refresh_jobs_router
+from src.backend.src.api.ingestion_jobs import router as ingestion_jobs_router
 from src.backend.src.jobs.precompute_grid import router as jobs_router
 from src.backend.src.services.auth import require_estimate_access
 from data_sourcing.database import connect as connect_data_db, init_db as init_data_db
@@ -131,6 +132,7 @@ app.include_router(layers_router, prefix="/api/v1")
 app.include_router(properties_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(refresh_jobs_router, prefix="/api/v1")
+app.include_router(ingestion_jobs_router, prefix="/api/v1")
 app.include_router(health_router)
 
 # Shared objects for routers
