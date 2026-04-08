@@ -14,7 +14,6 @@ from typing import Any
 from src.data_sourcing.database import connect
 from src.estimator import proximity as proximity_module
 from src.estimator.proximity import (
-    get_downtown_accessibility,
     get_nearest_libraries,
     get_nearest_parks,
     get_nearest_playgrounds,
@@ -23,7 +22,11 @@ from src.estimator.proximity import (
     group_comparables_by_attributes,
 )
 
-DOWNTOWN_EDMONTON = {"name": "Downtown Edmonton", "lat": 53.5461, "lon": -113.4938}
+EMPLOYMENT_CENTERS_PATH = Path(__file__).resolve().parent / "employment_centers.json"
+COMMUTE_TOP_N = 3
+COMMUTE_DISTANCE_BASELINE_M = 15_000.0
+COMMUTE_TIME_BASELINE_MIN = 35.0
+COMMUTE_INDICATOR_THRESHOLDS = {"high": 0.7, "medium": 0.45}
 MATCH_DISTANCE_THRESHOLD_M = 35.0
 MAX_ROUTE_FALLBACK_DISTANCE_M = 30_000.0
 
@@ -119,7 +122,7 @@ class PropertyEstimator:
         )
         baseline = self._resolve_baseline(nearest_property, matched_property, warnings, fallback_flags)
         amenities = self._collect_amenities(point, warnings, fallback_flags, missing_factors)
-        downtown = self._collect_downtown_access(point, warnings, fallback_flags, missing_factors)
+        commute_accessibility = self._collect_commute_accessibility(point, warnings, fallback_flags, missing_factors)
         neighbourhood_context = self._collect_neighbourhood_context(
             point,
             matched_property,
@@ -131,7 +134,7 @@ class PropertyEstimator:
         valuation = self._calculate_value(
             baseline=baseline,
             amenities=amenities,
-            downtown=downtown,
+            commute_accessibility=commute_accessibility,
             neighbourhood_context=neighbourhood_context,
             comparables=comparables,
             warnings=warnings,
@@ -151,7 +154,7 @@ class PropertyEstimator:
             missing_factors=missing_factors,
             fallback_flags=fallback_flags,
             amenities=amenities,
-            downtown=downtown,
+            commute_accessibility=commute_accessibility,
             neighbourhood_context=neighbourhood_context,
         )
         warnings = self._dedupe_warnings(warnings)
@@ -184,7 +187,7 @@ class PropertyEstimator:
             "fallback_flags": sorted(set(fallback_flags)),
             "feature_breakdown": {
                 "amenities": amenities,
-                "downtown_accessibility": downtown,
+                "commute_accessibility": commute_accessibility,
                 "valuation_adjustments": valuation["adjustments"],
             },
             "top_positive_factors": valuation["top_positive_factors"],
@@ -367,34 +370,158 @@ class PropertyEstimator:
             ]
         return output
 
-    def _collect_downtown_access(
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _load_employment_centers() -> list[dict[str, Any]]:
+        try:
+            payload = json.loads(EMPLOYMENT_CENTERS_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+        centers: list[dict[str, Any]] = []
+        for item in payload if isinstance(payload, list) else []:
+            if not isinstance(item, dict) or item.get("enabled") is False:
+                continue
+            lat = item.get("lat")
+            lon = item.get("lon")
+            if lat is None or lon is None:
+                continue
+            try:
+                lat_value = float(lat)
+                lon_value = float(lon)
+            except (TypeError, ValueError):
+                continue
+            if not (-90.0 <= lat_value <= 90.0 and -180.0 <= lon_value <= 180.0):
+                continue
+            weight = item.get("weight")
+            try:
+                weight_value = float(weight) if weight is not None else 1.0
+            except (TypeError, ValueError):
+                weight_value = 1.0
+            centers.append(
+                {
+                    "id": item.get("id") or item.get("name"),
+                    "name": item.get("name") or "Employment Center",
+                    "category": item.get("category"),
+                    "lat": lat_value,
+                    "lon": lon_value,
+                    "weight": max(0.0, weight_value),
+                }
+            )
+        return centers
+
+    def _collect_commute_accessibility(
         self,
         point: dict[str, float],
         warnings: list[dict[str, Any]],
         fallback_flags: list[str],
         missing_factors: list[str],
     ) -> dict[str, Any]:
-        downtown = get_downtown_accessibility(
-            (point["lon"], point["lat"]),
-            downtown_point=(DOWNTOWN_EDMONTON["lon"], DOWNTOWN_EDMONTON["lat"]),
-        )
-        target = {
-            "name": DOWNTOWN_EDMONTON["name"],
-            "lat": DOWNTOWN_EDMONTON["lat"],
-            "lon": DOWNTOWN_EDMONTON["lon"],
-            "entity_id": "downtown-edmonton",
+        centers = self._load_employment_centers()
+        if not centers:
+            missing_factors.append("commute_accessibility")
+            warnings.append(
+                self._warning(
+                    "employment_centers_unavailable",
+                    "medium",
+                    "No employment centers are configured, so commute accessibility was recorded as neutral.",
+                )
+            )
+            return {
+                "status": "no_targets",
+                "target_count": 0,
+                "targets": [],
+                "metrics": None,
+                "indicator": {"label": "neutral"},
+                "defaults_used": True,
+                "fallbacks": {"routing_fallback_used": False, "metric_fallback": None},
+            }
+
+        targets: list[dict[str, Any]] = []
+        for center in centers:
+            target = {
+                "name": center["name"],
+                "lat": center["lat"],
+                "lon": center["lon"],
+                "entity_id": center["id"],
+                "raw_category": center.get("category"),
+            }
+            bundle = self._distance_bundle(
+                point=point,
+                target=target,
+                label=center["name"],
+                fallback_flags=fallback_flags,
+                warnings=warnings,
+            )
+            bundle["weight"] = center["weight"]
+            bundle["category"] = center.get("category")
+            targets.append(bundle)
+
+        targets.sort(key=lambda item: (str(item.get("id") or ""), str(item.get("name") or "")))
+        all_have_time = all(item.get("car_travel_time_min") is not None for item in targets)
+        metric_mode = "time_min" if all_have_time else "distance_m"
+        if not all_have_time:
+            fallback_flags.append("commute_time_unavailable")
+            warnings.append(
+                self._warning(
+                    "commute_time_unavailable",
+                    "low",
+                    "Commute time data was unavailable for all employment centers, so distance-only metrics were used.",
+                )
+            )
+
+        metric_values: list[float] = []
+        weights: list[float] = []
+        for target in targets:
+            if metric_mode == "time_min":
+                value = float(target.get("car_travel_time_min") or 0.0)
+            else:
+                value = float(target.get("road_distance_m") or target.get("straight_line_m") or 0.0)
+            metric_values.append(max(0.0, value))
+            weights.append(float(target.get("weight") or 1.0))
+
+        top_n = min(COMMUTE_TOP_N, len(metric_values))
+        sorted_values = sorted(metric_values)
+        nearest = sorted_values[0] if sorted_values else 0.0
+        average_top_n = sum(sorted_values[:top_n]) / top_n if top_n else 0.0
+
+        baseline = COMMUTE_TIME_BASELINE_MIN if metric_mode == "time_min" else COMMUTE_DISTANCE_BASELINE_M
+        scores = [max(0.0, min(1.0, 1.0 - (value / baseline))) for value in metric_values]
+        weight_sum = sum(weights) or float(len(weights) or 1)
+        weighted_index = sum(score * weight for score, weight in zip(scores, weights)) / weight_sum
+
+        indicator_label = "low"
+        if weighted_index >= COMMUTE_INDICATOR_THRESHOLDS["high"]:
+            indicator_label = "high"
+        elif weighted_index >= COMMUTE_INDICATOR_THRESHOLDS["medium"]:
+            indicator_label = "medium"
+
+        routing_fallback_used = any((item.get("fallback_metadata") or {}).get("used") for item in targets)
+        if routing_fallback_used:
+            fallback_flags.append("commute_routing_fallback")
+
+        return {
+            "status": "ok",
+            "target_count": len(targets),
+            "targets": targets,
+            "metrics": {
+                "mode": metric_mode,
+                "units": "minutes" if metric_mode == "time_min" else "meters",
+                "nearest": round(nearest, 2),
+                "average_top_n": round(average_top_n, 2),
+                "weighted_index": round(weighted_index, 4),
+                "top_n": top_n,
+                "baseline": baseline,
+            },
+            "indicator": {
+                "label": indicator_label,
+                "thresholds": COMMUTE_INDICATOR_THRESHOLDS,
+            },
+            "defaults_used": False,
+            "fallbacks": {
+                "routing_fallback_used": routing_fallback_used,
+                "metric_fallback": None if all_have_time else "distance_only",
+            },
         }
-        bundle = self._distance_bundle(
-            point=point,
-            target=target,
-            label=DOWNTOWN_EDMONTON["name"],
-            fallback_flags=fallback_flags,
-            warnings=warnings,
-        )
-        if bundle["transit_distance_m"] is None:
-            missing_factors.append("downtown_transit_time")
-        bundle["straight_line_m"] = downtown["straight_line_m"]
-        return bundle
 
     def _collect_neighbourhood_context(
         self,
@@ -641,7 +768,7 @@ class PropertyEstimator:
         *,
         baseline: dict[str, Any],
         amenities: dict[str, list[dict[str, Any]]],
-        downtown: dict[str, Any],
+        commute_accessibility: dict[str, Any],
         neighbourhood_context: dict[str, Any],
         comparables: dict[str, list[dict[str, Any]]],
         warnings: list[dict[str, Any]],
@@ -747,16 +874,21 @@ class PropertyEstimator:
                 )
             )
 
-        downtown_distance = float(downtown["road_distance_m"] or downtown["straight_line_m"] or 0.0)
-        downtown_ratio = max(0.0, min(1.0, 1.0 - (downtown_distance / 14_000.0)))
-        adjustments.append(
-            self._adjustment(
-                "downtown_accessibility",
-                "Downtown accessibility",
-                baseline_value * 0.03 * (downtown_ratio - 0.25),
-                {"distance_m": round(downtown_distance, 2)},
+        commute_metrics = commute_accessibility.get("metrics") or {}
+        if commute_metrics:
+            commute_index = float(commute_metrics.get("weighted_index") or 0.0)
+            adjustments.append(
+                self._adjustment(
+                    "commute_accessibility",
+                    "Commute accessibility",
+                    baseline_value * 0.03 * (commute_index - 0.35),
+                    {
+                        "mode": commute_metrics.get("mode"),
+                        "nearest": commute_metrics.get("nearest"),
+                        "average_top_n": commute_metrics.get("average_top_n"),
+                    },
+                )
             )
-        )
 
         raw_estimate = baseline_value + sum(item["value"] for item in adjustments)
         lower_guardrail = baseline_value * 0.65
@@ -780,7 +912,7 @@ class PropertyEstimator:
         ]
         completeness_score = self._calculate_completeness(
             amenities=amenities,
-            downtown=downtown,
+            commute_accessibility=commute_accessibility,
             neighbourhood_context=neighbourhood_context,
             comparables=comparables,
         )
@@ -840,7 +972,7 @@ class PropertyEstimator:
         self,
         *,
         amenities: dict[str, list[dict[str, Any]]],
-        downtown: dict[str, Any],
+        commute_accessibility: dict[str, Any],
         neighbourhood_context: dict[str, Any],
         comparables: dict[str, list[dict[str, Any]]],
     ) -> float:
@@ -849,7 +981,7 @@ class PropertyEstimator:
             (bool(amenities.get("playgrounds")), 10.0),
             (bool(amenities.get("schools")), 12.0),
             (bool(amenities.get("libraries")), 8.0),
-            (downtown.get("road_distance_m") is not None, 10.0),
+            (bool(commute_accessibility.get("metrics")), 10.0),
             (neighbourhood_context.get("primary_average_assessment") is not None, 14.0),
             (neighbourhood_context.get("crime_available"), 8.0),
             (neighbourhood_context.get("census_indicators_available"), 8.0),
@@ -867,12 +999,12 @@ class PropertyEstimator:
         missing_factors: list[str],
         fallback_flags: list[str],
         amenities: dict[str, list[dict[str, Any]]],
-        downtown: dict[str, Any],
+        commute_accessibility: dict[str, Any],
         neighbourhood_context: dict[str, Any],
     ) -> dict[str, Any]:
         score = self._calculate_completeness(
             amenities=amenities,
-            downtown=downtown,
+            commute_accessibility=commute_accessibility,
             neighbourhood_context=neighbourhood_context,
             comparables=comparables,
         )

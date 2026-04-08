@@ -48,7 +48,7 @@ def _mock_estimate_result():
         "warnings": [],
         "missing_factors": [],
         "fallback_flags": [],
-        "feature_breakdown": {"amenities": {}, "downtown_accessibility": {}, "valuation_adjustments": []},
+        "feature_breakdown": {"amenities": {}, "commute_accessibility": {}, "valuation_adjustments": []},
         "top_positive_factors": [],
         "top_negative_factors": [],
         "comparables_matching": [],
