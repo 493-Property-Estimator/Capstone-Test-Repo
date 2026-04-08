@@ -228,6 +228,7 @@ Run full test sweep (Python + frontend):
 ```bash
 npm run test:python:all
 npm run test:frontend
+python3 -m pytest tests src/backend/tests scripts/Tests src/estimator/Tests src/data_sourcing/Tests --cov=scripts --cov=src --cov-branch --cov-report=term-missing
 ```
 
 Generate coverage reports for each new suite:
