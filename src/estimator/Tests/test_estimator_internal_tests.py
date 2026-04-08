@@ -295,9 +295,10 @@ def test_property_estimator_core_methods(tmp_path: Path, monkeypatch) -> None:
     amenities = est._collect_amenities({"lat": 53.5461, "lon": -113.4938}, warnings, flags, [])
     assert all(v == [] for v in amenities.values())
 
-    monkeypatch.setattr(pe, "get_downtown_accessibility", lambda *a, **k: {"straight_line_m": 10.0})
-    bundle = est._collect_downtown_access({"lat": 53.5461, "lon": -113.4938}, warnings, flags, [])
-    assert bundle["name"] == "Downtown Edmonton"
+    commute = est._collect_commute_accessibility({"lat": 53.5461, "lon": -113.4938}, warnings, flags, [])
+    assert commute["status"] in {"ok", "no_targets"}
+    if commute["targets"]:
+        assert any(item["name"] == "Downtown Edmonton" for item in commute["targets"])
 
 
 def test_property_estimator_value_range_confidence(tmp_path: Path) -> None:
@@ -307,7 +308,7 @@ def test_property_estimator_value_range_confidence(tmp_path: Path) -> None:
     value = est._calculate_value(
         baseline={"assessment_value": 400000.0},
         amenities={"parks": [], "playgrounds": [], "schools": [], "libraries": []},
-        downtown={"road_distance_m": 1000.0, "straight_line_m": 900.0},
+        commute_accessibility={"metrics": {"weighted_index": 0.6, "mode": "distance_m", "nearest": 900.0, "average_top_n": 1100.0}},
         neighbourhood_context={
             "primary_average_assessment": 410000.0,
             "census_indicators": {},
@@ -329,7 +330,7 @@ def test_property_estimator_value_range_confidence(tmp_path: Path) -> None:
     assert rng["low_estimate"] <= rng["high_estimate"]
     comp = est._calculate_completeness(
         amenities={"parks": [], "playgrounds": [], "schools": [], "libraries": []},
-        downtown={"road_distance_m": None},
+        commute_accessibility={"metrics": None},
         neighbourhood_context={"primary_average_assessment": None, "crime_available": False, "census_indicators_available": False},
         comparables={"matching": [], "non_matching": []},
     )
@@ -340,7 +341,7 @@ def test_property_estimator_value_range_confidence(tmp_path: Path) -> None:
         missing_factors=["x"],
         fallback_flags=["y"],
         amenities={"parks": [], "playgrounds": [], "schools": [], "libraries": []},
-        downtown={"road_distance_m": None},
+        commute_accessibility={"metrics": None},
         neighbourhood_context={"primary_average_assessment": None, "crime_available": False, "census_indicators_available": False},
     )
     assert conf["confidence_score"] >= 5.0 and comp >= 0.0
@@ -369,7 +370,11 @@ def test_property_estimator_estimate_orchestration(tmp_path: Path, monkeypatch) 
     monkeypatch.setattr(est, "_find_nearest_property", lambda *_a, **_k: {"canonical_location_id": "x", "distance_m": 10.0, "assessment_value": 100000.0})
     monkeypatch.setattr(est, "_resolve_baseline", lambda *_a, **_k: {"assessment_value": 100000.0, "matched_property": True, "canonical_location_id": "x"})
     monkeypatch.setattr(est, "_collect_amenities", lambda *_a, **_k: {"parks": [], "playgrounds": [], "schools": [], "libraries": []})
-    monkeypatch.setattr(est, "_collect_downtown_access", lambda *_a, **_k: {"road_distance_m": 100.0, "straight_line_m": 100.0})
+    monkeypatch.setattr(
+        est,
+        "_collect_commute_accessibility",
+        lambda *_a, **_k: {"metrics": {"weighted_index": 0.5, "mode": "distance_m", "nearest": 100.0, "average_top_n": 100.0}},
+    )
     monkeypatch.setattr(est, "_collect_neighbourhood_context", lambda *_a, **_k: {"primary_average_assessment": None, "crime_available": False, "census_indicators_available": False})
     monkeypatch.setattr(est, "_collect_comparables", lambda *_a, **_k: {"matching": [], "non_matching": []})
     monkeypatch.setattr(est, "_calculate_value", lambda **_k: {"final_estimate": 100000.0, "adjustments": [], "completeness_score": 50.0, "top_positive_factors": [], "top_negative_factors": []})
@@ -593,7 +598,7 @@ def test_property_estimator_remaining_branches(tmp_path: Path, monkeypatch) -> N
     val = est._calculate_value(
         baseline={"assessment_value": 400000.0},
         amenities={"parks": [{"road_distance_m": 100.0, "straight_line_m": 90.0}], "playgrounds": [], "schools": [], "libraries": []},
-        downtown={"road_distance_m": 100.0, "straight_line_m": 90.0},
+        commute_accessibility={"metrics": {"weighted_index": 0.55, "mode": "distance_m", "nearest": 100.0, "average_top_n": 120.0}},
         neighbourhood_context={
             "primary_average_assessment": 380000.0,
             "census_indicators": {"population_density": 1200.0, "household_size": 2.8, "limited_accuracy": True, "area_id": "N1090"},
@@ -696,7 +701,7 @@ def test_property_estimator_branch_closures(tmp_path: Path, monkeypatch) -> None
         missing_factors=[],
         fallback_flags=[],
         amenities={"parks": [1], "playgrounds": [1], "schools": [1], "libraries": [1]},
-        downtown={"road_distance_m": 1},
+        commute_accessibility={"metrics": {"weighted_index": 0.5}},
         neighbourhood_context={"primary_average_assessment": 1, "crime_available": True, "census_indicators_available": True},
     )
     assert c1["confidence_label"] == "high"
@@ -896,7 +901,11 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
     )
     monkeypatch.setattr(est, "_resolve_baseline", lambda *_a, **_k: {"assessment_value": 100000.0, "matched_property": False, "canonical_location_id": "x"})
     monkeypatch.setattr(est, "_collect_amenities", lambda *_a, **_k: {"parks": [], "playgrounds": [], "schools": [], "libraries": []})
-    monkeypatch.setattr(est, "_collect_downtown_access", lambda *_a, **_k: {"road_distance_m": 500.0, "straight_line_m": 500.0})
+    monkeypatch.setattr(
+        est,
+        "_collect_commute_accessibility",
+        lambda *_a, **_k: {"metrics": {"weighted_index": 0.5, "mode": "distance_m", "nearest": 500.0, "average_top_n": 500.0}},
+    )
     monkeypatch.setattr(est, "_collect_neighbourhood_context", lambda *_a, **_k: {"primary_average_assessment": None, "crime_available": False, "census_indicators_available": False})
     monkeypatch.setattr(est, "_collect_comparables", lambda *_a, **_k: {"matching": [], "non_matching": [{"assessment_value": 90000.0}]})
     monkeypatch.setattr(est, "_calculate_value", lambda **_k: {"final_estimate": 100000.0, "adjustments": [], "completeness_score": 55.0, "top_positive_factors": [], "top_negative_factors": []})
@@ -914,8 +923,21 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
     conn.close()
     assert est_empty._find_nearest_property(53.5, -113.4) is None
 
-    # _collect_downtown_access branch where transit distance exists (line 352 -> 354).
-    monkeypatch.setattr(pe, "get_downtown_accessibility", lambda *_a, **_k: {"straight_line_m": 12.0})
+    # _collect_commute_accessibility branch with a single employment center.
+    monkeypatch.setattr(
+        est_empty,
+        "_load_employment_centers",
+        lambda: [
+            {
+                "id": "downtown-edmonton",
+                "name": "Downtown Edmonton",
+                "lat": 53.5,
+                "lon": -113.4,
+                "weight": 1.0,
+                "category": "business_district",
+            }
+        ],
+    )
     monkeypatch.setattr(
         est_empty,
         "_distance_bundle",
@@ -924,10 +946,12 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
             "road_distance_m": 12.0,
             "straight_line_m": 12.0,
             "transit_distance_m": 20.0,
+            "car_travel_time_min": None,
+            "fallback_metadata": {"used": False},
         },
     )
-    d = est_empty._collect_downtown_access({"lat": 53.5, "lon": -113.4}, warnings, flags, missing)
-    assert d["transit_distance_m"] == 20.0 and "downtown_transit_time" not in missing
+    commute = est_empty._collect_commute_accessibility({"lat": 53.5, "lon": -113.4}, warnings, flags, missing)
+    assert commute["target_count"] == 1 and "commute_accessibility" not in missing
 
     # _collect_comparables branch where lists are non-empty (line 472 -> 482).
     monkeypatch.setattr(
@@ -951,7 +975,7 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
             "schools": [{"road_distance_m": 0.0, "straight_line_m": 0.0}],
             "libraries": [{"road_distance_m": 0.0, "straight_line_m": 0.0}],
         },
-        downtown={"road_distance_m": 0.0, "straight_line_m": 0.0},
+        commute_accessibility={"metrics": {"weighted_index": 0.4, "mode": "distance_m", "nearest": 0.0, "average_top_n": 0.0}},
         neighbourhood_context={
             "primary_average_assessment": None,
             "census_indicators": {
@@ -991,7 +1015,7 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
             "schools": [{"road_distance_m": 1_000_000.0, "straight_line_m": 1_000_000.0}],
             "libraries": [{"road_distance_m": 1_000_000.0, "straight_line_m": 1_000_000.0}],
         },
-        downtown={"road_distance_m": 1_000_000.0, "straight_line_m": 1_000_000.0},
+        commute_accessibility={"metrics": {"weighted_index": 0.0, "mode": "distance_m", "nearest": 1_000_000.0, "average_top_n": 1_000_000.0}},
         neighbourhood_context={
             "primary_average_assessment": 0.0,
             "census_indicators": {
@@ -1033,7 +1057,7 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
         missing_factors=[],
         fallback_flags=[],
         amenities={"parks": [1], "playgrounds": [1], "schools": [1], "libraries": []},
-        downtown={"road_distance_m": 1.0},
+        commute_accessibility={"metrics": {"weighted_index": 0.5}},
         neighbourhood_context={"primary_average_assessment": 1.0, "crime_available": False, "census_indicators_available": False},
     )
     assert c_medium["confidence_label"] == "medium"
@@ -1044,7 +1068,7 @@ def test_property_estimator_remaining_coverage_branches(tmp_path: Path, monkeypa
         missing_factors=["a", "b", "c", "d"],
         fallback_flags=[],
         amenities={"parks": [1], "playgrounds": [1], "schools": [1], "libraries": []},
-        downtown={"road_distance_m": 1.0},
+        commute_accessibility={"metrics": {"weighted_index": 0.2}},
         neighbourhood_context={"primary_average_assessment": 1.0, "crime_available": True, "census_indicators_available": True},
     )
     assert c_low["confidence_label"] == "low"

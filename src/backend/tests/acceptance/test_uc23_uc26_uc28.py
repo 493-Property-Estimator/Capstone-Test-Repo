@@ -89,7 +89,7 @@ def test_confidence_percentage_and_completeness_mapping(client, monkeypatch):
             "warnings": [],
             "missing_factors": [],
             "fallback_flags": [],
-            "feature_breakdown": {"amenities": {}, "downtown_accessibility": {}, "valuation_adjustments": []},
+            "feature_breakdown": {"amenities": {}, "commute_accessibility": {}, "valuation_adjustments": []},
             "top_positive_factors": [],
             "top_negative_factors": [],
             "comparables_matching": [],
@@ -138,7 +138,7 @@ def test_factor_breakdown_preserves_negative_values(client, monkeypatch):
             "fallback_flags": [],
             "feature_breakdown": {
                 "amenities": {},
-                "downtown_accessibility": {},
+                "commute_accessibility": {},
                 "valuation_adjustments": [
                     {
                         "code": "nearby_comparables",
