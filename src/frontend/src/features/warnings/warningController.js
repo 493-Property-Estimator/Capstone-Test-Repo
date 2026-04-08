@@ -5,89 +5,11 @@ export function createWarningController({
   warningPanel,
   warningIndicator
 }) {
-  /* node:coverage disable */
-  function renderWarnings(estimate) {
+  function renderWarnings() {
     clearElement(warningPanel);
-
-    const warnings = estimate?.warnings || [];
-    const confidence = estimate?.confidence;
-
-    if (!warnings.length && !confidence) {
-      toggleHidden(warningPanel, true);
-      toggleHidden(warningIndicator, true);
-      return;
-    }
-
-    toggleHidden(warningPanel, false);
+    toggleHidden(warningPanel, true);
     toggleHidden(warningIndicator, true);
-
-    const warningDetails = createElement("details", "collapsible-section");
-    warningDetails.open = !store.getState().warningsCollapsed;
-
-    const warningSummary = createElement("summary", "collapsible-summary");
-    warningSummary.appendChild(createElement("h3", null, "Feedback & Warnings"));
-    warningDetails.appendChild(warningSummary);
-
-    const warningBody = createElement("div", "collapsible-body");
-
-    warningDetails.addEventListener("toggle", () => {
-      const isCollapsed = !warningDetails.open;
-      if (store.getState().warningsCollapsed !== isCollapsed) {
-        store.setState({ warningsCollapsed: isCollapsed });
-      }
-    });
-
-    if (confidence) {
-      const confidenceCard = createElement("article", "warning-item info");
-      /* node:coverage ignore next */
-      confidenceCard.appendChild(createElement("h3", null, `Confidence: ${confidence.percentage ?? "--"}%${confidence.label ? ` · ${confidence.label}` : ""}`));
-      confidenceCard.appendChild(
-        createElement(
-          "p",
-          "warning-body",
-          `Estimate completeness: ${confidence.completeness || "unknown"}.`
-        )
-      );
-      warningBody.appendChild(confidenceCard);
-    }
-
-    warnings.forEach((warning) => {
-      const card = createElement("article", `warning-item ${warning.severity || "warning"}`);
-      card.appendChild(createElement("h3", null, warning.title));
-      card.appendChild(createElement("p", "warning-body", warning.message));
-
-      if (warning.affected_factors?.length) {
-        card.appendChild(
-          createElement(
-            "p",
-            "factor-meta",
-            `Affected factors: ${warning.affected_factors.join(", ")}`
-          )
-        );
-      }
-
-      if (warning.dismissible) {
-        const actions = createElement("div", "warning-actions");
-        const dismiss = createElement("button", "button button-secondary", "Dismiss");
-        dismiss.type = "button";
-        dismiss.addEventListener("click", () => {
-          store.setState({ warningsCollapsed: true });
-        });
-        actions.appendChild(dismiss);
-        card.appendChild(actions);
-      }
-
-      warningBody.appendChild(card);
-    });
-
-    warningDetails.appendChild(warningBody);
-    warningPanel.appendChild(warningDetails);
   }
-  /* node:coverage enable */
-
-  warningIndicator.addEventListener("click", () => {
-    store.setState({ warningsCollapsed: false });
-  });
 
   store.subscribe((state) => {
     renderWarnings(state.estimate);
