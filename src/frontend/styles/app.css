@@ -884,7 +884,7 @@ body[data-page="ingestion"] #ingestion-page {
   border-right: 1px solid rgba(95, 86, 72, 0.18);
   background: rgba(255, 251, 243, 0.84);
   backdrop-filter: blur(10px);
-  padding: 18px;
+  padding: 68px 18px 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -893,7 +893,7 @@ body[data-page="ingestion"] #ingestion-page {
 }
 
 .lab-map-shell {
-  padding: 20px;
+  padding: 68px 20px 20px;
   min-height: 0;
   display: flex;
   flex-direction: column;
