@@ -214,7 +214,22 @@ store.subscribe((state) => {
   const match = findMatchingProperty(state.propertyLayer, state.selectedLocation);
 
   if (match) {
-    store.setState({ selectedPropertyDetails: match });
+    hydratePropertyDetails(match).then((detailedProperty) => {
+      if (!detailedProperty?.canonical_location_id) {
+        return;
+      }
+
+      const selectedId = store.getState().selectedLocation?.canonical_location_id;
+      if (selectedId !== detailedProperty.canonical_location_id) {
+        return;
+      }
+
+      if (store.getState().selectedPropertyDetails) {
+        return;
+      }
+
+      store.setState({ selectedPropertyDetails: detailedProperty });
+    });
   }
 });
 /* node:coverage enable */
