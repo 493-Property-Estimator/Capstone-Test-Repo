@@ -117,6 +117,7 @@ export function createLayerController({
   }
 
   function renderControls() {
+    if (!controlsRoot) return;
     clearElement(controlsRoot);
 
     if (PROPERTY_LAYER_ENABLED) {
@@ -211,6 +212,7 @@ export function createLayerController({
   }
 
   function renderLegend() {
+    if (!legendRoot) return;
     clearElement(legendRoot);
     const layers = Object.values(store.getState().activeLayers).filter(
       (layer) => layer.enabled && layer.data?.legend?.items?.length

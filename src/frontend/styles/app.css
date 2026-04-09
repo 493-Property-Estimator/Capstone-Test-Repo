@@ -112,13 +112,16 @@ p {
 }
 
 .app-nav-link {
+  display: block;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
   color: var(--ink);
   padding: 11px 12px;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
+  font: inherit;
 }
 
 .app-nav-link.is-active {
@@ -848,7 +851,6 @@ p {
 }
 
 #estimator-page,
-#layer-page,
 #map-page,
 #ingestion-page {
   display: none;
@@ -856,11 +858,6 @@ p {
 
 body[data-page="estimator"] #estimator-page,
 body[data-page="estimator"] #map-page {
-  display: flex;
-}
-
-body[data-page="layer"] #layer-page,
-body[data-page="layer"] #map-page {
   display: flex;
 }
 

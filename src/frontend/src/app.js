@@ -39,7 +39,7 @@ function findMatchingProperty(propertyLayer, location) {
 }
 
 function setupAppNavigation() {
-  const pageIds = new Set(["estimator", "layer", "ingestion"]);
+  const pageIds = new Set(["estimator", "ingestion"]);
   const menuButton = document.getElementById("app-menu-toggle");
   const sidebar = document.getElementById("app-sidebar-nav");
   const overlay = document.getElementById("app-sidebar-overlay");
