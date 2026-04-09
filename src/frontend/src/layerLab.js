@@ -13,6 +13,7 @@ import { clearElement, createElement, setText } from "./utils/dom.js";
 
 const LAB_LAYERS = LAYER_LAB_DEFINITIONS;
 const POINT_ONLY_LAYERS = new Set([
+  "assessment_properties",
   "schools",
   "parks",
   "playgrounds",
@@ -596,7 +597,40 @@ function getLayerViewport(layerId) {
   return getViewport();
 }
 
+async function fetchPropertyFeatures(signal) {
+  const viewport = getViewport();
+  const response = await apiClient.getProperties({
+    ...viewport,
+    zoom: Math.max(viewport.zoom, 17),
+    limit: 20000,
+    signal
+  });
+  const properties = response.properties || [];
+  return properties
+    .filter((p) => p?.coordinates?.lat != null && p?.coordinates?.lng != null)
+    .map((p) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [p.coordinates.lng, p.coordinates.lat]
+      },
+      properties: {
+        name: p.name || p.canonical_address || "Property",
+        address: p.canonical_address || "",
+        neighbourhood: p.neighbourhood || p.details?.neighbourhood || "",
+        assessment_value: p.assessment_value ?? p.details?.assessment_value ?? null,
+        value: p.assessment_value ?? p.details?.assessment_value ?? null,
+        center_lng: p.coordinates.lng,
+        center_lat: p.coordinates.lat
+      }
+    }));
+}
+
 async function fetchLayerFeatures(layer, signal) {
+  if (layer.id === "assessment_properties") {
+    return fetchPropertyFeatures(signal);
+  }
+
   const viewport = getLayerViewport(layer.id);
 
   const response = await apiClient.getLayerData({
@@ -732,6 +766,7 @@ function initializeMap() {
   map = new window.maplibregl.Map({
     container: mapRoot,
     style: createRasterStyle(),
+    preserveDrawingBuffer: true,
     center: [EDMONTON_CENTER[1], EDMONTON_CENTER[0]],
     zoom: 11,
     maxBounds: [
