@@ -57,6 +57,8 @@ function buildController(apiClient) {
       sourceNameInput,
       datasetTypeInput,
       fileInput,
+      triggerInput,
+      overwriteInput,
       validateOnlyInput,
     };
   });
@@ -255,6 +257,7 @@ test("ingestion controller fallback handles validate-only and partial files", as
 test("ingestion controller covers status aliases, missing stats, and extension fallback messaging", async () => {
   const responses = [
     { status: "OK", message: "All good" },
+    { status: "completed", message: "done" },
     { status: "partially_successful", message: "Warnings", stats: "not-an-object" },
     { status: "complete", message: "Done", stats: { ingested: 1, skipped: 0, errors: 0 } }
   ];
@@ -273,6 +276,11 @@ test("ingestion controller covers status aliases, missing stats, and extension f
   assert.equal(ctx.statusPill.textContent, "Successful");
   assert.match(ctx.feedbackRoot.textContent, /All good/);
   assert.equal(ctx.feedbackRoot.textContent.includes("Ingested:"), false);
+
+  submit(ctx.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(ctx.statusPill.textContent, "Successful");
+  assert.match(ctx.feedbackRoot.textContent, /done/);
 
   submit(ctx.form);
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -508,7 +516,7 @@ test("ingestion controller covers invalid filename branch and missing status nor
 
   const fallback = await buildController({
     async ingestDataset() {
-      throw new Error("network");
+      throw new Error("offline");
     },
   });
 

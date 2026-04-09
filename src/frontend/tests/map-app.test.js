@@ -49,6 +49,22 @@ function baseIds() {
     { id: "warning-panel" },
     { id: "warning-indicator", tagName: "button" },
     { id: "environment-badge" },
+    { id: "app-menu-toggle", tagName: "button" },
+    { id: "app-sidebar-nav" },
+    { id: "app-sidebar-overlay" },
+    { id: "ingestion-form", tagName: "form" },
+    { id: "ingestion-reset", tagName: "button" },
+    { id: "ingestion-status-pill" },
+    { id: "ingestion-status-label" },
+    { id: "ingestion-feedback" },
+    { id: "ingestion-progress" },
+    { id: "ingestion-progress-bar" },
+    { id: "ingestion-source-name", tagName: "input" },
+    { id: "ingestion-dataset-type", tagName: "select" },
+    { id: "ingestion-file-input", tagName: "input" },
+    { id: "ingestion-trigger", tagName: "select" },
+    { id: "ingestion-validate-only", tagName: "input" },
+    { id: "ingestion-overwrite", tagName: "input" },
     { id: "property-detail-panel" },
     { id: "property-detail-title" },
     { id: "property-detail-subtitle" },
@@ -270,6 +286,22 @@ test("app bootstrap wires the integrated frontend flows", async () => {
     if (String(url).endsWith("/app.env")) {
       return createMockResponse("PREFER_LIVE_API=0\n");
     }
+    if (String(url).includes("/api/v1/properties/")) {
+      const canonicalLocationId = String(url).split("/").pop();
+      return createMockResponse({
+        property: {
+          canonical_location_id: decodeURIComponent(canonicalLocationId || "loc-unknown"),
+          canonical_address: "10234 98 Street NW, Edmonton, AB T5H 2P9",
+          coordinates: { lat: 53.5461, lng: -113.4938 },
+          details: {
+            neighbourhood: "Downtown",
+            assessment_value: 450000,
+            ward: "O-day'min",
+            tax_class: "Residential"
+          }
+        }
+      });
+    }
     if (String(url).includes("./mock-data/assessment-properties-tiles/index.json")) {
       return createMockResponse({ tiles: [] });
     }
@@ -423,6 +455,33 @@ test("app bootstrap wires the integrated frontend flows", async () => {
   });
   await wait(10);
   assert.equal(appModule.__app.store.getState().selectedPropertyDetails, null);
+
+  appModule.__app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-null-detail",
+        canonical_address: "Null Detail Property",
+        coordinates: { lat: 53.58, lng: -113.46 }
+      }
+    ],
+    clusters: []
+  });
+  appModule.__app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-null-detail",
+      canonical_address: "Null Detail Property",
+      coordinates: { lat: 53.58, lng: -113.46 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(220);
+  assert.equal(
+    appModule.__app.store.getState().selectedPropertyDetails?.canonical_location_id,
+    "loc-null-detail"
+  );
 
   appModule.__app.store.setState({
     selectedLocation: {
