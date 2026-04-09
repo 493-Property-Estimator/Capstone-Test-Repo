@@ -25,7 +25,7 @@ const DEFAULT_ENV = {
   ESTIMATE_WEIGHT_GREEN_SPACE: "50",
   ESTIMATE_WEIGHT_COMMUTE: "50",
   LAYER_LAB_LAYER_IDS:
-    "schools,parks,playgrounds,police_stations,transit_stops,businesses,green_space,roads,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries",
+    "assessment_properties,schools,parks,playgrounds,police_stations,transit_stops,businesses,green_space,roads,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries",
   ENABLED_LAYERS:
     "schools,parks,playgrounds,police_stations,transit_stops,businesses,green_space,roads,municipal_wards,provincial_districts,federal_districts,census_subdivisions,census_boundaries,assessment_properties"
 };

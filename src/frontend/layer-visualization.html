@@ -12,14 +12,48 @@
     <link rel="stylesheet" href="./styles/app.css" />
   </head>
   <body class="lab-page">
+    <button
+      id="app-menu-toggle"
+      class="app-menu-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="app-sidebar-nav"
+      aria-label="Open navigation menu"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <aside id="app-sidebar-nav" class="app-sidebar-nav" aria-label="Primary navigation">
+      <div class="app-nav-header">
+        <p class="eyebrow">Property Intelligence</p>
+        <h2>Workspace Menu</h2>
+      </div>
+      <nav class="app-nav-links" aria-label="App pages">
+        <a class="app-nav-link" href="./index.html">
+          Estimator Page
+        </a>
+        <a class="app-nav-link is-active" href="./layer-visualization.html">
+          Layer Visualization Lab
+        </a>
+        <a class="app-nav-link" href="./index.html#ingestion">
+          Ingestion Page
+        </a>
+      </nav>
+    </aside>
+    <div id="app-sidebar-overlay" class="app-sidebar-overlay is-hidden" aria-hidden="true"></div>
+
     <aside class="lab-sidebar">
       <header class="panel panel-brand">
-        <p class="eyebrow">Layer Visualization Lab</p>
+        <div class="brand-row">
+          <p class="eyebrow">Layer Visualization Lab</p>
+          <span class="environment-badge">Map overlays</span>
+        </div>
         <h1>Map Layer Rendering Modes</h1>
         <p class="panel-copy">
           Compare non-property map layers in either individual geometry or heat-map form.
         </p>
-        <a class="button button-secondary" href="./index.html">Back to Estimator Map</a>
       </header>
 
       <section class="panel" aria-labelledby="lab-controls-heading">
@@ -46,6 +80,24 @@
     </main>
 
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script>
+      (function () {
+        var menuButton = document.getElementById("app-menu-toggle");
+        var sidebar = document.getElementById("app-sidebar-nav");
+        var overlay = document.getElementById("app-sidebar-overlay");
+        function setSidebarOpen(open) {
+          sidebar.classList.toggle("is-open", open);
+          overlay.classList.toggle("is-hidden", !open);
+          menuButton.setAttribute("aria-expanded", String(open));
+        }
+        menuButton.addEventListener("click", function () {
+          setSidebarOpen(!sidebar.classList.contains("is-open"));
+        });
+        overlay.addEventListener("click", function () {
+          setSidebarOpen(false);
+        });
+      })();
+    </script>
     <script type="module" src="./src/layerLab.js"></script>
   </body>
 </html>
