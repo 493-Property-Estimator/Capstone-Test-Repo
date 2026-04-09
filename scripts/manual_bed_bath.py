@@ -1,7 +1,36 @@
 #!/usr/bin/env python3
+"""
+Semi-manual REALTOR.ca map-card scraper (Playwright + CDP).
+
+This script connects to a locally running Chromium-based browser (Chrome/Brave)
+over the DevTools protocol and scrapes the currently visible listing “cards” on
+the REALTOR.ca map search page.
+
+Quick start
+-----------
+1) Install dependencies (not part of the core app requirements):
+   - `pip install playwright requests`
+   - `python3 -m playwright install chromium`
+
+2) Start a browser with remote debugging enabled (example):
+   - `brave-browser --remote-debugging-port=9222`
+
+3) Open a REALTOR.ca map search and ensure listing cards are visible.
+
+4) Run from the repo root:
+   - `python3 scripts/manual_bed_bath.py --help`
+
+Outputs
+-------
+- CSV (default `edmonton_manual_realtor_cards.csv`)
+- Progress file (default `completed_neighbourhoods.txt`) to resume runs
+"""
+
 from __future__ import annotations
 
+import argparse
 import csv
+import json
 import re
 from pathlib import Path
 from typing import Iterable
@@ -251,21 +280,60 @@ def build_remaining_list(
     return remaining
 
 
-def main():
-    out_path = Path(OUT_CSV)
-    progress_path = Path(PROGRESS_FILE)
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Connect to a local Chromium CDP session and scrape visible REALTOR.ca listing cards."
+    )
+    parser.add_argument("--cdp-url", default=CDP_URL, help="Chrome DevTools Protocol URL (default: http://127.0.0.1:9222)")
+    parser.add_argument("--out-csv", default=OUT_CSV, help="Output CSV path")
+    parser.add_argument("--progress-file", default=PROGRESS_FILE, help="Progress marker file (one neighbourhood per line)")
+    parser.add_argument(
+        "--start-from",
+        default=START_FROM,
+        help="Resume starting at this neighbourhood name (empty means start at first remaining)",
+    )
+    parser.add_argument(
+        "--force-redo",
+        action="append",
+        default=[],
+        help="Neighbourhood name to redo even if already completed (repeatable)",
+    )
+    parser.add_argument(
+        "--force-redo-json",
+        default="",
+        help="JSON array of neighbourhood names to redo (alternative to repeating --force-redo)",
+    )
+    return parser.parse_args()
+
+
+def _parse_force_redo(raw_values: list[str], raw_json: str) -> set[str]:
+    forced = {clean_text(item) for item in (raw_values or []) if clean_text(item)}
+    if raw_json:
+        payload = json.loads(raw_json)
+        if not isinstance(payload, list):
+            raise ValueError("--force-redo-json must be a JSON array of strings")
+        forced.update(clean_text(item) for item in payload if clean_text(item))
+    return {item for item in forced if item}
+
+
+def main() -> None:
+    args = _parse_args()
+    out_path = Path(args.out_csv)
+    progress_path = Path(args.progress_file)
+    start_from = clean_text(args.start_from) or None
+    force_redo = _parse_force_redo(args.force_redo, args.force_redo_json)
 
     ensure_csv_exists(out_path)
 
     # Remove old rows for any forced-redo neighbourhoods, then clear their progress markers
-    if FORCE_REDO:
-        rewrite_csv_without_neighbourhoods(out_path, FORCE_REDO)
+    if force_redo:
+        rewrite_csv_without_neighbourhoods(out_path, force_redo)
 
     existing_keys = load_existing_keys(out_path)
     completed_neighbourhoods = load_completed_progress(progress_path)
 
-    if FORCE_REDO:
-        completed_neighbourhoods -= FORCE_REDO
+    if force_redo:
+        completed_neighbourhoods -= force_redo
         write_completed_progress(progress_path, completed_neighbourhoods)
         existing_keys = load_existing_keys(out_path)
 
@@ -273,8 +341,8 @@ def main():
     remaining = build_remaining_list(
         all_neighbourhoods,
         completed_neighbourhoods,
-        START_FROM,
-        FORCE_REDO,
+        start_from,
+        force_redo,
     )
 
     print(f"Loaded {len(all_neighbourhoods)} residential Edmonton neighbourhoods")
@@ -287,7 +355,7 @@ def main():
     print(remaining)
 
     with sync_playwright() as p:
-        browser = p.chromium.connect_over_cdp(CDP_URL)
+        browser = p.chromium.connect_over_cdp(args.cdp_url)
         context = browser.contexts[0]
         page = context.pages[0] if context.pages else context.new_page()
 

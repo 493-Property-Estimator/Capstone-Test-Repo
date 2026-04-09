@@ -2,6 +2,13 @@
 
 For AI-agent onboarding, read `AGENTS.md` first.
 
+## Documentation Map
+
+- App run + runtime expectations: `README.md`
+- Ingestion (CLI + frontend upload UI): `docs/INGESTION.md`
+- Data sourcing pipeline details: `src/data_sourcing/README.md`
+- One-off utilities: `scripts/README.md`
+
 ## Current Status
 
 This repository currently contains:
@@ -61,11 +68,15 @@ pip install -r src/backend/requirements.txt
 pip install -r src/backend/requirements-dev.txt
 ```
 
-If you want the live database-backed app running locally, initialize the SQLite database first:
+If you want the live database-backed app running locally, initialize the SQLite database schema first:
 
 ```bash
 ./ingest init-db
 ```
+
+To ingest real datasets into the SQLite DB (so layers/properties show up in the UI), see:
+
+- `docs/INGESTION.md`
 
 ### Frontend
 
@@ -111,6 +122,12 @@ The API will be available at:
 
 ```text
 http://localhost:8000/api/v1
+```
+
+Interactive API docs (FastAPI Swagger UI):
+
+```text
+http://localhost:8000/docs
 ```
 
 Recommended startup flow from the repo root:
@@ -160,6 +177,15 @@ python3 scripts/init_and_ingest_open_data.py
 
 The root property assessment CSV, when present, is treated as an ingestion/bootstrap source only. The running app does not read that CSV directly. In live mode, the frontend requests property and layer data from the backend, and the backend serves those responses from the SQLite feature store.
 
+### What To Expect When Running
+
+- Frontend loads a MapLibre map centered on Edmonton.
+- With a populated DB, toggled layers should draw as you pan/zoom and assessment properties should appear as clusters or points depending on zoom.
+- Search resolves addresses only within supported bounds; out-of-bounds resolves return an unsupported status.
+- Estimate calls require a token when backend auth is enabled:
+  - frontend token: `ESTIMATE_API_TOKEN` in `src/frontend/app.env`
+  - backend token: `ESTIMATE_API_TOKEN` / `ESTIMATE_AUTH_REQUIRED` in backend settings
+- The **Data Ingestion** page (sidebar) uploads datasets to the backend (`/api/v1/jobs/ingest`). For details and supported dataset types, see `docs/INGESTION.md`.
 
 ## Runtime Notes
 
@@ -191,7 +217,7 @@ npm run test:python:new
 ```
 
 Run all Python tests in the repository (existing + new, including `tests/` and `src/backend/tests/`):
-`
+
 ```bash
 npm run test:python:all
 ```

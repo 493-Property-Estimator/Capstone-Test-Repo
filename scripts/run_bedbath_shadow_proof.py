@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+"""
+Bed/Bath enrichment shadow-proof runner.
+
+This script generates a synthetic SQLite database and synthetic listing/permit
+inputs, then runs the bed/bath enrichment workflow in "shadow mode" so match
+outcomes can be reviewed without touching the main `src/data_sourcing/open_data.db`.
+
+It writes all artifacts under `reports/bedbath_shadow_proof/` (DB, inputs, review
+exports, and a machine-readable `proof_summary.json`).
+
+Run:
+  `python3 scripts/run_bedbath_shadow_proof.py`
+"""
+
 from __future__ import annotations
 
 import csv
