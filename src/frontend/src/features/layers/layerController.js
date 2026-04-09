@@ -12,13 +12,6 @@ import {
 import { debounce } from "../../utils/debounce.js";
 import { clearElement, createElement, setText } from "../../utils/dom.js";
 
-const MAIN_PAGE_LAYER_IDS = new Set([
-  "schools",
-  "parks",
-  "playgrounds",
-  "transit_stops"
-]);
-
 export function createLayerController({
   apiClient,
   store,
@@ -104,10 +97,27 @@ export function createLayerController({
     });
   }
 
+  function createDisplayModeSelect(currentMode, onChange) {
+    const select = document.createElement("select");
+    select.className = "layer-display-select";
+    const modes = [
+      { value: "clusters", label: "Clusters" },
+      { value: "points", label: "Points" },
+      { value: "heatmap", label: "Heat Map" }
+    ];
+    modes.forEach((mode) => {
+      const option = document.createElement("option");
+      option.value = mode.value;
+      option.textContent = mode.label;
+      option.selected = mode.value === currentMode;
+      select.appendChild(option);
+    });
+    select.addEventListener("change", () => onChange(select.value));
+    return select;
+  }
+
   function renderControls() {
-    if (!controlsRoot) {
-      return;
-    }
+    if (!controlsRoot) return;
     clearElement(controlsRoot);
 
     if (PROPERTY_LAYER_ENABLED) {
@@ -118,6 +128,16 @@ export function createLayerController({
       const subtitle = createElement("span", null, formatStatus(propertyLayerState.status));
       name.appendChild(title);
       name.appendChild(subtitle);
+
+      const controls = createElement("div", "layer-controls-row");
+
+      const displaySelect = createDisplayModeSelect(
+        propertyLayerState.displayMode || "clusters",
+        (mode) => {
+          store.updatePropertyLayer({ displayMode: mode });
+        }
+      );
+      controls.appendChild(displaySelect);
 
       const toggle = document.createElement("input");
       toggle.type = "checkbox";
@@ -141,15 +161,15 @@ export function createLayerController({
           setLayerStatusMessage("Assessment Properties idle.");
         }
       });
+      controls.appendChild(toggle);
 
       row.appendChild(name);
-      row.appendChild(toggle);
+      row.appendChild(controls);
       controlsRoot.appendChild(row);
     }
 
     LAYER_DEFINITIONS
       .filter((layer) => !layer.alwaysOn)
-      .filter((layer) => MAIN_PAGE_LAYER_IDS.has(layer.id))
       .forEach((layer) => {
       const layerState = store.getState().activeLayers[layer.id];
       const row = createElement("div", "layer-item");
@@ -158,6 +178,16 @@ export function createLayerController({
       const subtitle = createElement("span", null, formatStatus(layerState.status));
       name.appendChild(title);
       name.appendChild(subtitle);
+
+      const controls = createElement("div", "layer-controls-row");
+
+      const displaySelect = createDisplayModeSelect(
+        layerState.displayMode || "clusters",
+        (mode) => {
+          store.updateLayer(layer.id, { displayMode: mode });
+        }
+      );
+      controls.appendChild(displaySelect);
 
       const toggle = document.createElement("input");
       toggle.type = "checkbox";
@@ -173,17 +203,16 @@ export function createLayerController({
           setLayerStatusMessage(`${layer.label} idle.`);
         }
       });
+      controls.appendChild(toggle);
 
       row.appendChild(name);
-      row.appendChild(toggle);
+      row.appendChild(controls);
       controlsRoot.appendChild(row);
     });
   }
 
   function renderLegend() {
-    if (!legendRoot) {
-      return;
-    }
+    if (!legendRoot) return;
     clearElement(legendRoot);
     const layers = Object.values(store.getState().activeLayers).filter(
       (layer) => layer.enabled && layer.data?.legend?.items?.length
@@ -424,7 +453,6 @@ export function createLayerController({
     const state = store.getState();
     LAYER_DEFINITIONS
       .filter((layer) => layer.id !== "assessment_properties")
-      .filter((layer) => MAIN_PAGE_LAYER_IDS.has(layer.id))
       .filter((layer) => state.activeLayers[layer.id]?.enabled)
       .forEach(
       (layer) => loadLayer(layer.id)

@@ -49,8 +49,22 @@ function ids() {
     { id: "warning-panel" },
     { id: "warning-indicator", tagName: "button" },
     { id: "environment-badge" },
-    { id: "layer-side-panel" },
-    { id: "layer-panel-toggle", tagName: "button" },
+    { id: "app-menu-toggle", tagName: "button" },
+    { id: "app-sidebar-nav" },
+    { id: "app-sidebar-overlay" },
+    { id: "ingestion-form", tagName: "form" },
+    { id: "ingestion-reset", tagName: "button" },
+    { id: "ingestion-status-pill" },
+    { id: "ingestion-status-label" },
+    { id: "ingestion-feedback" },
+    { id: "ingestion-progress" },
+    { id: "ingestion-progress-bar" },
+    { id: "ingestion-source-name", tagName: "input" },
+    { id: "ingestion-dataset-type", tagName: "select" },
+    { id: "ingestion-file-input", tagName: "input" },
+    { id: "ingestion-trigger", tagName: "select" },
+    { id: "ingestion-validate-only", tagName: "input" },
+    { id: "ingestion-overwrite", tagName: "input" },
     { id: "property-detail-panel" },
     { id: "property-detail-title" },
     { id: "property-detail-subtitle" },
@@ -123,22 +137,20 @@ test("app helper matches properties by id, by coordinates, and handles missing i
   );
 });
 
-test("app toggles the layer side panel and updates button state", () => {
-  const layerSidePanel = document.getElementById("layer-side-panel");
-  const layerPanelToggle = document.getElementById("layer-panel-toggle");
+test("app navigation opens sidebar and switches pages", () => {
+  const menuToggle = document.getElementById("app-menu-toggle");
+  const sidebar = document.getElementById("app-sidebar-nav");
+  const overlay = document.getElementById("app-sidebar-overlay");
 
-  assert.equal(layerSidePanel.classList.contains("is-collapsed"), false);
-  assert.equal(layerPanelToggle.getAttribute("aria-expanded"), null);
+  menuToggle.click();
+  assert.equal(sidebar.classList.contains("is-open"), true);
+  assert.equal(overlay.classList.contains("is-hidden"), false);
+  assert.equal(menuToggle.getAttribute("aria-expanded"), "true");
 
-  layerPanelToggle.click();
-  assert.equal(layerSidePanel.classList.contains("is-collapsed"), true);
-  assert.equal(layerPanelToggle.getAttribute("aria-expanded"), "false");
-  assert.equal(layerPanelToggle.textContent, "Show Layers");
-
-  layerPanelToggle.click();
-  assert.equal(layerSidePanel.classList.contains("is-collapsed"), false);
-  assert.equal(layerPanelToggle.getAttribute("aria-expanded"), "true");
-  assert.equal(layerPanelToggle.textContent, "Hide Layers");
+  overlay.click();
+  assert.equal(sidebar.classList.contains("is-open"), false);
+  assert.equal(overlay.classList.contains("is-hidden"), true);
+  assert.equal(menuToggle.getAttribute("aria-expanded"), "false");
 });
 
 test("app reset handler restores default selection state", () => {

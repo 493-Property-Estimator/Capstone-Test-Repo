@@ -454,6 +454,7 @@ export function createMapAdapter({
 
     const ids = renderedLayerIds.get(layerId) || [];
     const sourceId = `source-${layerId}`;
+    const clusterSourceId = `source-${layerId}-clustered`;
 
     [...ids].reverse().forEach((id) => {
       if (map.getLayer(id)) {
@@ -463,6 +464,10 @@ export function createMapAdapter({
 
     if (map.getSource(sourceId)) {
       map.removeSource(sourceId);
+    }
+
+    if (map.getSource(clusterSourceId)) {
+      map.removeSource(clusterSourceId);
     }
 
     renderedLayerIds.delete(layerId);
@@ -546,57 +551,71 @@ export function createMapAdapter({
     }
   }
 
+  function buildAssessmentFeatures(data) {
+    const propertyFeatures = (data.properties || [])
+      .filter((property) => property?.coordinates?.lat != null && property?.coordinates?.lng != null)
+      .map((property) => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [property.coordinates.lng, property.coordinates.lat]
+        },
+        properties: {
+          canonical_location_id: property.canonical_location_id,
+          name: property.name || property.canonical_address,
+          address: property.canonical_address,
+          coordinates: property.coordinates,
+          neighbourhood: property.neighbourhood || property.details?.neighbourhood || "--",
+          ward: property.ward || property.details?.ward || "--",
+          tax_class: property.tax_class || property.details?.tax_class || "--",
+          assessment_value: property.assessment_value ?? property.details?.assessment_value ?? null,
+          assessment_text: property.assessment_value != null
+            ? `$${Number(property.assessment_value).toLocaleString()}`
+            : "--",
+          details: property.details || {},
+          description:
+            property.description ||
+            `Assessment: $${Number(property.assessment_value || 0).toLocaleString()} | Neighbourhood: ${property.neighbourhood || "--"} | Ward: ${property.ward || "--"} | Tax class: ${property.tax_class || "--"}`
+        }
+      }));
+
+    const clusterFeatures = (data.clusters || []).map((cluster) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [cluster.center.lng, cluster.center.lat]
+      },
+      properties: {
+        cluster: true,
+        cluster_id: cluster.cluster_id,
+        point_count: cluster.count,
+        point_count_abbreviated: String(cluster.count)
+      }
+    }));
+
+    return { propertyFeatures, clusterFeatures };
+  }
+
   function renderAssessmentLayer(layerId, data, definition) {
     const sourceId = `source-${layerId}`;
-    const features =
-      data.renderMode === "property"
-        ? (data.properties || [])
-          .filter((property) => property?.coordinates?.lat != null && property?.coordinates?.lng != null)
-          .map((property) => ({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [property.coordinates.lng, property.coordinates.lat]
-            },
-            properties: {
-              canonical_location_id: property.canonical_location_id,
-              name: property.name || property.canonical_address,
-              address: property.canonical_address,
-              coordinates: property.coordinates,
-              neighbourhood: property.neighbourhood || property.details?.neighbourhood || "--",
-              ward: property.ward || property.details?.ward || "--",
-              tax_class: property.tax_class || property.details?.tax_class || "--",
-              assessment_value: property.assessment_value ?? property.details?.assessment_value ?? null,
-              assessment_text: property.assessment_value != null
-                ? `$${Number(property.assessment_value).toLocaleString()}`
-                : "--",
-              details: property.details || {},
-              description:
-                property.description ||
-                `Assessment: $${Number(property.assessment_value || 0).toLocaleString()} | Neighbourhood: ${property.neighbourhood || "--"} | Ward: ${property.ward || "--"} | Tax class: ${property.tax_class || "--"}`
-            }
-          }))
-        : (data.clusters || []).map((cluster) => ({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [cluster.center.lng, cluster.center.lat]
-            },
-            properties: {
-              cluster: true,
-              cluster_id: cluster.cluster_id,
-              point_count: cluster.count,
-              point_count_abbreviated: String(cluster.count)
-            }
-          }));
+    const displayMode = data.displayMode || "clusters";
+    const { propertyFeatures, clusterFeatures } = buildAssessmentFeatures(data);
 
+    const allPointFeatures = [...propertyFeatures, ...clusterFeatures];
+    const features = displayMode === "clusters"
+      ? allPointFeatures
+      : propertyFeatures;
+
+    removeRenderedLayer(layerId);
     upsertSource(sourceId, { features });
 
-    const clusterLayerId = `${layerId}-cluster-circle`;
-    const clusterCountLayerId = `${layerId}-cluster-count`;
-    const pointLayerId = `${layerId}-points`;
+    const rendered = [];
 
-    if (!map.getLayer(clusterLayerId)) {
+    if (displayMode === "clusters") {
+      const clusterLayerId = `${layerId}-cluster-circle`;
+      const clusterCountLayerId = `${layerId}-cluster-count`;
+      const pointLayerId = `${layerId}-points`;
+
       map.addLayer({
         id: clusterLayerId,
         type: "circle",
@@ -625,9 +644,8 @@ export function createMapAdapter({
           "circle-stroke-width": 2
         }
       });
-    }
+      rendered.push(clusterLayerId);
 
-    if (!map.getLayer(clusterCountLayerId)) {
       map.addLayer({
         id: clusterCountLayerId,
         type: "symbol",
@@ -644,9 +662,8 @@ export function createMapAdapter({
           "text-color": "#ffffff"
         }
       });
-    }
+      rendered.push(clusterCountLayerId);
 
-    if (!map.getLayer(pointLayerId)) {
       map.addLayer({
         id: pointLayerId,
         type: "circle",
@@ -659,10 +676,58 @@ export function createMapAdapter({
           "circle-stroke-width": 1.2
         }
       });
+      rendered.push(pointLayerId);
+    } else if (displayMode === "points") {
+      const pointLayerId = `${layerId}-points`;
+
+      map.addLayer({
+        id: pointLayerId,
+        type: "circle",
+        source: sourceId,
+        paint: {
+          "circle-color": definition?.color || "#a43434",
+          "circle-radius": 4,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.2
+        }
+      });
+      rendered.push(pointLayerId);
+    } else if (displayMode === "heatmap") {
+      const heatLayerId = `${layerId}-heatmap`;
+
+      map.addLayer({
+        id: heatLayerId,
+        type: "heatmap",
+        source: sourceId,
+        paint: {
+          "heatmap-weight": 1,
+          "heatmap-intensity": [
+            "interpolate", ["linear"], ["zoom"],
+            10, 0.6,
+            15, 1.2
+          ],
+          "heatmap-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            10, 12,
+            15, 20
+          ],
+          "heatmap-color": [
+            "interpolate", ["linear"], ["heatmap-density"],
+            0, "rgba(0,0,0,0)",
+            0.2, "rgba(29,107,87,0.3)",
+            0.4, "rgba(29,107,87,0.5)",
+            0.6, "#d97706",
+            0.8, "#ea580c",
+            1, "#b91c1c"
+          ],
+          "heatmap-opacity": 0.8
+        }
+      });
+      rendered.push(heatLayerId);
     }
 
     registerAssessmentInteractions(layerId);
-    renderedLayerIds.set(layerId, [clusterLayerId, clusterCountLayerId, pointLayerId]);
+    renderedLayerIds.set(layerId, rendered);
   }
 
   function registerGenericInteractions(layerId) {
@@ -702,21 +767,20 @@ export function createMapAdapter({
 
   function renderGenericLayer(layerId, layerState, definition) {
     const sourceId = `source-${layerId}`;
+    const displayMode = layerState.displayMode || "clusters";
 
+    removeRenderedLayer(layerId);
     upsertSource(sourceId, layerState.data);
 
-    const fillLayerId = `${layerId}-fill`;
-    const lineLayerId = `${layerId}-line`;
-    const pointLayerId = `${layerId}-points`;
     const rendered = [];
     const pointRadiusByLayer = {
-      schools: 6.5,
-      parks: 7,
-      playgrounds: 6,
-      police_stations: 7.5,
-      businesses: 5.5,
-      green_space: 6.5,
-      transit_stops: 4.5
+      schools: 3.5,
+      parks: 4,
+      playgrounds: 3,
+      police_stations: 4,
+      businesses: 3,
+      green_space: 3.5,
+      transit_stops: 2.5
     };
     const lineWidthByLayer = {
       roads: 1.4,
@@ -734,45 +798,144 @@ export function createMapAdapter({
       census_boundaries: 0.08
     };
 
-    if (!map.getLayer(fillLayerId)) {
-      map.addLayer({
-        id: fillLayerId,
-        type: "fill",
-        source: sourceId,
-        filter: [
-          "any",
-          ["==", ["geometry-type"], "Polygon"],
-          ["==", ["geometry-type"], "MultiPolygon"]
-        ],
-        paint: {
-          "fill-color": definition?.color || "#666666",
-          "fill-opacity": fillOpacityByLayer[layerId] || 0.16
-        }
-      });
-    }
+    const fillLayerId = `${layerId}-fill`;
+    const lineLayerId = `${layerId}-line`;
+
+    map.addLayer({
+      id: fillLayerId,
+      type: "fill",
+      source: sourceId,
+      filter: [
+        "any",
+        ["==", ["geometry-type"], "Polygon"],
+        ["==", ["geometry-type"], "MultiPolygon"]
+      ],
+      paint: {
+        "fill-color": definition?.color || "#666666",
+        "fill-opacity": fillOpacityByLayer[layerId] || 0.16
+      }
+    });
     rendered.push(fillLayerId);
 
-    if (!map.getLayer(lineLayerId)) {
-      map.addLayer({
-        id: lineLayerId,
-        type: "line",
-        source: sourceId,
-        filter: [
-          "any",
-          ["==", ["geometry-type"], "LineString"],
-          ["==", ["geometry-type"], "MultiLineString"],
-          ["==", ["geometry-type"], "Polygon"],
-          ["==", ["geometry-type"], "MultiPolygon"]
-        ],
-        paint: {
-          "line-color": definition?.color || "#666666",
-          "line-width": lineWidthByLayer[layerId] || 2
-        }
-      });
-    }
+    map.addLayer({
+      id: lineLayerId,
+      type: "line",
+      source: sourceId,
+      filter: [
+        "any",
+        ["==", ["geometry-type"], "LineString"],
+        ["==", ["geometry-type"], "MultiLineString"],
+        ["==", ["geometry-type"], "Polygon"],
+        ["==", ["geometry-type"], "MultiPolygon"]
+      ],
+      paint: {
+        "line-color": definition?.color || "#666666",
+        "line-width": lineWidthByLayer[layerId] || 2
+      }
+    });
     rendered.push(lineLayerId);
 
-    if (!map.getLayer(pointLayerId)) {
+    if (displayMode === "heatmap") {
+      const heatLayerId = `${layerId}-heatmap`;
+      map.addLayer({
+        id: heatLayerId,
+        type: "heatmap",
+        source: sourceId,
+        filter: ["==", ["geometry-type"], "Point"],
+        paint: {
+          "heatmap-weight": 1,
+          "heatmap-intensity": [
+            "interpolate", ["linear"], ["zoom"],
+            10, 0.6,
+            15, 1.2
+          ],
+          "heatmap-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            10, 12,
+            15, 20
+          ],
+          "heatmap-color": [
+            "interpolate", ["linear"], ["heatmap-density"],
+            0, "rgba(0,0,0,0)",
+            0.2, `${definition?.color || "#666666"}44`,
+            0.4, `${definition?.color || "#666666"}88`,
+            0.6, "#d97706",
+            0.8, "#ea580c",
+            1, "#b91c1c"
+          ],
+          "heatmap-opacity": 0.8
+        }
+      });
+      rendered.push(heatLayerId);
+    } else if (displayMode === "clusters") {
+      const clusterSourceId = `source-${layerId}-clustered`;
+      const clusterCircleId = `${layerId}-cluster-circle`;
+      const clusterCountId = `${layerId}-cluster-count`;
+      const pointLayerId = `${layerId}-points`;
+
+      if (map.getSource(clusterSourceId)) {
+        map.getSource(clusterSourceId).setData(layerState.data);
+      } else {
+        map.addSource(clusterSourceId, {
+          type: "geojson",
+          data: layerState.data,
+          cluster: true,
+          clusterMaxZoom: 14,
+          clusterRadius: 50
+        });
+      }
+
+      map.addLayer({
+        id: clusterCircleId,
+        type: "circle",
+        source: clusterSourceId,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": definition?.color || "#666666",
+          "circle-radius": [
+            "step", ["get", "point_count"],
+            14, 15, 18, 60, 22
+          ],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2
+        }
+      });
+      rendered.push(clusterCircleId);
+
+      map.addLayer({
+        id: clusterCountId,
+        type: "symbol",
+        source: clusterSourceId,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-size": 12,
+          "text-font": ["Noto Sans Regular"],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true
+        },
+        paint: {
+          "text-color": "#ffffff"
+        }
+      });
+      rendered.push(clusterCountId);
+
+      map.addLayer({
+        id: pointLayerId,
+        type: "circle",
+        source: clusterSourceId,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": definition?.color || "#666666",
+          "circle-radius": pointRadiusByLayer[layerId] || 3.5,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1,
+          "circle-opacity": 0.55
+        }
+      });
+      rendered.push(pointLayerId);
+    } else {
+      const pointLayerId = `${layerId}-points`;
       map.addLayer({
         id: pointLayerId,
         type: "circle",
@@ -780,14 +943,14 @@ export function createMapAdapter({
         filter: ["==", ["geometry-type"], "Point"],
         paint: {
           "circle-color": definition?.color || "#666666",
-          "circle-radius": pointRadiusByLayer[layerId] || 6,
+          "circle-radius": pointRadiusByLayer[layerId] || 3.5,
           "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.6,
-          "circle-opacity": layerId === "businesses" ? 0.9 : 0.96
+          "circle-stroke-width": 1,
+          "circle-opacity": 0.55
         }
       });
+      rendered.push(pointLayerId);
     }
-    rendered.push(pointLayerId);
 
     renderedLayerIds.set(layerId, rendered);
     registerGenericInteractions(layerId);

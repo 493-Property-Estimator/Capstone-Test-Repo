@@ -7,14 +7,12 @@ import { createLayerController } from "./features/layers/layerController.js";
 import { createEstimateController } from "./features/estimate/estimateController.js";
 import { createWarningController } from "./features/warnings/warningController.js";
 import { createPropertyDetailController } from "./features/propertyDetails/propertyDetailController.js";
+import { createIngestionController } from "./features/ingestion/ingestionController.js";
 import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 
 const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
-const propertyDetailCache = new Map();
-let propertyDetailAbortController = null;
-let propertyDetailRequestSeq = 0;
 
 function findMatchingProperty(propertyLayer, location) {
   if (!location) {
@@ -40,48 +38,60 @@ function findMatchingProperty(propertyLayer, location) {
   }) || null;
 }
 
-async function hydratePropertyDetails(property) {
-  if (!property?.canonical_location_id) {
-    return property;
-  }
+function setupAppNavigation() {
+  const pageIds = new Set(["estimator", "ingestion"]);
+  const menuButton = document.getElementById("app-menu-toggle");
+  const sidebar = document.getElementById("app-sidebar-nav");
+  const overlay = document.getElementById("app-sidebar-overlay");
+  const links = typeof document.querySelectorAll === "function"
+    ? Array.from(document.querySelectorAll("[data-page-target]"))
+    : [];
 
-  const hasMeaningfulDetails = property.details && Object.keys(property.details).length > 0;
-  if (hasMeaningfulDetails) {
-    return property;
-  }
+  const setSidebarOpen = (open) => {
+    if (!sidebar || !overlay || !menuButton) {
+      return;
+    }
 
-  const cachedDetail = propertyDetailCache.get(property.canonical_location_id);
-  if (cachedDetail) {
-    return cachedDetail;
-  }
+    sidebar.classList.toggle("is-open", open);
+    overlay.classList.toggle("is-hidden", !open);
+    menuButton.setAttribute("aria-expanded", String(open));
+  };
 
-  if (propertyDetailAbortController) {
-    propertyDetailAbortController.abort();
-  }
+  const setPage = (pageId) => {
+    if (!pageIds.has(pageId)) {
+      return;
+    }
 
-  propertyDetailRequestSeq += 1;
-  const requestSeq = propertyDetailRequestSeq;
-  propertyDetailAbortController = new AbortController();
-
-  try {
-    const response = await apiClient.getPropertyDetail(property.canonical_location_id, {
-      signal: propertyDetailAbortController.signal
+    if (document.body?.dataset) {
+      document.body.dataset.page = pageId;
+    } else if (typeof document.body?.setAttribute === "function") {
+      document.body.setAttribute("data-page", pageId);
+    }
+    links.forEach((link) => {
+      link.classList.toggle("is-active", link.dataset.pageTarget === pageId);
     });
 
-    if (requestSeq !== propertyDetailRequestSeq) {
-      return property;
-    }
+    setSidebarOpen(false);
+  };
 
-    const detailed = response?.property || property;
-    propertyDetailCache.set(property.canonical_location_id, detailed);
-    return detailed;
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      return property;
-    }
-    return property;
-  }
+  menuButton?.addEventListener("click", () => {
+    const isOpen = sidebar?.classList.contains("is-open");
+    setSidebarOpen(!isOpen);
+  });
+
+  overlay?.addEventListener("click", () => setSidebarOpen(false));
+
+  links.forEach((link) => {
+    link.addEventListener("click", () => {
+      setPage(link.dataset.pageTarget);
+    });
+  });
+
+  const initialPage = document.body?.dataset?.page || "estimator";
+  setPage(initialPage);
 }
+
+setupAppNavigation();
 
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
@@ -90,19 +100,18 @@ const mapAdapter = createMapAdapter({
   onViewportChange: () => {},
   propertyCardElement: document.getElementById("property-hover-card"),
   propertyDetailPanelElement: document.getElementById("property-detail-panel"),
-  onPropertySelect: async (property) => {
-    const detailedProperty = await hydratePropertyDetails(property);
+  onPropertySelect: (property) => {
     const location = {
-      canonical_location_id: detailedProperty.canonical_location_id,
-      canonical_address: detailedProperty.canonical_address,
-      coordinates: detailedProperty.coordinates,
+      canonical_location_id: property.canonical_location_id,
+      canonical_address: property.canonical_address,
+      coordinates: property.coordinates,
       region: "Edmonton",
-      neighbourhood: detailedProperty.details?.neighbourhood || detailedProperty.neighbourhood || null,
+      neighbourhood: property.details?.neighbourhood || property.neighbourhood || null,
       coverage_status: "supported"
     };
     store.setState({
       selectedLocation: location,
-      selectedPropertyDetails: detailedProperty,
+      selectedPropertyDetails: property,
       propertyDetailsDismissed: false
     });
   },
@@ -134,12 +143,11 @@ const searchController = createSearchController({
   candidateResultsRoot: document.getElementById("candidate-results"),
   helperText: document.getElementById("search-helper"),
   statusElement: document.getElementById("search-status"),
-  async onLocationResolved(location) {
+  onLocationResolved(location) {
     const matchedProperty = findMatchingProperty(store.getState().propertyLayer, location);
-    const detailedProperty = matchedProperty ? await hydratePropertyDetails(matchedProperty) : null;
     store.setState({
       selectedLocation: location,
-      selectedPropertyDetails: detailedProperty,
+      selectedPropertyDetails: matchedProperty,
       propertyDetailsDismissed: false
     });
     mapAdapter.setView(location, { zoom: 17 });
@@ -205,6 +213,25 @@ createPropertyDetailController({
   closeButton: document.getElementById("property-detail-close")
 });
 
+createIngestionController({
+  apiClient,
+  form: document.getElementById("ingestion-form"),
+  resetButton: document.getElementById("ingestion-reset"),
+  statusPill: document.getElementById("ingestion-status-pill"),
+  statusLabel: document.getElementById("ingestion-status-label"),
+  feedbackRoot: document.getElementById("ingestion-feedback"),
+  progressRoot: document.getElementById("ingestion-progress"),
+  progressBar: document.getElementById("ingestion-progress-bar"),
+  fields: {
+    sourceNameInput: document.getElementById("ingestion-source-name"),
+    datasetTypeInput: document.getElementById("ingestion-dataset-type"),
+    fileInput: document.getElementById("ingestion-file-input"),
+    triggerInput: document.getElementById("ingestion-trigger"),
+    validateOnlyInput: document.getElementById("ingestion-validate-only"),
+    overwriteInput: document.getElementById("ingestion-overwrite")
+  }
+});
+
 /* node:coverage disable */
 store.subscribe((state) => {
   if (state.selectedPropertyDetails || state.propertyDetailsDismissed || !state.selectedLocation) {
@@ -235,9 +262,13 @@ store.subscribe((state) => {
 /* node:coverage enable */
 
 /* node:coverage ignore next */
-document.getElementById("environment-badge").textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
+const environmentBadge = document.getElementById("environment-badge");
+if (environmentBadge) {
+  environmentBadge.textContent = PREFER_LIVE_API ? "Auto API" : "Mock API";
+}
 
-document.getElementById("reset-selection").addEventListener("click", () => {
+const resetSelectionButton = document.getElementById("reset-selection");
+resetSelectionButton?.addEventListener("click", () => {
   store.setState({
     selectedLocation: DEFAULT_LOCATION,
     selectedPropertyDetails: null,
@@ -248,16 +279,6 @@ document.getElementById("reset-selection").addEventListener("click", () => {
   mapAdapter.resetView();
   searchController.clear();
 });
-
-const layerSidePanel = document.getElementById("layer-side-panel");
-const layerPanelToggle = document.getElementById("layer-panel-toggle");
-if (layerSidePanel && layerPanelToggle) {
-  layerPanelToggle.addEventListener("click", () => {
-    const isCollapsed = layerSidePanel.classList.toggle("is-collapsed");
-    layerPanelToggle.setAttribute("aria-expanded", String(!isCollapsed));
-    layerPanelToggle.textContent = isCollapsed ? "Show Layers" : "Hide Layers";
-  });
-}
 
 export const __app = {
   store,

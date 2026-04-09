@@ -83,7 +83,7 @@ test("layer controller handles stale generic requests, property aborts, cache ex
     mapAdapter
   });
 
-  const schoolsToggle = controlsRoot.children[1].children[1];
+  const schoolsToggle = controlsRoot.children[1].children[1].children[1];
   schoolsToggle.checked = true;
   schoolsToggle.dispatchEvent({ type: "change", target: schoolsToggle });
   schoolsToggle.checked = false;
@@ -96,7 +96,7 @@ test("layer controller handles stale generic requests, property aborts, cache ex
   await wait(5);
   assert.equal(store.getState().activeLayers.schools.status, "idle");
 
-  const propertyToggle = controlsRoot.children[0].children[1];
+  const propertyToggle = controlsRoot.children[0].children[1].children[1];
   propertyToggle.checked = false;
   propertyToggle.dispatchEvent({ type: "change", target: propertyToggle });
   mapAdapter.handler();
@@ -187,14 +187,14 @@ test("layer controller renders unavailable generic state and partial property st
     mapAdapter
   });
 
-  const propertyToggle = controlsRoot.children[0].children[1];
+  const propertyToggle = controlsRoot.children[0].children[1].children[1];
   propertyToggle.checked = true;
   propertyToggle.dispatchEvent({ type: "change", target: propertyToggle });
   await wait(5);
   assert.equal(store.getState().propertyLayer.status, "partial");
   assert.match(statusElement.textContent, /partial/i);
 
-  const schoolsToggle = controlsRoot.children[1].children[1];
+  const schoolsToggle = controlsRoot.children[1].children[1].children[1];
   schoolsToggle.checked = true;
   schoolsToggle.dispatchEvent({ type: "change", target: schoolsToggle });
   await wait(5);

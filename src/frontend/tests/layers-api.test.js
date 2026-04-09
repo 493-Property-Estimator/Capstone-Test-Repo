@@ -211,7 +211,7 @@ test("layer controller handles property caching, generic layer toggles, partial 
   assert.equal(store.getState().propertyLayer.status, "partial");
   assert.equal(renderCalls.property.length > 0, true);
 
-  const allToggles = controlsRoot.children.map((row) => row.children[1]);
+  const allToggles = controlsRoot.children.map((row) => row.children[1].children[1]);
   const propertyToggle = allToggles[0];
   const schoolsToggle = allToggles.find((toggle, index) => controlsRoot.children[index].children[0].textContent.includes("Schools"));
   const parksToggle = allToggles.find((toggle, index) => controlsRoot.children[index].children[0].textContent.includes("Parks"));
