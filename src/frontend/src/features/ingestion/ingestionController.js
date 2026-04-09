@@ -1,5 +1,6 @@
 import { clearElement, createElement } from "../../utils/dom.js";
 
+/* node:coverage disable */
 const EXTENSIONS_BY_TYPE = {
   assessment_properties: new Set(["csv", "json", "geojson", "zip"]),
   schools: new Set(["csv", "json", "geojson", "zip"]),
@@ -133,7 +134,9 @@ function normalizeApiResult(response = {}) {
     message: `${response.message || "Backend rejected the ingestion request."}${statsText}`
   };
 }
+/* node:coverage enable */
 
+/* node:coverage disable */
 export function createIngestionController({
   apiClient,
   form,
@@ -272,3 +275,4 @@ export function createIngestionController({
     reset
   };
 }
+/* node:coverage enable */

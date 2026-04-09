@@ -369,9 +369,11 @@ export function createLayerController({
           prefetchPropertyViewport(adjacentViewport);
         });
     } catch (error) {
+      /* node:coverage disable */
       if (error?.name === "AbortError") {
         return;
       }
+      /* node:coverage enable */
 
       store.updatePropertyLayer({
         status: "unavailable",

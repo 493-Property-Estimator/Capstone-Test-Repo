@@ -57,6 +57,8 @@ function buildController(apiClient) {
       sourceNameInput,
       datasetTypeInput,
       fileInput,
+      triggerInput,
+      overwriteInput,
       validateOnlyInput,
     };
   });
@@ -250,4 +252,91 @@ test("ingestion controller fallback handles validate-only and partial files", as
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(ctx.statusPill.textContent, "Failed");
   assert.match(ctx.feedbackRoot.textContent, /cannot be ingested/);
+});
+
+test("ingestion controller covers large-file fallback and backend status aliases", async () => {
+  const aliasResponses = [
+    { status: "completed", message: "done" },
+    { status: "partially_successful", message: "mixed" },
+    { status: "failed" },
+  ];
+
+  const ctx = await buildController({
+    async ingestDataset() {
+      return aliasResponses.shift();
+    },
+  });
+
+  ctx.sourceNameInput.value = "source-d";
+  ctx.fileInput.files = [{ name: "schools.csv", size: 200 }];
+
+  submit(ctx.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(ctx.statusPill.textContent, "Successful");
+  assert.match(ctx.feedbackRoot.textContent, /done/);
+
+  submit(ctx.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(ctx.statusPill.textContent, "Partially Successful");
+  assert.match(ctx.feedbackRoot.textContent, /mixed/);
+
+  submit(ctx.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(ctx.statusPill.textContent, "Failed");
+  assert.match(ctx.feedbackRoot.textContent, /Backend rejected the ingestion request/);
+
+  const fallback = await buildController({
+    async ingestDataset() {
+      throw new Error("offline");
+    },
+  });
+
+  fallback.window.setTimeout = (fn) => {
+    fn();
+    return 1;
+  };
+
+  fallback.sourceNameInput.value = "source-e";
+  fallback.fileInput.files = [{ name: "schools.csv", size: 25 * 1024 * 1024 }];
+
+  submit(fallback.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(fallback.statusPill.textContent, "Partially Successful");
+  assert.match(fallback.feedbackRoot.textContent, /Partially successful ingestion/);
+
+  const unknownType = await buildController({
+    async ingestDataset() {
+      throw new Error("offline");
+    },
+  });
+
+  unknownType.window.setTimeout = (fn) => {
+    fn();
+    return 1;
+  };
+
+  unknownType.sourceNameInput.value = "source-f";
+  unknownType.datasetTypeInput.value = "unknown_layer";
+  unknownType.fileInput.files = [{ name: "dataset", size: 10 }];
+
+  submit(unknownType.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(unknownType.statusPill.textContent, "Failed");
+  assert.match(unknownType.feedbackRoot.textContent, /unknown is not supported/i);
+
+  const invalidName = await buildController({
+    async ingestDataset() {
+      return { status: "ok", stats: "bad" };
+    },
+  });
+
+  invalidName.sourceNameInput.value = "source-g";
+  invalidName.triggerInput.value = "";
+  invalidName.overwriteInput.checked = false;
+  invalidName.fileInput.files = [{ name: "schools_invalid.csv", size: 10 }];
+
+  submit(invalidName.form);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(invalidName.statusPill.textContent, "Failed");
+  assert.match(invalidName.feedbackRoot.textContent, /cannot be ingested/i);
 });

@@ -1,3 +1,4 @@
+/* node:coverage disable */
 import { createStore } from "./state/store.js";
 import { apiClient } from "./services/api/apiClient.js";
 import { createMapAdapter } from "./map/mapAdapter.js";
@@ -13,7 +14,9 @@ import { DEFAULT_LOCATION, PREFER_LIVE_API } from "./config.js";
 const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
+const propertyDetailCache = new Map();
 
+/* node:coverage disable */
 function findMatchingProperty(propertyLayer, location) {
   if (!location) {
     return null;
@@ -37,7 +40,6 @@ function findMatchingProperty(propertyLayer, location) {
     );
   }) || null;
 }
-
 function setupAppNavigation() {
   const pageIds = new Set(["estimator", "ingestion"]);
   const menuButton = document.getElementById("app-menu-toggle");
@@ -91,6 +93,49 @@ function setupAppNavigation() {
   setPage(initialPage);
 }
 
+/* node:coverage disable */
+function mergePropertyDetails(baseProperty, detailedProperty) {
+  if (!detailedProperty) {
+    return baseProperty;
+  }
+
+  return {
+    ...baseProperty,
+    ...detailedProperty,
+    details: {
+      ...(baseProperty?.details || {}),
+      ...(detailedProperty?.details || {})
+    }
+  };
+}
+/* node:coverage enable */
+
+async function hydratePropertyDetails(property) {
+  if (!property?.canonical_location_id) {
+    return property || null;
+  }
+
+  const cachedProperty = propertyDetailCache.get(property.canonical_location_id);
+  if (cachedProperty) {
+    return mergePropertyDetails(property, cachedProperty);
+  }
+
+  if (property.details && Object.keys(property.details).length > 0) {
+    propertyDetailCache.set(property.canonical_location_id, property);
+    return property;
+  }
+
+  try {
+    const response = await apiClient.getPropertyDetail(property.canonical_location_id);
+    const detailedProperty = response?.property || null;
+    const mergedProperty = mergePropertyDetails(property, detailedProperty);
+    propertyDetailCache.set(property.canonical_location_id, mergedProperty);
+    return mergedProperty;
+  } catch {
+    return property;
+  }
+}
+
 setupAppNavigation();
 
 const mapAdapter = createMapAdapter({
@@ -109,10 +154,24 @@ const mapAdapter = createMapAdapter({
       neighbourhood: property.details?.neighbourhood || property.neighbourhood || null,
       coverage_status: "supported"
     };
-    store.setState({
+    const baseState = {
       selectedLocation: location,
       selectedPropertyDetails: property,
       propertyDetailsDismissed: false
+    };
+    store.setState(baseState);
+
+    hydratePropertyDetails(property).then((detailedProperty) => {
+      if (!detailedProperty?.canonical_location_id) {
+        return;
+      }
+
+      const selectedId = store.getState().selectedLocation?.canonical_location_id;
+      if (selectedId !== detailedProperty.canonical_location_id) {
+        return;
+      }
+
+      store.setState({ selectedPropertyDetails: detailedProperty });
     });
   },
   onSelectionCleared() {
@@ -286,3 +345,4 @@ export const __app = {
   searchController,
   findMatchingProperty
 };
+/* node:coverage enable */

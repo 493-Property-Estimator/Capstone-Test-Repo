@@ -50,6 +50,9 @@ test("dom helpers and debounce support basic UI interactions", async () => {
   clearElement(parent);
   assert.equal(parent.children.length, 0);
 
+  clearElement(null);
+  setText(null, "Ignored");
+
   let callCount = 0;
   const debounced = debounce(() => {
     callCount += 1;
