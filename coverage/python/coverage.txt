@@ -1,0 +1,132 @@
+== Python tests + coverage ==
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0
+rootdir: /home/fronk/ECE493/Capstone/Group/Capstone-Test-Repo
+configfile: pytest.ini
+plugins: cov-7.1.0, anyio-4.13.0
+collected 446 items
+
+tests/test_bedbath_enrichment.py ............                            [  2%]
+tests/test_census_ingest.py ...                                          [  3%]
+tests/test_coverage_targets.py ........................                  [  8%]
+tests/test_crime_ingest.py ..                                            [  9%]
+tests/test_data_sourcing_coverage_gaps.py .............................. [ 15%]
+                                                                         [ 15%]
+tests/test_ingest_cli.py ...                                             [ 16%]
+tests/test_more_coverage_small_modules.py ............                   [ 19%]
+tests/test_pipelines_full_coverage.py .................................. [ 26%]
+....................................................                     [ 38%]
+tests/test_pipelines_more_coverage.py ......                             [ 39%]
+tests/test_property_estimator.py ..........                              [ 42%]
+tests/test_road_enrichment.py .                                          [ 42%]
+tests/test_testingstage_services.py ......                               [ 43%]
+tests/test_transit_services.py ...                                       [ 44%]
+tests/test_untested_scripts_more.py .......................              [ 49%]
+src/backend/tests/acceptance/test_out_of_bounds.py .                     [ 49%]
+src/backend/tests/acceptance/test_uc01_uc02_inputs.py ...                [ 50%]
+src/backend/tests/acceptance/test_uc03_click.py ..                       [ 50%]
+src/backend/tests/acceptance/test_uc03_missing_coords.py .               [ 51%]
+src/backend/tests/acceptance/test_uc23_uc26_uc28.py ......               [ 52%]
+src/backend/tests/acceptance/test_uc23_unresolvable.py .                 [ 52%]
+src/backend/tests/acceptance/test_uc24_not_found.py .                    [ 52%]
+src/backend/tests/acceptance/test_uc25_layers.py .                       [ 53%]
+src/backend/tests/acceptance/test_uc29_cache.py .                        [ 53%]
+src/backend/tests/acceptance/test_uc31_health.py ..                      [ 53%]
+src/backend/tests/acceptance/test_uc32_invalid_inputs.py ..              [ 54%]
+src/backend/tests/contract/test_contracts.py .......                     [ 55%]
+src/backend/tests/integration/test_additional_branches.py ....           [ 56%]
+src/backend/tests/integration/test_api_additional.py ............        [ 59%]
+src/backend/tests/integration/test_app_additional.py ........            [ 61%]
+src/backend/tests/integration/test_app_exceptions.py .                   [ 61%]
+src/backend/tests/integration/test_config.py .                           [ 61%]
+src/backend/tests/integration/test_cors.py ..                            [ 62%]
+src/backend/tests/integration/test_estimates_payload_parsing.py ..       [ 62%]
+src/backend/tests/integration/test_flow.py ..                            [ 63%]
+src/backend/tests/integration/test_health_additional.py .......          [ 64%]
+src/backend/tests/integration/test_health_feature_store_down.py .        [ 64%]
+src/backend/tests/integration/test_health_jobs.py ...                    [ 65%]
+src/backend/tests/integration/test_ingestion_jobs.py ................... [ 69%]
+..........                                                               [ 71%]
+src/backend/tests/integration/test_metrics_cache_ratio.py .              [ 72%]
+src/backend/tests/integration/test_precompute_grid_additional.py ....    [ 73%]
+src/backend/tests/integration/test_properties_auth_refresh.py .......... [ 75%]
+..                                                                       [ 75%]
+src/backend/tests/integration/test_search_resolve_variants.py ..         [ 76%]
+src/backend/tests/integration/test_services.py .......                   [ 77%]
+src/backend/tests/support/test_config_additional.py ..                   [ 78%]
+src/backend/tests/support/test_db_queries.py .....                       [ 79%]
+src/backend/tests/support/test_services_misc.py ......                   [ 80%]
+src/backend/tests/support/test_validation.py .....                       [ 81%]
+scripts/Tests/test_ingest_data_folder_tests.py ...............           [ 85%]
+src/estimator/Tests/test_estimator_additional.py ..                      [ 85%]
+src/estimator/Tests/test_estimator_internal_tests.py ................... [ 89%]
+....                                                                     [ 90%]
+src/estimator/Tests/test_estimator_tests.py ......                       [ 92%]
+src/estimator/Tests/test_runtime_services_additional.py ............     [ 94%]
+src/data_sourcing/Tests/test_data_sourcing_tests.py ............         [ 97%]
+src/data_sourcing/Tests/test_workflow_source_fetcher.py ...........      [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.3-final-0 ________________
+
+Name                                            Stmts   Miss Branch BrPart  Cover   Missing
+-------------------------------------------------------------------------------------------
+scripts/ingest_data_folder.py                     174      0     60      0   100%
+src/backend/src/__init__.py                         0      0      0      0   100%
+src/backend/src/api/__init__.py                     0      0      0      0   100%
+src/backend/src/api/estimates.py                  194      0     62      0   100%
+src/backend/src/api/health.py                      93      0     20      0   100%
+src/backend/src/api/ingestion_jobs.py             240      0     92      0   100%
+src/backend/src/api/layers.py                      18      0      4      0   100%
+src/backend/src/api/locations.py                   36      0     10      0   100%
+src/backend/src/api/properties.py                  97      0     20      0   100%
+src/backend/src/api/refresh_jobs.py                16      0      0      0   100%
+src/backend/src/api/search.py                      63      0     22      0   100%
+src/backend/src/app.py                            100      0      8      0   100%
+src/backend/src/config.py                          68      0     14      0   100%
+src/backend/src/db/__init__.py                      0      0      0      0   100%
+src/backend/src/db/connection.py                    6      0      0      0   100%
+src/backend/src/db/queries.py                     141      0     38      0   100%
+src/backend/src/jobs/__init__.py                    0      0      0      0   100%
+src/backend/src/jobs/precompute_grid.py           166      0     34      0   100%
+src/backend/src/services/__init__.py                0      0      0      0   100%
+src/backend/src/services/auth.py                   18      0     10      0   100%
+src/backend/src/services/cache.py                  39      0      8      0   100%
+src/backend/src/services/errors.py                  8      0      0      0   100%
+src/backend/src/services/features.py               57      0     18      0   100%
+src/backend/src/services/metrics.py                25      0      2      0   100%
+src/backend/src/services/property_viewport.py      78      0     24      0   100%
+src/backend/src/services/routing.py                32      0      8      0   100%
+src/backend/src/services/validation.py            139      0     64      0   100%
+src/backend/src/services/warnings.py                8      0      2      0   100%
+src/data_sourcing/__init__.py                       5      0      0      0   100%
+src/data_sourcing/address_normalization.py        119      0     32      0   100%
+src/data_sourcing/attribute_schema.py              12      0      2      0   100%
+src/data_sourcing/bedbath_models.py               112      0     34      0   100%
+src/data_sourcing/cli.py                          112      0     38      0   100%
+src/data_sourcing/config.py                        23      0      0      0   100%
+src/data_sourcing/database.py                      58      0      4      0   100%
+src/data_sourcing/enrich_bedbath.py               441      0    124      0   100%
+src/data_sourcing/permit_parser.py                 42      0     14      0   100%
+src/data_sourcing/pipelines.py                   1110      0    424      0   100%
+src/data_sourcing/promotion.py                     78      0     34      0   100%
+src/data_sourcing/property_matcher.py             114      0     48      0   100%
+src/data_sourcing/reporting.py                     33      0      4      0   100%
+src/data_sourcing/service.py                      144      0     50      0   100%
+src/data_sourcing/source_clients.py                87      0     26      0   100%
+src/data_sourcing/source_fetcher.py               487      0    246      0   100%
+src/data_sourcing/source_loader.py                 18      0      0      0   100%
+src/data_sourcing/source_registry.py               27      0     10      0   100%
+src/data_sourcing/validate_bedbath.py              22      0      2      0   100%
+src/data_sourcing/workflow.py                      81      0     20      0   100%
+src/estimator/__init__.py                           8      0      0      0   100%
+src/estimator/property_estimator.py               481      0    140      0   100%
+src/estimator/proximity.py                        403      0    138      0   100%
+src/estimator/runtime_services.py                 147      0     32      0   100%
+src/estimator/simple_estimator.py                  11      0      2      0   100%
+-------------------------------------------------------------------------------------------
+TOTAL                                            5991      0   1944      0   100%
+Coverage HTML written to dir coverage/python/html
+Coverage XML written to file coverage/python/coverage.xml
+Required test coverage of 100% reached. Total coverage: 100.00%
+============================= 446 passed in 22.90s =============================

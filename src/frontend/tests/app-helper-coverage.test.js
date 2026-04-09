@@ -73,7 +73,7 @@ function ids() {
   ];
 }
 
-installDomGlobals({ ids: ids() });
+const { document } = installDomGlobals({ ids: ids() });
 installMapLibre(window);
 globalThis.fetch = async (url) => {
   if (String(url).endsWith("/app.env")) {
@@ -87,6 +87,17 @@ globalThis.fetch = async (url) => {
   }
   return createMockResponse({});
 };
+
+// Provide `document.querySelectorAll` and `document.body.dataset` so app navigation
+// covers dataset + link branches in app.js.
+document.body.dataset = { page: "estimator" };
+const estimatorLink = document.createElement("a");
+estimatorLink.dataset = { pageTarget: "estimator" };
+const ingestionLink = document.createElement("a");
+ingestionLink.dataset = { pageTarget: "ingestion" };
+const bogusLink = document.createElement("a");
+bogusLink.dataset = { pageTarget: "bogus" };
+document.querySelectorAll = () => [estimatorLink, ingestionLink, bogusLink];
 
 const { __app } = await import("../src/app.js");
 
@@ -151,6 +162,14 @@ test("app navigation opens sidebar and switches pages", () => {
   assert.equal(sidebar.classList.contains("is-open"), false);
   assert.equal(overlay.classList.contains("is-hidden"), true);
   assert.equal(menuToggle.getAttribute("aria-expanded"), "false");
+
+  bogusLink.click();
+  assert.equal(document.body.dataset.page, "estimator");
+
+  ingestionLink.click();
+  assert.equal(document.body.dataset.page, "ingestion");
+  assert.equal(ingestionLink.classList.contains("is-active"), true);
+  assert.equal(estimatorLink.classList.contains("is-active"), false);
 });
 
 test("app reset handler restores default selection state", () => {

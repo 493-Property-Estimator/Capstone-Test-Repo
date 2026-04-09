@@ -1,0 +1,28 @@
+[run]
+branch = True
+relative_files = True
+source =
+    scripts
+    src
+
+omit =
+    tests/*
+    src/backend/tests/*
+    src/data_sourcing/Tests/*
+    src/estimator/Tests/*
+    scripts/Tests/*
+
+    # One-off / interactive scripts (not part of runtime library surface)
+    scripts/bed_bath.py
+    scripts/clean_realtor_cards.py
+    scripts/create_db_sample.py
+    scripts/download_and_prepare_crime_data.py
+    scripts/edmonton_neighbourhood_census_builder.py
+    scripts/init_and_ingest_open_data.py
+    scripts/manual_bed_bath.py
+    scripts/run_bedbath_shadow_proof.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:

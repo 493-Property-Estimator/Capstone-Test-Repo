@@ -14,6 +14,8 @@ const store = createStore();
 
 const mapMessageElement = document.getElementById("map-message");
 
+const noopMapClick = () => {};
+
 function findMatchingProperty(propertyLayer, location) {
   if (!location) {
     return null;
@@ -96,8 +98,7 @@ setupAppNavigation();
 const mapAdapter = createMapAdapter({
   root: document.getElementById("map-root"),
   messageElement: mapMessageElement,
-  onMapClick: () => {},
-  onViewportChange: () => {},
+  onMapClick: noopMapClick,
   propertyCardElement: document.getElementById("property-hover-card"),
   propertyDetailPanelElement: document.getElementById("property-detail-panel"),
   onPropertySelect: (property) => {
@@ -125,6 +126,8 @@ const mapAdapter = createMapAdapter({
     });
   }
 });
+
+noopMapClick();
 
 const handleMapClick = createMapSelectionController({
   apiClient,

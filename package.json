@@ -15,6 +15,7 @@
     "test:python:coverage:data-sourcing": "python3 -m pytest src/data_sourcing/Tests --cov=data_sourcing.source_loader --cov=data_sourcing.source_registry --cov=data_sourcing.cli --cov-branch --cov-report=term-missing --cov-report=html:coverage/html/data-sourcing",
     "test:python:coverage:all": "python3 -m pytest src/backend/tests scripts/Tests src/estimator/Tests src/data_sourcing/Tests --cov=scripts.ingest_data_folder --cov=src.estimator.proximity --cov=src.estimator.simple_estimator --cov=data_sourcing.cli --cov=data_sourcing.source_loader --cov=data_sourcing.source_registry --cov=data_sourcing.workflow --cov-branch --cov-fail-under=100 --cov-report=term-missing --cov-report=html:coverage/html/all --cov-report=xml:coverage/coverage.xml",
     "test:frontend": "node --test src/frontend/tests/*.test.js",
-    "test:frontend:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/frontend/src/**/*.js --test-coverage-exclude=src/frontend/src/services/api/mockData.js src/frontend/tests/*.test.js"
+    "test:frontend:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/frontend/src/**/*.js --test-coverage-exclude=src/frontend/src/services/api/mockData.js src/frontend/tests/*.test.js",
+    "test:coverage:combined": "bash scripts/run_combined_coverage.sh"
   }
 }

@@ -235,6 +235,22 @@ export function createEstimateController({
     topFactorsSection.appendChild(topFactorsBody);
     estimatePanel.appendChild(topFactorsSection);
 
+    const baselineSection = createElement("details", "collapsible-section");
+    baselineSection.open = false;
+    const baselineSummary = createElement("summary", "collapsible-summary");
+    baselineSummary.appendChild(createElement("h3", null, "Baseline Metadata"));
+    baselineSection.appendChild(baselineSummary);
+    const baselineBody = createElement("div", "collapsible-body");
+    baselineBody.appendChild(
+      createElement(
+        "p",
+        null,
+        `Baseline: ${formatCurrency(estimate.baseline_value)}`
+      )
+    );
+    baselineSection.appendChild(baselineBody);
+    estimatePanel.appendChild(baselineSection);
+
   }
   /* node:coverage enable */
 

@@ -160,21 +160,6 @@ python3 scripts/init_and_ingest_open_data.py
 
 The root property assessment CSV, when present, is treated as an ingestion/bootstrap source only. The running app does not read that CSV directly. In live mode, the frontend requests property and layer data from the backend, and the backend serves those responses from the SQLite feature store.
 
-### TestingStage Test Page
-
-This repo also includes a simple combined frontend/backend playground that serves a test page against the sample SQLite database.
-
-Run from the repo root:
-
-```bash
-python3 TestingStage/backend/server.py
-```
-
-Open:
-
-```text
-http://127.0.0.1:8010
-```
 
 ## Runtime Notes
 

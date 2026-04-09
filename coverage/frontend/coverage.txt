@@ -1,0 +1,86 @@
+== Frontend (node --test) + coverage ==
+
+> test:frontend:coverage
+> node --test --experimental-test-coverage --test-coverage-include=src/frontend/src/**/*.js --test-coverage-exclude=src/frontend/src/services/api/mockData.js src/frontend/tests/*.test.js
+
+[32m✔ api fallback helper covers non-status and retryable status branches [90m(1.076864ms)[39m[39m
+[32m✔ api client falls back from live network failures [90m(182.617031ms)[39m[39m
+[32m✔ api client respects disabled mock fallback and sends live estimate auth headers [90m(40.734458ms)[39m[39m
+[32m✔ api client supports mock-mode aborts and optional cursor parameters [90m(199.805313ms)[39m[39m
+[32m✔ app helper matches properties by id, by coordinates, and handles missing inputs [90m(1.239522ms)[39m[39m
+[32m✔ app navigation opens sidebar and switches pages [90m(0.573457ms)[39m[39m
+[32m✔ app reset handler restores default selection state [90m(5.982714ms)[39m[39m
+[32m✔ app shows Auto API badge when live mode is preferred [90m(1.207466ms)[39m[39m
+[32m✔ config ignores blank env keys while parsing valid entries [90m(5.370077ms)[39m[39m
+[32m✔ config falls back to defaults when app env is unavailable [90m(3.546411ms)[39m[39m
+[32m✔ config falls back to defaults when app env fetch throws [90m(4.833425ms)[39m[39m
+[32m✔ config normalizes invalid provider values back to db [90m(4.77406ms)[39m[39m
+[32m✔ config loads runtime env values and normalizes providers [90m(2.975329ms)[39m[39m
+[32m✔ store updates layers, property layer, and subscriptions [90m(5.019828ms)[39m[39m
+[32m✔ dom helpers and debounce support basic UI interactions [90m(16.927079ms)[39m[39m
+[32m✔ search controller covers suggestions, resolved, ambiguous, unsupported, and error flows [90m(1641.94353ms)[39m[39m
+[32m✔ map selection controller handles resolved, unsupported, unresolved, and error outcomes [90m(2.290267ms)[39m[39m
+[32m✔ warning controller renders confidence, warnings, dismiss, and restore flows [90m(1.193219ms)[39m[39m
+[32m✔ estimate controller validates inputs, renders estimates, and resets state [90m(23.949852ms)[39m[39m
+[32m✔ dom helpers handle null elements without throwing [90m(3.323202ms)[39m[39m
+[32m✔ ingestion controller handles validation errors and reset [90m(4.695701ms)[39m[39m
+[32m✔ ingestion controller guard branches for missing elements [90m(5.328522ms)[39m[39m
+[32m✔ ingestion controller uses API result statuses [90m(4.917722ms)[39m[39m
+[32m✔ ingestion controller fallback handles validate-only and partial files [90m(5.248974ms)[39m[39m
+[32m✔ layer controller supports a build with assessment properties disabled [90m(3.078622ms)[39m[39m
+[32m✔ layer controller handles stale generic requests, property aborts, cache expiry, and prefetch failures [90m(521.629969ms)[39m[39m
+[32m✔ layer controller renders unavailable generic state and partial property state [90m(12.172015ms)[39m[39m
+[32m✔ api client uses live APIs, falls back to mock on configured failures, and propagates validation errors [90m(578.801159ms)[39m[39m
+[32m✔ layer controller handles property caching, generic layer toggles, partial states, and outages [90m(884.946779ms)[39m[39m
+[32m✔ map adapter covers deferred load, missing cards, ignored clicks, and generic interaction fallbacks [90m(409.381955ms)[39m[39m
+[32m✔ map adapter supports selection, generic layers, assessment layers, interactions, and reset flows [90m(1065.924173ms)[39m[39m
+[32m✔ map adapter handles missing MapLibre and default viewport fallback [90m(0.524778ms)[39m[39m
+[32m✔ app bootstrap wires the integrated frontend flows [90m(607.579687ms)[39m[39m
+[32m✔ property detail controller renders empty and populated states and supports closing [90m(15.960632ms)[39m[39m
+[34mℹ tests 34[39m
+[34mℹ suites 0[39m
+[34mℹ pass 34[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 1965.01246[39m
+[34mℹ start of coverage report
+ℹ -----------------------------------------------------------------------------------
+ℹ file                               | [31mline %[34m | [31mbranch %[34m | [31mfuncs %[34m | uncovered lines
+ℹ -----------------------------------------------------------------------------------
+ℹ src                                | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ  frontend                          | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ   src                              | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ    [32mapp.js                         [34m | [32m100.00[34m | [32m  100.00[34m | [32m  94.12[34m | 
+ℹ    [32mconfig.js                      [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ    features                        | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ     estimate                       | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mestimateController.js        [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ     ingestion                      | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mingestionController.js       [34m | [32m100.00[34m | [33m   87.23[34m | [32m 100.00[34m | 
+ℹ     layers                         | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mlayerController.js           [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ     mapSelection                   | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mmapSelectionController.js    [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ     propertyDetails                | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mpropertyDetailController.js  [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ     search                         | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32msearchController.js          [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ     warnings                       | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mwarningController.js         [34m | [32m100.00[34m | [33m   85.19[34m | [32m 100.00[34m | 
+ℹ    map                             | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ     [32mmapAdapter.js                 [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ    services                        | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ     api                            | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ      [32mapiClient.js                 [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ    state                           | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ     [32mstore.js                      [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ    utils                           | [31m      [34m | [31m        [34m | [31m       [34m | 
+ℹ     [32mdebounce.js                   [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ     [32mdom.js                        [34m | [32m100.00[34m | [32m  100.00[34m | [32m 100.00[34m | 
+ℹ -----------------------------------------------------------------------------------
+ℹ all files                          | [32m100.00[34m | [32m   97.96[34m | [32m  99.59[34m | 
+ℹ -----------------------------------------------------------------------------------
+ℹ end of coverage report
+[39m

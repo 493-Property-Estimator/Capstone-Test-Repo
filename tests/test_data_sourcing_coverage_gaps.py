@@ -7,6 +7,7 @@ import sys
 import types
 import re
 import zipfile
+import warnings
 from pathlib import Path
 
 import pytest
@@ -797,10 +798,10 @@ def test_enrich_bedbath_uncovered_helpers_and_main(tmp_path: Path, monkeypatch, 
     assert _diagnostic_similarity("", "x") == 0.0
 
     # _collect_alert_warnings collects both ambiguous and quarantined.
-    warnings = _collect_alert_warnings(
+    alert_warnings = _collect_alert_warnings(
         [{"canonical_location_id": "loc-1", "ambiguous": 1, "match_method": "x", "reason_code": None}]
     )
-    assert warnings
+    assert alert_warnings
 
     # _retain_best_source_assignments quarantines suite-missing group.
     rows = [
@@ -947,7 +948,14 @@ def test_enrich_bedbath_uncovered_helpers_and_main(tmp_path: Path, monkeypatch, 
             "--disable-promotion",
         ],
     )
-    runpy.run_module("src.data_sourcing.enrich_bedbath", run_name="__main__")
+    # `runpy.run_module()` warns when the module is already imported; suppress for this intentional coverage run.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=RuntimeWarning,
+            message=r".*found in sys\.modules after import of package.*prior to execution.*",
+        )
+        runpy.run_module("src.data_sourcing.enrich_bedbath", run_name="__main__")
     out = capsys.readouterr().out
     assert "\"status\"" in out
 

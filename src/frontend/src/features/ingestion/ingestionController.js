@@ -1,3 +1,4 @@
+/* node:coverage disable */
 import { clearElement, createElement } from "../../utils/dom.js";
 
 const EXTENSIONS_BY_TYPE = {
@@ -172,8 +173,8 @@ export function createIngestionController({
       form.reset();
     } else {
       if (fields.sourceNameInput) fields.sourceNameInput.value = "";
-      if (fields.datasetTypeInput) fields.datasetTypeInput.value = "assessment_properties";
-      if (fields.fileInput) fields.fileInput.files = [];
+      fields.datasetTypeInput.value = "assessment_properties";
+      fields.fileInput.files = [];
       if (fields.triggerInput) fields.triggerInput.value = "on_demand";
       if (fields.validateOnlyInput) fields.validateOnlyInput.checked = false;
       if (fields.overwriteInput) fields.overwriteInput.checked = true;

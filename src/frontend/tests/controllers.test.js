@@ -294,6 +294,83 @@ test("warning controller renders confidence, warnings, dismiss, and restore flow
   assert.equal(warningPanel.children[0].children[1].children.length, 2);
 });
 
+test("warning controller handles empty payloads and no-op toggle/indicator branches", async () => {
+  const { document } = installDomGlobals();
+  const store = await buildStore();
+  const { createWarningController } = await import("../src/features/warnings/warningController.js");
+
+  const warningPanel = document.createElement("div");
+  const warningIndicator = document.createElement("button");
+
+  createWarningController({
+    store,
+    warningPanel,
+    warningIndicator
+  });
+
+  store.setState({ estimate: { warnings: [] } });
+  assert.equal(warningPanel.classList.contains("is-hidden"), true);
+
+  store.setState({ estimate: { warnings: "not-an-array" } });
+  assert.equal(warningPanel.classList.contains("is-hidden"), true);
+
+  store.setState({
+    warningsCollapsed: false,
+    estimate: {
+      confidence: {},
+      warnings: [{ severity: "", affected_factors: "crime", dismissible: false }]
+    }
+  });
+
+  assert.equal(warningPanel.children.length, 1);
+  const warningDetails = warningPanel.children[0];
+  assert.equal(warningDetails.open, true);
+
+  warningDetails.dispatchEvent({ type: "toggle" });
+  assert.equal(store.getState().warningsCollapsed, false);
+
+  warningIndicator.click();
+  assert.equal(store.getState().warningsCollapsed, false);
+
+  const warningCard = warningDetails.children[1].children[1];
+  assert.match(warningDetails.children[0].textContent, /unknown, --/);
+  assert.equal(warningCard.children[0].textContent, "Warning");
+  assert.equal(warningCard.children[1].textContent, "");
+  assert.equal(warningCard.children[2].textContent, "");
+  assert.equal(warningCard.children[3].children.length, 0);
+
+  store.setState({
+    warningsCollapsed: true,
+    estimate: {
+      warnings: [{ title: "No confidence payload", message: "", affected_factors: [], dismissible: false }]
+    }
+  });
+  assert.match(warningPanel.textContent, /unknown, --/);
+});
+
+test("warning controller tolerates a missing warning indicator element", async () => {
+  const { document } = installDomGlobals();
+  const store = await buildStore();
+  const { createWarningController } = await import("../src/features/warnings/warningController.js");
+
+  const warningPanel = document.createElement("div");
+
+  createWarningController({
+    store,
+    warningPanel,
+    warningIndicator: null
+  });
+
+  store.setState({
+    estimate: {
+      confidence: { percentage: 44, label: "low" },
+      warnings: [{ title: "Heads up", message: "Missing indicator", dismissible: false }]
+    }
+  });
+
+  assert.equal(warningPanel.children.length, 1);
+});
+
 test("estimate controller validates inputs, renders estimates, and resets state", async () => {
   const { document } = installDomGlobals();
   const store = await buildStore();

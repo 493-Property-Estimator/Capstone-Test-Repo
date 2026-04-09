@@ -1505,7 +1505,9 @@ class TestEdmontonRoadEnrichment:
         )
         db_conn.commit()
         # Delete the road before running
+        db_conn.execute("PRAGMA foreign_keys = OFF")
         db_conn.execute("DELETE FROM roads_prod")
+        db_conn.execute("PRAGMA foreign_keys = ON")
         db_conn.commit()
         payload = _payload([{"official_road_name": "Main St", "geometry_points": [[-113.5, 53.5], [-113.49, 53.51]]}])
         result = _apply_edmonton_road_enrichment(db_conn, payload, "test")
