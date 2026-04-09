@@ -1,0 +1,170 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import { installDomGlobals, createMockResponse, wait } from "./helpers/fakeDom.js";
+import { installMapLibre, latestMapInstance } from "./helpers/fakeMapLibre.js";
+
+function baseIds({ includeNavigation = true } = {}) {
+  const ids = [
+    { id: "map-root", rect: { left: 0, top: 0, width: 900, height: 600 } },
+    { id: "map-message" },
+    { id: "property-hover-card", rect: { left: 0, top: 0, width: 220, height: 120 } },
+    { id: "address-input", tagName: "input" },
+    { id: "search-submit", tagName: "button" },
+    { id: "suggestions" },
+    { id: "candidate-results" },
+    { id: "search-helper" },
+    { id: "search-status" },
+    { id: "layer-controls" },
+    { id: "layer-legend" },
+    { id: "layer-status" },
+    { id: "estimate-submit", tagName: "button" },
+    { id: "reset-selection", tagName: "button" },
+    { id: "estimate-status" },
+    { id: "location-summary" },
+    { id: "selection-meta" },
+    { id: "estimate-panel" },
+    { id: "validation-message" },
+    { id: "latitude-input", tagName: "input" },
+    { id: "longitude-input", tagName: "input" },
+    { id: "bedrooms-input", tagName: "input" },
+    { id: "bathrooms-input", tagName: "input" },
+    { id: "floor-area-input", tagName: "input" },
+    { id: "include-breakdown-input", tagName: "input" },
+    { id: "include-top-factors-input", tagName: "input" },
+    { id: "include-warnings-input", tagName: "input" },
+    { id: "include-layers-context-input", tagName: "input" },
+    { id: "factor-crime-input", tagName: "input" },
+    { id: "factor-schools-input", tagName: "input" },
+    { id: "factor-green-space-input", tagName: "input" },
+    { id: "factor-commute-input", tagName: "input" },
+    { id: "weight-crime-input", tagName: "input" },
+    { id: "weight-schools-input", tagName: "input" },
+    { id: "weight-green-space-input", tagName: "input" },
+    { id: "weight-commute-input", tagName: "input" },
+    { id: "weight-crime-output" },
+    { id: "weight-schools-output" },
+    { id: "weight-green-space-output" },
+    { id: "weight-commute-output" },
+    { id: "warning-panel" },
+    { id: "warning-indicator", tagName: "button" },
+    { id: "environment-badge" },
+    { id: "ingestion-form", tagName: "form" },
+    { id: "ingestion-reset", tagName: "button" },
+    { id: "ingestion-status-pill" },
+    { id: "ingestion-status-label" },
+    { id: "ingestion-feedback" },
+    { id: "ingestion-progress" },
+    { id: "ingestion-progress-bar" },
+    { id: "ingestion-source-name", tagName: "input" },
+    { id: "ingestion-dataset-type", tagName: "select" },
+    { id: "ingestion-file-input", tagName: "input" },
+    { id: "ingestion-trigger", tagName: "select" },
+    { id: "ingestion-validate-only", tagName: "input" },
+    { id: "ingestion-overwrite", tagName: "input" },
+    { id: "property-detail-panel" },
+    { id: "property-detail-title" },
+    { id: "property-detail-subtitle" },
+    { id: "property-detail-body" },
+    { id: "property-detail-close", tagName: "button" }
+  ];
+
+  if (includeNavigation) {
+    ids.push({ id: "app-menu-toggle", tagName: "button" });
+    ids.push({ id: "app-sidebar-nav" });
+    ids.push({ id: "app-sidebar-overlay" });
+  }
+
+  return ids;
+}
+
+test("app navigation uses setAttribute when body.dataset is missing", async () => {
+  const { document, window } = installDomGlobals({ ids: baseIds({ includeNavigation: false }) });
+  installMapLibre(window);
+
+  const estimatorLink = document.createElement("button");
+  estimatorLink.dataset = { pageTarget: "estimator" };
+  const ingestionLink = document.createElement("button");
+  ingestionLink.dataset = { pageTarget: "ingestion" };
+  document.querySelectorAll = () => [estimatorLink, ingestionLink];
+
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/app.env")) {
+      return createMockResponse("PREFER_LIVE_API=0\n");
+    }
+    return createMockResponse({});
+  };
+
+  await import("../src/app.js");
+  await wait(10);
+
+  assert.equal(document.body.getAttribute("data-page"), "estimator");
+  ingestionLink.click();
+  assert.equal(document.body.getAttribute("data-page"), "ingestion");
+});
+
+test("app property hydration uses cached property details when available", async () => {
+  const { window } = installDomGlobals({ ids: baseIds() });
+  installMapLibre(window);
+
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/app.env")) {
+      return createMockResponse("PREFER_LIVE_API=0\n");
+    }
+    return createMockResponse({}, { status: 404 });
+  };
+
+  const { __app } = await import("../src/app.js");
+  await wait(10);
+
+  __app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-cache",
+        canonical_address: "Cache-ready property",
+        coordinates: { lat: 53.55, lng: -113.49 },
+        details: { neighbourhood: "Downtown" }
+      }
+    ],
+    clusters: []
+  });
+
+  __app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-cache",
+      canonical_address: "Cache-ready property",
+      coordinates: { lat: 53.55, lng: -113.49 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(25);
+  assert.equal(__app.store.getState().selectedPropertyDetails?.canonical_location_id, "loc-cache");
+
+  __app.store.updatePropertyLayer({
+    enabled: true,
+    renderMode: "property",
+    properties: [
+      {
+        canonical_location_id: "loc-cache",
+        canonical_address: "Cache-ready property",
+        coordinates: { lat: 53.55, lng: -113.49 }
+      }
+    ],
+    clusters: []
+  });
+
+  __app.store.setState({
+    selectedLocation: {
+      canonical_location_id: "loc-cache",
+      canonical_address: "Cache-ready property",
+      coordinates: { lat: 53.55, lng: -113.49 }
+    },
+    selectedPropertyDetails: null,
+    propertyDetailsDismissed: false
+  });
+  await wait(25);
+  assert.equal(__app.store.getState().selectedPropertyDetails?.canonical_location_id, "loc-cache");
+});

@@ -257,9 +257,23 @@ test("warning controller renders confidence, warnings, dismiss, and restore flow
     }
   });
 
+  assert.equal(warningPanel.children.length, 1);
   assert.equal(warningIndicator.classList.contains("is-hidden"), true);
-  assert.equal(warningPanel.classList.contains("is-hidden"), true);
-  assert.equal(warningPanel.children.length, 0);
+  assert.equal(warningPanel.classList.contains("is-hidden"), false);
+  const warningDetails = warningPanel.children[0];
+  assert.equal(warningDetails.tagName, "DETAILS");
+  assert.equal(warningDetails.open, false);
+
+  warningDetails.open = true;
+  warningDetails.dispatchEvent({ type: "toggle" });
+  assert.equal(store.getState().warningsCollapsed, false);
+
+  const dismissButton = warningDetails.children[1].children[1].children[3].children[0];
+  dismissButton.click();
+  assert.equal(store.getState().warningsCollapsed, true);
+
+  warningIndicator.click();
+  assert.equal(store.getState().warningsCollapsed, false);
 
   store.setState({
     estimate: {
@@ -276,9 +290,8 @@ test("warning controller renders confidence, warnings, dismiss, and restore flow
     }
   });
 
-  assert.equal(warningPanel.classList.contains("is-hidden"), true);
-  assert.equal(warningPanel.children.length, 0);
-  assert.equal(store.getState().warningsCollapsed, true);
+  assert.equal(warningPanel.children.length, 1);
+  assert.equal(warningPanel.children[0].children[1].children.length, 2);
 });
 
 test("warning controller handles empty payloads and no-op toggle/indicator branches", async () => {
