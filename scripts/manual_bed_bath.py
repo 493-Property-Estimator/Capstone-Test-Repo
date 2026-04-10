@@ -32,6 +32,7 @@ import argparse
 import csv
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Iterable
 
@@ -47,7 +48,7 @@ PROGRESS_FILE = "completed_neighbourhoods.txt"
 # Resume controls
 # START_FROM = "Evergreen"      # set to None to start from the beginning of remaining
 START_FROM = ""      # set to None to start from the beginning of remaining
-FORCE_REDO = {}     # neighbourhoods to ask again even if already completed
+FORCE_REDO: set[str] = set()     # neighbourhoods to ask again even if already completed
 
 NEIGHBOURHOOD_DATA_URL = "https://data.edmonton.ca/resource/3b6m-fezs.json?$limit=1000"
 
@@ -280,7 +281,7 @@ def build_remaining_list(
     return remaining
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Connect to a local Chromium CDP session and scrape visible REALTOR.ca listing cards."
     )
@@ -295,7 +296,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--force-redo",
         action="append",
-        default=[],
+        default=list(FORCE_REDO),
         help="Neighbourhood name to redo even if already completed (repeatable)",
     )
     parser.add_argument(
@@ -303,7 +304,10 @@ def _parse_args() -> argparse.Namespace:
         default="",
         help="JSON array of neighbourhood names to redo (alternative to repeating --force-redo)",
     )
-    return parser.parse_args()
+    if argv is None:
+        argv = sys.argv[1:]
+    args, _unknown = parser.parse_known_args(argv)
+    return args
 
 
 def _parse_force_redo(raw_values: list[str], raw_json: str) -> set[str]:

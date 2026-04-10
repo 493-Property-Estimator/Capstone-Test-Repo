@@ -19,6 +19,7 @@ omit =
     scripts/download_and_prepare_crime_data.py
     scripts/edmonton_neighbourhood_census_builder.py
     scripts/init_and_ingest_open_data.py
+    scripts/md_to_docx.py
     scripts/manual_bed_bath.py
     scripts/run_bedbath_shadow_proof.py
 

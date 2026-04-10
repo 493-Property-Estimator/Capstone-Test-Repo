@@ -136,7 +136,7 @@ TOTAL                                            5991      0   1944      0   100
 Coverage HTML written to dir coverage/python/html
 Coverage XML written to file coverage/python/coverage.xml
 Required test coverage of 100% reached. Total coverage: 100.00%
-============================= 446 passed in 18.90s =============================
+============================= 446 passed in 31.66s =============================
 
 ---
 
@@ -147,56 +147,56 @@ Required test coverage of 100% reached. Total coverage: 100.00%
 > test:frontend:coverage
 > node --test --experimental-test-coverage --test-coverage-include=src/frontend/src/**/*.js --test-coverage-exclude=src/frontend/src/services/api/mockData.js --test-coverage-exclude=src/frontend/src/app.js src/frontend/tests/*.test.js
 
-[32m✔ api fallback helper covers non-status and retryable status branches [90m(1.111321ms)[39m[39m
-[32m✔ api client falls back from live network failures [90m(182.144889ms)[39m[39m
-[32m✔ api client respects disabled mock fallback and sends live estimate auth headers [90m(32.716266ms)[39m[39m
-[32m✔ api client supports mock-mode aborts and optional cursor parameters [90m(199.25162ms)[39m[39m
-[32m✔ app navigation uses setAttribute when body.dataset is missing [90m(37.681587ms)[39m[39m
-[32m✔ app property hydration uses cached property details when available [90m(75.30381ms)[39m[39m
-[32m✔ app helper matches properties by id, by coordinates, and handles missing inputs [90m(1.171873ms)[39m[39m
-[32m✔ app navigation opens sidebar and switches pages [90m(0.441679ms)[39m[39m
-[32m✔ app reset handler restores default selection state [90m(2.68569ms)[39m[39m
-[32m✔ app hydration falls back cleanly when detail fetch fails or property id is missing [90m(63.079289ms)[39m[39m
-[32m✔ app shows Auto API badge when live mode is preferred [90m(0.910665ms)[39m[39m
-[32m✔ app navigation uses dataset-backed page switching and ignores invalid pages [90m(1.181372ms)[39m[39m
-[32m✔ app navigation tolerates missing sidebar/overlay elements [90m(27.032624ms)[39m[39m
-[32m✔ config ignores blank env keys while parsing valid entries [90m(2.926713ms)[39m[39m
-[32m✔ config falls back to defaults when app env is unavailable [90m(1.721596ms)[39m[39m
-[32m✔ config falls back to defaults when app env fetch throws [90m(1.485322ms)[39m[39m
-[32m✔ config normalizes invalid provider values back to db [90m(5.110173ms)[39m[39m
-[32m✔ config loads runtime env values and normalizes providers [90m(2.526591ms)[39m[39m
-[32m✔ store updates layers, property layer, and subscriptions [90m(3.311401ms)[39m[39m
-[32m✔ dom helpers and debounce support basic UI interactions [90m(16.047652ms)[39m[39m
-[32m✔ search controller covers suggestions, resolved, ambiguous, unsupported, and error flows [90m(1629.2665ms)[39m[39m
-[32m✔ map selection controller handles resolved, unsupported, unresolved, and error outcomes [90m(4.150828ms)[39m[39m
-[32m✔ warning controller renders confidence, warnings, dismiss, and restore flows [90m(2.447041ms)[39m[39m
-[32m✔ warning controller handles empty payloads and no-op toggle/indicator branches [90m(0.917789ms)[39m[39m
-[32m✔ warning controller tolerates a missing warning indicator element [90m(0.680327ms)[39m[39m
-[32m✔ estimate controller validates inputs, renders estimates, and resets state [90m(45.14263ms)[39m[39m
-[32m✔ dom helpers handle null elements without throwing [90m(2.03742ms)[39m[39m
-[32m✔ ingestion controller handles validation errors and reset [90m(3.734083ms)[39m[39m
-[32m✔ ingestion controller guard branches for missing elements [90m(9.79529ms)[39m[39m
-[32m✔ ingestion controller uses API result statuses [90m(4.337236ms)[39m[39m
-[32m✔ ingestion controller fallback handles validate-only and partial files [90m(3.81007ms)[39m[39m
-[32m✔ ingestion controller covers status aliases, missing stats, and extension fallback messaging [90m(4.725485ms)[39m[39m
-[32m✔ ingestion controller fallback treats large files as partial ingestion [90m(2.083726ms)[39m[39m
-[32m✔ ingestion controller reset fallback clears all fields when form.reset is absent [90m(2.217891ms)[39m[39m
-[32m✔ ingestion controller skips reset wiring when reset button is missing [90m(2.309314ms)[39m[39m
-[32m✔ ingestion controller guard covers each missing required element branch [90m(0.899979ms)[39m[39m
-[32m✔ ingestion controller covers invalid filename branch and missing status normalization [90m(5.485362ms)[39m[39m
-[32m✔ ingestion controller handles missing source input and blank dataset type values [90m(2.347308ms)[39m[39m
-[32m✔ ingestion controller covers blank trigger values and empty file list branches [90m(2.257072ms)[39m[39m
-[32m✔ ingestion controller rejects files missing a name [90m(0.414371ms)[39m[39m
-[32m✔ layer controller supports a build with assessment properties disabled [90m(4.516519ms)[39m[39m
-[32m✔ layer controller handles stale generic requests, property aborts, cache expiry, and prefetch failures [90m(524.440977ms)[39m[39m
-[32m✔ layer controller renders unavailable generic state and partial property state [90m(13.175555ms)[39m[39m
-[32m✔ api client uses live APIs, falls back to mock on configured failures, and propagates validation errors [90m(592.426221ms)[39m[39m
-[32m✔ layer controller handles property caching, generic layer toggles, partial states, and outages [90m(891.309587ms)[39m[39m
-[32m✔ map adapter covers deferred load, missing cards, ignored clicks, and generic interaction fallbacks [90m(408.991916ms)[39m[39m
-[32m✔ map adapter supports selection, generic layers, assessment layers, interactions, and reset flows [90m(1082.073143ms)[39m[39m
-[32m✔ map adapter handles missing MapLibre and default viewport fallback [90m(0.686264ms)[39m[39m
-[32m✔ app bootstrap wires the integrated frontend flows [90m(834.829355ms)[39m[39m
-[32m✔ property detail controller renders empty and populated states and supports closing [90m(20.811131ms)[39m[39m
+[32m✔ api fallback helper covers non-status and retryable status branches [90m(1.095877ms)[39m[39m
+[32m✔ api client falls back from live network failures [90m(181.551095ms)[39m[39m
+[32m✔ api client respects disabled mock fallback and sends live estimate auth headers [90m(41.553094ms)[39m[39m
+[32m✔ api client supports mock-mode aborts and optional cursor parameters [90m(202.641089ms)[39m[39m
+[32m✔ app navigation uses setAttribute when body.dataset is missing [90m(41.173159ms)[39m[39m
+[32m✔ app property hydration uses cached property details when available [90m(74.935196ms)[39m[39m
+[32m✔ app helper matches properties by id, by coordinates, and handles missing inputs [90m(2.931441ms)[39m[39m
+[32m✔ app navigation opens sidebar and switches pages [90m(1.139807ms)[39m[39m
+[32m✔ app reset handler restores default selection state [90m(6.239257ms)[39m[39m
+[32m✔ app hydration falls back cleanly when detail fetch fails or property id is missing [90m(63.727092ms)[39m[39m
+[32m✔ app shows Auto API badge when live mode is preferred [90m(1.079255ms)[39m[39m
+[32m✔ app navigation uses dataset-backed page switching and ignores invalid pages [90m(1.049572ms)[39m[39m
+[32m✔ app navigation tolerates missing sidebar/overlay elements [90m(25.208735ms)[39m[39m
+[32m✔ config ignores blank env keys while parsing valid entries [90m(3.641446ms)[39m[39m
+[32m✔ config falls back to defaults when app env is unavailable [90m(1.719209ms)[39m[39m
+[32m✔ config falls back to defaults when app env fetch throws [90m(1.516181ms)[39m[39m
+[32m✔ config normalizes invalid provider values back to db [90m(2.061151ms)[39m[39m
+[32m✔ config loads runtime env values and normalizes providers [90m(2.267741ms)[39m[39m
+[32m✔ store updates layers, property layer, and subscriptions [90m(3.624824ms)[39m[39m
+[32m✔ dom helpers and debounce support basic UI interactions [90m(16.612689ms)[39m[39m
+[32m✔ search controller covers suggestions, resolved, ambiguous, unsupported, and error flows [90m(1633.439397ms)[39m[39m
+[32m✔ map selection controller handles resolved, unsupported, unresolved, and error outcomes [90m(2.94094ms)[39m[39m
+[32m✔ warning controller renders confidence, warnings, dismiss, and restore flows [90m(1.620663ms)[39m[39m
+[32m✔ warning controller handles empty payloads and no-op toggle/indicator branches [90m(0.542596ms)[39m[39m
+[32m✔ warning controller tolerates a missing warning indicator element [90m(0.339568ms)[39m[39m
+[32m✔ estimate controller validates inputs, renders estimates, and resets state [90m(32.073698ms)[39m[39m
+[32m✔ dom helpers handle null elements without throwing [90m(2.187005ms)[39m[39m
+[32m✔ ingestion controller handles validation errors and reset [90m(4.096181ms)[39m[39m
+[32m✔ ingestion controller guard branches for missing elements [90m(7.03356ms)[39m[39m
+[32m✔ ingestion controller uses API result statuses [90m(4.498676ms)[39m[39m
+[32m✔ ingestion controller fallback handles validate-only and partial files [90m(5.098262ms)[39m[39m
+[32m✔ ingestion controller covers status aliases, missing stats, and extension fallback messaging [90m(4.459495ms)[39m[39m
+[32m✔ ingestion controller fallback treats large files as partial ingestion [90m(2.638179ms)[39m[39m
+[32m✔ ingestion controller reset fallback clears all fields when form.reset is absent [90m(2.661924ms)[39m[39m
+[32m✔ ingestion controller skips reset wiring when reset button is missing [90m(2.179881ms)[39m[39m
+[32m✔ ingestion controller guard covers each missing required element branch [90m(0.332444ms)[39m[39m
+[32m✔ ingestion controller covers invalid filename branch and missing status normalization [90m(6.084908ms)[39m[39m
+[32m✔ ingestion controller handles missing source input and blank dataset type values [90m(2.67736ms)[39m[39m
+[32m✔ ingestion controller covers blank trigger values and empty file list branches [90m(1.256162ms)[39m[39m
+[32m✔ ingestion controller rejects files missing a name [90m(0.315822ms)[39m[39m
+[32m✔ layer controller supports a build with assessment properties disabled [90m(5.896128ms)[39m[39m
+[32m✔ layer controller handles stale generic requests, property aborts, cache expiry, and prefetch failures [90m(528.700734ms)[39m[39m
+[32m✔ layer controller renders unavailable generic state and partial property state [90m(13.074538ms)[39m[39m
+[32m✔ api client uses live APIs, falls back to mock on configured failures, and propagates validation errors [90m(579.672671ms)[39m[39m
+[32m✔ layer controller handles property caching, generic layer toggles, partial states, and outages [90m(886.580763ms)[39m[39m
+[32m✔ map adapter covers deferred load, missing cards, ignored clicks, and generic interaction fallbacks [90m(409.443661ms)[39m[39m
+[32m✔ map adapter supports selection, generic layers, assessment layers, interactions, and reset flows [90m(1065.295259ms)[39m[39m
+[32m✔ map adapter handles missing MapLibre and default viewport fallback [90m(0.549719ms)[39m[39m
+[32m✔ app bootstrap wires the integrated frontend flows [90m(832.640089ms)[39m[39m
+[32m✔ property detail controller renders empty and populated states and supports closing [90m(23.446783ms)[39m[39m
 [34mℹ tests 50[39m
 [34mℹ suites 0[39m
 [34mℹ pass 50[39m
@@ -204,7 +204,7 @@ Required test coverage of 100% reached. Total coverage: 100.00%
 [34mℹ cancelled 0[39m
 [34mℹ skipped 0[39m
 [34mℹ todo 0[39m
-[34mℹ duration_ms 2295.143143[39m
+[34mℹ duration_ms 2326.253503[39m
 [34mℹ start of coverage report
 ℹ -----------------------------------------------------------------------------------
 ℹ file                               | [31mline %[34m | [31mbranch %[34m | [31mfuncs %[34m | uncovered lines
