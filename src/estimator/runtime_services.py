@@ -55,7 +55,12 @@ class OsrmService:
         base_url: str | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
-        configured_base = base_url or os.getenv("TESTING_STAGE_OSRM_BASE_URL", "").strip()
+        configured_base = (
+            base_url
+            or os.getenv("ROUTING_OSRM_BASE_URL", "").strip()
+            or os.getenv("OSRM_BASE_URL", "").strip()
+            or os.getenv("TESTING_STAGE_OSRM_BASE_URL", "").strip()
+        )
         self._base_url = configured_base.rstrip("/")
         self._timeout_seconds = float(
             timeout_seconds
@@ -113,7 +118,7 @@ class OsrmService:
     ) -> dict[str, Any]:
         if not self.is_configured():
             raise OsrmError(
-                "OSRM is not configured. Set TESTING_STAGE_OSRM_BASE_URL to your local OSRM server."
+                "OSRM is not configured. Set OSRM_BASE_URL (or ROUTING_OSRM_BASE_URL) to your local OSRM server."
             )
 
         coordinate_path = ";".join(
@@ -141,6 +146,21 @@ class OsrmService:
                 f"OSRM {service} error: {payload.get('message') or payload.get('code')}"
             )
         return payload
+
+
+def get_estimated_car_speed_kmh() -> float:
+    raw = (
+        os.getenv("ESTIMATED_CAR_SPEED_KMH", "").strip()
+        or os.getenv("ESTIMATOR_CAR_SPEED_KMH", "").strip()
+        or "45"
+    )
+    try:
+        value = float(raw)
+    except ValueError:
+        value = 45.0
+    if value <= 0:
+        return 45.0
+    return value
 
 
 class CrimeProvider:
@@ -357,4 +377,3 @@ class SQLiteCrimeProvider(CrimeProvider):
             "crime_types": crime_types,
             "total_incidents": sum(item["count"] for item in crime_types),
         }
-

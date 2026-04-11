@@ -598,7 +598,9 @@ def test_property_estimator_remaining_branches(tmp_path: Path, monkeypatch) -> N
         fallback_flags=flags,
         warnings=warnings,
     )
-    assert bundle["car_travel_time_s"] is None
+    assert bundle["car_travel_time_s"] is not None
+    assert (bundle.get("car_time_source") or "").startswith("estimated:")
+    assert any(item.get("code") == "osrm_duration_unavailable" for item in warnings)
 
     monkeypatch.setattr(pe, "group_comparables_by_attributes", lambda *_a, **_k: {"matching": [], "non_matching": []})
     comp = est._collect_comparables({"lat": 53.5, "lon": -113.4}, {}, warnings, [])

@@ -12,6 +12,7 @@ from statistics import median
 from typing import Any
 
 from src.data_sourcing.database import connect
+from src.data_sourcing import neighbourhood_valuation_models as nvm
 from src.estimator import proximity as proximity_module
 from src.estimator.proximity import (
     get_nearest_libraries,
@@ -103,6 +104,7 @@ class PropertyEstimator:
         lat: float,
         lon: float,
         property_attributes: dict[str, Any] | None = None,
+        enable_neighbourhood_value_model: bool = True,
     ) -> dict[str, Any]:
         point = self._normalize_point(lat, lon)
         normalized_attributes = self._normalize_attributes(property_attributes or {})
@@ -110,6 +112,16 @@ class PropertyEstimator:
         warnings: list[dict[str, Any]] = []
         missing_factors: list[str] = []
         fallback_flags: list[str] = []
+
+        if not enable_neighbourhood_value_model:
+            fallback_flags.append("neighbourhood_value_model_disabled")
+            warnings.append(
+                self._warning(
+                    "neighbourhood_value_model_disabled",
+                    "low",
+                    "Neighbourhood value model adjustments were disabled for this estimate.",
+                )
+            )
 
         nearest_property = self._find_nearest_property(point["lat"], point["lon"])
         if nearest_property is None:
@@ -139,6 +151,7 @@ class PropertyEstimator:
             comparables=comparables,
             warnings=warnings,
             fallback_flags=fallback_flags,
+            enable_neighbourhood_value_model=enable_neighbourhood_value_model,
         )
         range_result = self._calculate_range(
             final_estimate=valuation["final_estimate"],
@@ -600,6 +613,7 @@ class PropertyEstimator:
         return {
             "primary_neighbourhood": primary_name,
             "primary_average_assessment": self._round_money(aggregates["average_assessment"]),
+            "primary_median_assessment": self._round_money(aggregates.get("median_assessment")),
             "primary_property_count": int(aggregates["property_count"]),
             "primary_crime": primary_crime,
             "other_neighbourhoods": other_crime,
@@ -740,6 +754,14 @@ class PropertyEstimator:
             except Exception:
                 transit_distance_m = None
 
+        if car_time_s is None:
+            speed_getter = getattr(self._services_module, "get_estimated_car_speed_kmh", None)
+            speed_kmh = float(speed_getter()) if callable(speed_getter) else 45.0
+            speed_mps = (speed_kmh * 1000.0) / 3600.0 if speed_kmh > 0 else 0.0
+            if speed_mps > 0:
+                car_time_s = round(float(road_distance_m) / speed_mps, 2)
+                car_time_source = f"estimated:{route_mode}"
+
         return {
             "id": target.get("entity_id") or target.get("canonical_location_id"),
             "name": label,
@@ -773,6 +795,7 @@ class PropertyEstimator:
         comparables: dict[str, list[dict[str, Any]]],
         warnings: list[dict[str, Any]],
         fallback_flags: list[str],
+        enable_neighbourhood_value_model: bool = True,
     ) -> dict[str, Any]:
         baseline_value = float(baseline["assessment_value"])
         adjustments: list[dict[str, Any]] = []
@@ -890,6 +913,14 @@ class PropertyEstimator:
                 )
             )
 
+        if enable_neighbourhood_value_model:
+            ml_adjustment = self._neighbourhood_ml_adjustment(
+                baseline=baseline,
+                neighbourhood_context=neighbourhood_context,
+            )
+            if ml_adjustment is not None:
+                adjustments.append(ml_adjustment)
+
         raw_estimate = baseline_value + sum(item["value"] for item in adjustments)
         lower_guardrail = baseline_value * 0.65
         upper_guardrail = baseline_value * 1.35
@@ -923,6 +954,116 @@ class PropertyEstimator:
             "top_positive_factors": [item for item in rounded_adjustments if item["value"] > 0][:3],
             "top_negative_factors": [item for item in rounded_adjustments if item["value"] < 0][:3],
         }
+
+    def _neighbourhood_ml_adjustment(self, *, baseline: dict[str, Any], neighbourhood_context: dict[str, Any]) -> dict[str, Any] | None:
+        if not baseline.get("matched_property"):
+            return None
+        if self._table_row_count("neighbourhood_value_models_prod") <= 0:
+            return None
+        neighbourhood = neighbourhood_context.get("primary_neighbourhood") or baseline.get("neighbourhood")
+        if not neighbourhood:
+            return None
+
+        canonical_location_id = baseline.get("canonical_location_id")
+        if not canonical_location_id:
+            return None
+        feature_row = self._property_feature_row(str(canonical_location_id))
+        if not feature_row:
+            return None
+
+        ridge = self._load_neighbourhood_value_model(neighbourhood=str(neighbourhood), model_type="ridge")
+        rf = self._load_neighbourhood_value_model(neighbourhood=str(neighbourhood), model_type="rf")
+        if ridge is None and rf is None:
+            return None
+
+        ridge_pred = nvm.predict_ridge(ridge, feature_row) if ridge is not None else None
+        rf_pred = nvm.predict_rf(rf, feature_row) if rf is not None else None
+        preds = [v for v in [ridge_pred, rf_pred] if v is not None and v > 0]
+        if not preds:
+            return None
+
+        baseline_value = float(baseline.get("assessment_value") or 0.0)
+        avg_pred = sum(preds) / len(preds)
+        delta = float(avg_pred - baseline_value)
+
+        # Keep this contribution intentionally small and bounded.
+        raw_adjustment = delta * 0.15
+        cap = max(10_000.0, 0.05 * baseline_value)
+        adjustment_value = max(-cap, min(cap, raw_adjustment))
+
+        return self._adjustment(
+            "neighbourhood_value_model",
+            "Neighbourhood value model",
+            adjustment_value,
+            {
+                "neighbourhood": str(neighbourhood),
+                "ridge_pred": self._round_money(ridge_pred) if ridge_pred is not None else None,
+                "rf_pred": self._round_money(rf_pred) if rf_pred is not None else None,
+                "avg_pred": self._round_money(avg_pred),
+                "baseline_assessment": self._round_money(baseline_value),
+            },
+        )
+
+    def _property_feature_row(self, canonical_location_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    pl.canonical_location_id,
+                    pl.neighbourhood,
+                    pl.assessment_value,
+                    pl.lot_size,
+                    pl.total_gross_area,
+                    pl.year_built,
+                    pl.zoning,
+                    pl.tax_class,
+                    pl.garage,
+                    pl.assessment_class_1,
+                    pa.bedrooms_estimated,
+                    pa.bathrooms_estimated
+                FROM property_locations_prod pl
+                LEFT JOIN property_attributes_prod pa
+                  ON pa.canonical_location_id = pl.canonical_location_id
+                WHERE pl.canonical_location_id = ?
+                LIMIT 1
+                """,
+                (canonical_location_id,),
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def _load_neighbourhood_value_model(self, *, neighbourhood: str, model_type: str) -> nvm.TrainedModel | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT neighbourhood, model_type, model_version, feature_schema_json, payload_json, r2, mae, train_count, test_count
+                FROM neighbourhood_value_models_prod
+                WHERE UPPER(COALESCE(neighbourhood, '')) = UPPER(?)
+                  AND model_type = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (neighbourhood, model_type),
+            ).fetchone()
+        if row is None:
+            return None
+        try:
+            feature_schema = json.loads(row["feature_schema_json"] or "{}")
+            payload = json.loads(row["payload_json"] or "{}")
+        except Exception:
+            return None
+        return nvm.TrainedModel(
+            neighbourhood=str(row["neighbourhood"] or neighbourhood),
+            model_type=str(row["model_type"] or model_type),
+            version=str(row["model_version"] or ""),
+            feature_schema=feature_schema if isinstance(feature_schema, dict) else {},
+            payload=payload if isinstance(payload, dict) else {},
+            metrics={
+                "r2": float(row["r2"] or 0.0),
+                "mae": float(row["mae"] or 0.0),
+                "train_count": int(row["train_count"] or 0),
+                "test_count": int(row["test_count"] or 0),
+            },
+        )
 
     def _calculate_range(
         self,
@@ -1033,6 +1174,27 @@ class PropertyEstimator:
         }
 
     def _neighbourhood_aggregates_by_name(self, neighbourhood: str) -> dict[str, Any]:
+        if self._table_row_count("neighbourhood_model_prod") > 0:
+            with self._connect() as connection:
+                row = connection.execute(
+                    """
+                    SELECT
+                        neighbourhood,
+                        average_assessment,
+                        median_assessment,
+                        property_count,
+                        centroid_lat,
+                        centroid_lon,
+                        dataset_version,
+                        created_at
+                    FROM neighbourhood_model_prod
+                    WHERE UPPER(COALESCE(neighbourhood, '')) = UPPER(?)
+                    LIMIT 1
+                    """,
+                    (neighbourhood,),
+                ).fetchone()
+            if row is not None:
+                return dict(row)
         with self._connect() as connection:
             row = connection.execute(
                 """
@@ -1051,11 +1213,63 @@ class PropertyEstimator:
             return {
                 "neighbourhood": neighbourhood,
                 "average_assessment": None,
+                "median_assessment": None,
                 "property_count": 0,
             }
         return dict(row)
 
     def _closest_other_neighbourhoods(self, neighbourhood: str, limit: int) -> list[dict[str, Any]]:
+        if self._table_row_count("neighbourhood_model_prod") > 0:
+            with self._connect() as connection:
+                anchor = connection.execute(
+                    """
+                    SELECT centroid_lat, centroid_lon
+                    FROM neighbourhood_model_prod
+                    WHERE UPPER(COALESCE(neighbourhood, '')) = UPPER(?)
+                      AND centroid_lat IS NOT NULL
+                      AND centroid_lon IS NOT NULL
+                    LIMIT 1
+                    """,
+                    (neighbourhood,),
+                ).fetchone()
+                rows = connection.execute(
+                    """
+                    SELECT neighbourhood, average_assessment, property_count, centroid_lat, centroid_lon
+                    FROM neighbourhood_model_prod
+                    WHERE neighbourhood IS NOT NULL
+                      AND TRIM(neighbourhood) <> ''
+                      AND UPPER(neighbourhood) <> UPPER(?)
+                      AND average_assessment IS NOT NULL
+                      AND centroid_lat IS NOT NULL
+                      AND centroid_lon IS NOT NULL
+                    """,
+                    (neighbourhood,),
+                ).fetchall()
+
+            if anchor is None or anchor["centroid_lat"] is None or anchor["centroid_lon"] is None:
+                return []
+
+            ranked = []
+            anchor_lat = float(anchor["centroid_lat"])
+            anchor_lon = float(anchor["centroid_lon"])
+            for row in rows:
+                distance_m = self._services_module.haversine_meters(
+                    anchor_lat,
+                    anchor_lon,
+                    float(row["centroid_lat"]),
+                    float(row["centroid_lon"]),
+                )
+                ranked.append(
+                    {
+                        "neighbourhood": row["neighbourhood"],
+                        "average_assessment": self._round_money(row["average_assessment"]),
+                        "property_count": int(row["property_count"] or 0),
+                        "distance_from_primary_m": round(distance_m, 2),
+                    }
+                )
+            ranked.sort(key=lambda item: (item["distance_from_primary_m"], item["neighbourhood"]))
+            return ranked[:limit]
+
         with self._connect() as connection:
             anchor = connection.execute(
                 """
@@ -1284,9 +1498,15 @@ def estimate_property_value(
     lat: float,
     lon: float,
     property_attributes: dict[str, Any] | None = None,
+    enable_neighbourhood_value_model: bool = True,
 ) -> dict[str, Any]:
     estimator = _get_estimator_cached(str(Path(db_path).resolve()))
-    return estimator.estimate(lat=lat, lon=lon, property_attributes=property_attributes)
+    return estimator.estimate(
+        lat=lat,
+        lon=lon,
+        property_attributes=property_attributes,
+        enable_neighbourhood_value_model=enable_neighbourhood_value_model,
+    )
 
 
 @lru_cache(maxsize=4)

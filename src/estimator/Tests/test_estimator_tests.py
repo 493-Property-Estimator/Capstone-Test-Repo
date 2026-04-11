@@ -36,7 +36,7 @@ def test_estimate_property_value_uses_cached_estimator(monkeypatch, tmp_path: Pa
     calls = []
 
     class FakeEstimator:
-        def estimate(self, *, lat, lon, property_attributes):
+        def estimate(self, *, lat, lon, property_attributes, enable_neighbourhood_value_model=True):
             calls.append((lat, lon, property_attributes))
             return {"ok": True}
 

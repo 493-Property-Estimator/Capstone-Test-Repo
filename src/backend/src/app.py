@@ -39,6 +39,8 @@ from src.backend.src.api.health import router as health_router
 from src.backend.src.api.refresh_jobs import router as refresh_jobs_router
 from src.backend.src.api.ingestion_jobs import router as ingestion_jobs_router
 from src.backend.src.jobs.precompute_grid import router as jobs_router
+from src.backend.src.jobs.precompute_neighbourhood_model import router as neighbourhood_jobs_router
+from src.backend.src.jobs.train_neighbourhood_value_models import router as neighbourhood_ml_jobs_router
 from src.backend.src.services.auth import require_estimate_access
 from data_sourcing.database import connect as connect_data_db, init_db as init_data_db
 from data_sourcing.service import IngestionService
@@ -131,6 +133,8 @@ app.include_router(estimates_router, prefix="/api/v1", dependencies=[Depends(req
 app.include_router(layers_router, prefix="/api/v1")
 app.include_router(properties_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(neighbourhood_jobs_router, prefix="/api/v1")
+app.include_router(neighbourhood_ml_jobs_router, prefix="/api/v1")
 app.include_router(refresh_jobs_router, prefix="/api/v1")
 app.include_router(ingestion_jobs_router, prefix="/api/v1")
 app.include_router(health_router)

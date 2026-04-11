@@ -196,6 +196,9 @@ async def create_estimate(request: Request, payload: Any = None):
         )
 
     started = time.perf_counter()
+    time_budget = max(settings.estimate_time_budget_seconds, 0.1)
+    primary_timeout = max(0.1, min(time_budget, time_budget * 0.85))
+    fallback_timeout = max(0.1, time_budget - primary_timeout)
     try:
         estimate = await asyncio.wait_for(
             asyncio.to_thread(
@@ -205,19 +208,32 @@ async def create_estimate(request: Request, payload: Any = None):
                 lon=float(coords["lng"]),
                 property_attributes=normalized_attributes,
             ),
-            timeout=max(settings.estimate_time_budget_seconds, 0.1),
+            timeout=primary_timeout,
         )
     except TimeoutError:
-        return JSONResponse(
-            status_code=503,
-            content=error_response(
-                request_id,
-                code="TIME_BUDGET_EXCEEDED",
-                message="Estimate request exceeded the valuation time budget.",
-                details={"budget_seconds": settings.estimate_time_budget_seconds},
-                retryable=True,
-            ),
-        )
+        try:
+            estimate = await asyncio.wait_for(
+                asyncio.to_thread(
+                    estimate_property_value,
+                    settings.data_db_path,
+                    lat=float(coords["lat"]),
+                    lon=float(coords["lng"]),
+                    property_attributes=normalized_attributes,
+                    enable_neighbourhood_value_model=False,
+                ),
+                timeout=fallback_timeout,
+            )
+        except TimeoutError:
+            return JSONResponse(
+                status_code=503,
+                content=error_response(
+                    request_id,
+                    code="TIME_BUDGET_EXCEEDED",
+                    message="Estimate request exceeded the valuation time budget.",
+                    details={"budget_seconds": settings.estimate_time_budget_seconds},
+                    retryable=True,
+                ),
+            )
     except ValueError as exc:
         return JSONResponse(
             status_code=424,

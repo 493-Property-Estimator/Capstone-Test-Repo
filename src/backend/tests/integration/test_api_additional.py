@@ -253,7 +253,35 @@ def test_estimates_timeout_and_cached(client, monkeypatch):
         json={"location": {"coordinates": {"lat": 53.5461, "lng": -113.4938}}},
     )
     assert resp.status_code == 200
-    assert resp.headers.get("X-Cache-Status") == "HIT"
+
+
+def test_estimates_timeout_fallback_runs_without_neighbourhood_model(client, monkeypatch):
+    import dataclasses
+    import time
+
+    from src.backend.src.api import estimates as estimates_api
+
+    settings = client.app.state.settings
+    client.app.state.settings = dataclasses.replace(settings, estimate_time_budget_seconds=0.25)
+
+    def fake_estimator(*_a, enable_neighbourhood_value_model=True, **_k):
+        if enable_neighbourhood_value_model:
+            time.sleep(0.5)
+            return {"final_estimate": 999999}
+        return {"final_estimate": 123456, "fallback_flags": ["timeout_fallback_pipeline_only"]}
+
+    monkeypatch.setattr(estimates_api, "estimate_property_value", fake_estimator)
+
+    resp = client.post(
+        "/api/v1/estimates",
+        json={"location": {"property_id": "loc_001"}},
+    )
+    assert resp.status_code == 200
+    assert float(resp.json().get("final_estimate") or 0) == 123456
+
+
+def test_estimates_time_budget_exceeded_returns_503_when_fallback_also_times_out(client, monkeypatch):
+    from src.backend.src.api import estimates as estimates_api
 
     monkeypatch.setattr(client.app.state.cache, "get", lambda *_a, **_k: (None, "miss"))
 

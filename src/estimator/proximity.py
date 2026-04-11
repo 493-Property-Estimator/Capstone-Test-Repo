@@ -461,6 +461,24 @@ def _fetch_library_rows(
 
 
 def _fetch_neighbourhood_aggregates(db_path: Path | str) -> list[dict[str, Any]]:
+    resolved_db_path = str(Path(db_path).resolve())
+    if _table_exists(resolved_db_path, "neighbourhood_model_prod"):
+        sql = """
+            SELECT
+                neighbourhood,
+                average_assessment,
+                property_count,
+                centroid_lat,
+                centroid_lon
+            FROM neighbourhood_model_prod
+            WHERE neighbourhood IS NOT NULL
+              AND TRIM(neighbourhood) <> ''
+              AND average_assessment IS NOT NULL
+              AND centroid_lat IS NOT NULL
+              AND centroid_lon IS NOT NULL
+        """
+        return _query_rows(db_path, sql, [])
+
     _require_table(db_path, "property_locations_prod")
     sql = """
         SELECT
